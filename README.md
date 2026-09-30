@@ -33,9 +33,61 @@ Submission (via Builderbase): short description, **demo video (< 3 min)**, this 
 
 ## Our solution
 
-_TODO – fill in once the team picks a direction. See [docs/ideas.md](docs/ideas.md) for the brainstorm._
+> **Kate's situations are written. Ours are composed.**
 
-**Base app (ready):** a KBC-Mobile-style banking app to build the PoC on. Synthetic customers can log in, see accounts and transactions, make transfers, and get a **"Voor jou"** feed of personalised, explainable insights ("Waarom zie ik dit?"). The personalization engine plugs in at [`backend/app/services/insights.py`](backend/app/services/insights.py).
+First, the thing we refuse to pretend: **a bank that reaches out proactively is not our idea.** Kate has been live in KBC Mobile since November 2020, already covers **140+ situations** for **5.8 million** digital customers and solves **70%** of queries on her own ([source](https://newsroom.kbc.com/kate-your-personal-digital-assistant/)). Pitching proactivity as new to a jury from KBC would be pitching them their own 2020 release.
+
+What is new is **how a situation comes into being.** Those 140 situations are hand-authored, one at a time, by people. That works for 140. It cannot work for a segment-of-one across 2.3M customers — which is precisely guiding question 5. You cannot write 2.3M situations.
+
+So we do not write situations. We write a catalogue of cheap, reusable **signals**, and let them **combine** into moments nobody pre-programmed, each carrying a confidence score derived from the customer's own regularity rather than a hand-picked threshold.
+
+That has a consequence we lean on, because it is where the real engineering is: once moments arise combinatorially instead of being authored, **arbitration becomes the system.** Deciding what is worth saying, at what urgency, through which channel — feed card, push, SMS, call — and crucially **when to stay silent**, stops being a nicety. A bank that can generate a thousand relevant moments per customer and says nothing 999 times is more valuable than one that says all thousand.
+
+### How this answers the challenge
+
+| Guiding question | Our answer | Where it lives |
+|---|---|---|
+| 1. What signals reveal what customers need? | Signals derived from the customer's own bookings: income cadence, category patterns, recurring debits, buffer versus fixed costs. Cheap, explainable, no ML required. | [`backend/app/services/insights.py`](backend/app/services/insights.py) |
+| 2. How to recognise situation, behaviour and intent? | Situation and behaviour are composed from those signals; **intent** the customer states directly, by talking to Kate in natural language. | [`backend/app/kate/`](backend/app/kate/), `POST /api/v1/kate/chat` |
+| 3. How do experiences adapt automatically? | Every suggestion carries a plain-language `reason` ("Waarom zie ik dit?") that is **always** present, so the customer can see the evidence rather than trust a black box. The persona is passed to Kate as context; a dedicated tone layer per life phase is designed, not built. | `reason` on every insight, [`kate/context.py`](backend/app/kate/context.py) |
+| 4. How does this work across channels? | One arbitration step turns an urgency score into a channel, and can choose to send nothing at all. | Moments engine (in review, see below) |
+| 5. How does it reach millions? | **Tiered intelligence:** rule-based signals run for all 2.3M; an LLM is invoked only for a shortlisted moment or when the customer actually talks to Kate; a human advisor handles the high-value and sensitive cases. Cost scales with *conversations*, not with customers. | Design, see [docs/ideas.md](docs/ideas.md) |
+
+### What works today
+
+Try it yourself — one click, no password needed, synthetic data only: **[live demo](https://tectonichackathon-578474883491.europe-west1.run.app/login)**
+
+| Capability | Status |
+|---|---|
+| KBC-Mobile-style app: login, accounts, transactions, transfers (IBAN mod-97, balance rules) | ✅ live |
+| **"Voor jou"** feed: explainable insights, each with its own "Waarom zie ik dit?" | ✅ live |
+| **Kate chat** in natural language, answering from the customer's own owner-scoped data | ⚠️ live, but on a **mock** responder — see below |
+| **Kate's voice** (ElevenLabs) and speech input | ⚠️ built, **switched off** in the live demo |
+| One-click persona login so judges can try all three customers instantly | ✅ live |
+
+`GET /api/v1/kate/status` on the deployed service currently answers
+`{"llm": "mock", "voice": false, "speech_recognition": false}`: the code degrades gracefully when no
+credentials are present, and no Vertex AI or ElevenLabs key is set on Cloud Run yet. Kate answers,
+but from a canned responder rather than Gemini. **Before the demo video, set those secrets** — the
+endpoints are done, the keys are not.
+
+### What is built but not yet merged
+
+Honest status, because "does it work?" is 30% of the score and a promise is not a demo:
+
+- **Moments engine** — signals → moments → urgency → channel → deliberate silence, plus a **time machine** that moves the clock so a reviewer can watch a moment fire instead of waiting a month. In review as PR #15.
+- **Subscription manager** — price increases, duplicate subscriptions, forgotten trials that became paid, each answered with "Do you still use this?" rather than a guess, because the bank sees the payment and never the usage.
+
+### Designed, not built
+
+- Tone per life phase: Emma (21) short and informal, Marie (67) calm explanations and an advisor option.
+- Consent screen ("What does Kate know about me?") with a switch per signal and per channel.
+- Jury dashboard: signal → situation → action → reason, across a simulated population.
+- Measured scale numbers (p50/p95/p99 and extrapolated cost for 2.3M). The tiering above is a design, not yet a benchmark, and we would rather say so than show a number we did not measure.
+
+### Security, by construction
+
+Security is 10% of the score, so it is a design input rather than a later pass. Every read and write of customer data goes through an ownership-scoped store that cannot answer "give me account X" without also proving whose it is, which rules out IDOR structurally rather than by review. Sessions are HttpOnly, `SameSite=Strict`, `__Host-`prefixed cookies; responses carry a strict CSP. Transaction descriptions and chat messages are treated as **data, never as instructions** to the model. And sensitive categories — health, religion, politics, trade union, dating — are never inferred, never profiled and never surfaced, which is a product decision as much as a privacy one. The Aikido baseline and final scans are still to be run.
 
 ## Architecture
 

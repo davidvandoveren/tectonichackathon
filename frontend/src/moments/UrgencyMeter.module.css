@@ -1,0 +1,63 @@
+.meter {
+  --urgency-amber: #e29a1b;
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.track {
+  flex: 1 1 64px;
+  max-width: 120px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--kbc-bg-muted);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.risk {
+  background: var(--kbc-red);
+}
+
+.obligation {
+  background: var(--urgency-amber);
+}
+
+.opportunity {
+  background: var(--kbc-green);
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.riskText {
+  color: var(--kbc-red);
+}
+
+.obligationText {
+  color: #9a6300;
+}
+
+.opportunityText {
+  color: var(--kbc-slate);
+}
+
+.channel {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--kbc-navy);
+  color: var(--kbc-text-on-navy);
+}

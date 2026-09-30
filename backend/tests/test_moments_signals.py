@@ -221,6 +221,38 @@ def test_merchant_concentration_stays_silent_on_scattered_spending() -> None:
     assert find(extract_signals(ledger([CURRENT], scattered)), "merchant_concentration") is None
 
 
+def test_a_sensitive_merchant_never_becomes_a_signal() -> None:
+    """Issue #35: health, religion, politics, unions and dating must never feed the profile."""
+    pharmacy = [tx(d, "-20.00", "Apotheek", Category.OTHER) for d in (80, 66, 52, 38, 24, 10)]
+
+    signals = extract_signals(ledger([CURRENT], pharmacy))
+
+    assert find(signals, "merchant_concentration") is None
+    assert not any("Apotheek" in s.evidence or "Apotheek" in s.meta.values() for s in signals)
+
+
+def test_sensitive_spending_is_invisible_to_every_extractor() -> None:
+    """Filtered before extraction, not afterwards: a large hospital bill is no 'outlier' either."""
+    history = [tx(d, "-40.00", f"Winkel {d}", Category.OTHER) for d in range(35, 90, 7)]
+
+    def big_bill_at(merchant: str) -> Transaction:
+        return tx(3, "-2400.00", merchant, Category.OTHER)
+
+    ordinary = extract_signals(ledger([CURRENT], [*history, big_bill_at("Mediamarkt")]))
+    sensitive = extract_signals(ledger([CURRENT], [*history, big_bill_at("AZ Ziekenhuis")]))
+
+    assert find(ordinary, "large_outflow_outlier") is not None, "the fixture must be meaningful"
+    assert sensitive == extract_signals(ledger([CURRENT], history))
+
+
+def test_public_transport_is_not_a_deal_merchant() -> None:
+    """Issue #35: De Lijn and NMBS have no Kate Deal; a fuel station does."""
+    for operator in ("De Lijn", "NMBS", "SNCB", "STIB", "MIVB", "TEC"):
+        rides = [tx(d, "-6.00", operator, Category.TRANSPORT) for d in (80, 66, 52, 38, 24, 10)]
+
+        assert find(extract_signals(ledger([CURRENT], rides)), "merchant_concentration") is None
+
+
 # --- self-transfers (the savings habit) --------------------------------------------------------
 
 

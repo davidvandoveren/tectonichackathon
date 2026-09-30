@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import { TabBar } from "./TabBar";
+import { KateChat } from "../kate/KateChat";
 import styles from "./AppLayout.module.css";
 
 export function AppLayout() {
@@ -9,6 +10,7 @@ export function AppLayout() {
         <Outlet />
       </main>
       <TabBar />
+      <KateChat />
     </div>
   );
 }

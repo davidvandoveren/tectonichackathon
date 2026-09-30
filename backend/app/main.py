@@ -12,9 +12,9 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings, get_settings
 from app.domain.bank import Bank
 from app.domain.seed import seed_bank
-from app.routers import auth, banking, subscriptions
+from app.routers import auth, banking, kate, subscriptions
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
-from app.security.rate_limit import FailureLimiter
+from app.security.rate_limit import FailureLimiter, RequestLimiter
 from app.security.sessions import SessionStore
 from app.subscriptions.scenario import book_subscriptions
 from app.subscriptions.store import FeedbackStore
@@ -36,6 +36,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.login_limiter = FailureLimiter(
             settings.login_max_failures, settings.login_window_seconds
         )
+        app.state.kate_limiter = RequestLimiter(settings.kate_max_requests_per_minute, 60)
         logger.info(
             "Seeded %d synthetic customers (env=%s)", len(bank.list_users()), settings.app_env
         )
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(banking.router, prefix="/api/v1")
+    app.include_router(kate.router, prefix="/api/v1")
     app.include_router(subscriptions.router, prefix="/api/v1")
 
     if settings.static_dir and (settings.static_dir / "index.html").is_file():

@@ -1,0 +1,22 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--kbc-blue);
+  color: var(--kbc-blue);
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.button:hover:not([aria-disabled="true"]) {
+  background: var(--kbc-bg-muted);
+}
+
+.button[aria-disabled="true"] {
+  cursor: not-allowed;
+}

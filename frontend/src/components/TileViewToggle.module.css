@@ -1,0 +1,27 @@
+.group {
+  display: inline-flex;
+  border: 1px solid var(--kbc-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: none;
+  background: var(--kbc-surface);
+  color: var(--kbc-slate);
+  cursor: pointer;
+}
+
+.option:not(:last-child) {
+  border-right: 1px solid var(--kbc-line);
+}
+
+.optionSelected {
+  background: var(--kbc-line);
+  color: var(--kbc-blue);
+}

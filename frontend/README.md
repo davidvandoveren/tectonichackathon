@@ -1,8 +1,11 @@
 # KBC Mobile PoC – frontend
 
-Vite + React 19 + TypeScript (strict) mobile-web client for the KBC Mobile
-personalization proof of concept. No UI kit, no CSS framework: plain CSS with
-design tokens (`src/styles/tokens.css`) and per-component CSS modules.
+Vite + React 19 + TypeScript (strict) web client for the KBC personalization
+proof of concept, styled to match KBC Touch (desktop) and KBC Mobile (phone) —
+see `docs/design/kbc-touch-ui.md` for the measured design spec. No UI kit, no
+CSS framework: plain CSS with design tokens (`src/styles/tokens.css`) and
+per-component CSS modules. No external fonts/CDNs — the font stack falls back
+to system fonts (compatible with the backend's `default-src 'self'` CSP).
 
 Not a real bank. Synthetic demo data only, served by the FastAPI backend in
 `../backend`.
@@ -30,19 +33,46 @@ src/
   api/          typed fetch client (client.ts), request/response types (types.ts),
                 one file per resource (auth.ts, me.ts, accounts.ts, transfers.ts, insights.ts)
   lib/          iban.ts (mod-97 validation + formatting), money.ts (decimal-string
-                formatting/summing, never floats), dates.ts (nl-BE formatting,
+                formatting/summing/splitting, never floats), dates.ts (nl-BE formatting,
                 transaction grouping), cta.ts (safe-internal-path check for insight CTAs)
   auth/         AuthContext/AuthProvider (calls /me once, exposes the user via
                 context), RequireAuth (route guard, redirects to /login)
+  layout/       the mobile/desktop layout system — see "Layout modes" below
+  kate/         AskKateButton, the "Vraag het Kate" entry point (currently an
+                inert placeholder; wire its `onClick` to open the Kate chat
+                surface once it exists)
   components/   reusable UI: Button, TextField, SelectField, Skeleton, ErrorState,
-                EmptyState, AccountCard, TransactionList, TabBar, AppLayout,
-                PageHeader, Wordmark, InsightCard, InsightCarousel, icons/ (hand-written
-                inline SVGs, no icon font/CDN)
+                EmptyState, AccountCard, AccountSection, SectionHeader,
+                EmptyAccountTile, TileViewToggle, MenuLink, TransactionList,
+                TabBar, AppLayout, PageHeader, Wordmark, InsightCard,
+                InsightCarousel, icons/ (hand-written inline SVGs, no icon font/CDN)
   pages/        LoginPage, HomePage, AccountDetailPage, TransferPage, ProfilePage,
                 NotFoundPage
-  styles/       tokens.css (CSS custom properties), global.css (reset, focus
-                styles, reduced-motion handling)
+  styles/       tokens.css (CSS custom properties, matching docs/design/kbc-touch-ui.md),
+                global.css (reset, focus styles, reduced-motion handling)
 ```
+
+## Layout modes
+
+The app renders as either **KBC Touch** (desktop: sidebar + header, `DesktopShell`)
+or **KBC Mobile** (phone: top bar + bottom tab bar, `MobileShell`), picked by
+`src/layout/ViewModeProvider.tsx`:
+
+- **`auto`** (default) resolves to desktop at viewport width ≥ 900px (via
+  `matchMedia`, live-updated on resize) and mobile below it.
+- **`mobile`** / **`desktop`** force a layout regardless of viewport. Forcing
+  `mobile` on a wide viewport renders `MobileShell` inside a centered
+  390×844 `PhoneFrame` — useful for demos/recordings.
+
+The choice is persisted to `localStorage["ui.viewMode"]`
+(`src/layout/viewModeStorage.ts`); every read/write is wrapped in try/catch
+and falls back to `"auto"` if storage is unavailable (it's a UI preference
+only, never personal data — the only localStorage use in this app).
+
+A small segmented control, `<ViewModeToggle>` (`role="radiogroup"`, arrow-key
+navigable), lets you switch modes: floating bottom-right on desktop and as a
+compact floating button on mobile, plus inline on the profile page and the
+login page.
 
 ## Where the personalization slot lives
 
@@ -58,8 +88,10 @@ shows up here.
 ## Security notes
 
 - Session is an HttpOnly, `SameSite=Strict` cookie set by the backend; the
-  client never reads or stores a token (no localStorage/sessionStorage use
-  anywhere in `src/`).
+  client never reads or stores a token. The only `localStorage` use anywhere
+  in `src/` is the mobile/desktop layout preference (see "Layout modes"
+  above) — a UI setting, never personal or session data, and every
+  read/write is wrapped in try/catch.
 - `src/api/client.ts` always sends `credentials: "same-origin"`, adds
   `Content-Type: application/json` on writes, and broadcasts a global event
   on any `401` (`onUnauthorized`), which `AuthProvider` uses to clear auth
@@ -81,9 +113,10 @@ shows up here.
 - The transfer confirmation screen assumes the `Transaction` returned by
   `POST /transfers` has `counterparty` set to the submitted `to_name` (used
   on the success screen).
-- Total balance on the home screen sums all accounts as a single figure,
-  assuming a single currency (EUR) across a user's accounts — summation uses
-  integer cents (`BigInt`) rather than float math to stay exact.
+- The Betalen (home) page follows the KBC Touch layout, which doesn't show a
+  combined total balance — accounts are grouped into sections by type
+  instead. `src/lib/money.ts` still exports a tested, `BigInt`-based
+  `sumMoney` (integer cents, never float math) for future use.
 - IBAN validation implements the general ISO 13616 mod-97 checksum (5–34
   alphanumeric characters), not a Belgium-specific length/format check,
   since the contract only specifies "must pass the mod-97 checksum".

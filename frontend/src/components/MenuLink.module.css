@@ -1,0 +1,31 @@
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-4);
+  background: var(--kbc-surface);
+  color: var(--kbc-navy);
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-default);
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--kbc-bg-muted);
+}
+
+.icon {
+  color: var(--kbc-blue);
+  flex-shrink: 0;
+}
+
+.label {
+  flex: 1;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--kbc-slate);
+  transform: rotate(-90deg);
+}

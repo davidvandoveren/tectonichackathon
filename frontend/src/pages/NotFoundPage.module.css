@@ -7,5 +7,6 @@
   min-height: 100vh;
   padding: var(--space-5);
   text-align: center;
-  background: var(--color-bg);
+  background: var(--kbc-bg-muted);
+  color: var(--kbc-navy);
 }

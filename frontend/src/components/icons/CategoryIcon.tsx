@@ -19,7 +19,7 @@ const PATHS: Record<TransactionCategory, string> = {
 };
 
 const COLORS: Record<TransactionCategory, string> = {
-  income: "var(--color-success)",
+  income: "var(--kbc-green)",
   groceries: "#e08a1e",
   housing: "#6a4fc4",
   transport: "#1f8fd6",
@@ -39,7 +39,7 @@ export function CategoryIcon({ category, ...rest }: CategoryIconProps) {
       height="20"
       fill="none"
       stroke={COLORS[category]}
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       {...rest}

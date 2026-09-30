@@ -55,7 +55,10 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | Sleutelcheck Gemini + ElevenLabs (`check_kate_keys`) | – | – | 🔍 PR #33 |
 | Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David · **Claude-sessie UI** (#18) | `frontend/` | ⏳ backend klaar zodra #34 op `main` staat (kaartflow in `docs/api.md`) |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
-| Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |
+| Aikido baseline + eind-scan | Alexandre (zelf, in Aikido) | – | 🚧 baseline bezig |
+| Builderbase-projecttekst + demoscript (< 3 min) | Alexandre · **Claude-sessie Personas** (#42) | nieuw: `docs/submission.md`, `docs/demo-script.md` | 🚧 `feature/submission-docs` – niet aan beginnen |
+| Personas briefing-scenario's: **financieel krap** (`cashflow_risk` + bewuste stilte) en **erfenis** (context voor erfenis-modus) | Alexandre · **Claude-sessie Personas** (#43) | `backend/app/domain/seed.py` (+ tests) | 🚧 `feature/personas-briefing` – niet aan beginnen |
+| Demovideo opnemen | **nog toe te wijzen** | – | ⏳ na demoscript (#42) |
 
 **David werkt met twee Claude-sessies tegelijk; zo zijn ze afgebakend:**
 

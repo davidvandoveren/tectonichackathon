@@ -5,7 +5,7 @@ set -euo pipefail
 
 : "${PROJECT_ID:?Set PROJECT_ID}"
 REGION="${REGION:-europe-west1}"
-SERVICE="${SERVICE:-kbc-mobile-poc}"
+SERVICE="${SERVICE:-tectonichackathon}"
 SECRET="${SECRET:-demo-password}"
 
 gcloud config set project "$PROJECT_ID"

@@ -12,7 +12,7 @@ Base path: `/api/v1`. JSON only. Served same-origin with the web app, so no CORS
 ## Endpoints
 
 ### Health
-`GET /healthz` → `{"status": "ok"}` (no `/api/v1` prefix)
+`GET /health` → `{"status": "ok"}` (no `/api/v1` prefix; not `/healthz`, which Cloud Run reserves)
 
 ### Auth
 `GET /api/v1/auth/demo-users` → the synthetic personas you can log in as (for the login screen)

@@ -53,6 +53,9 @@ export function ProfilePage() {
           <li>
             <MenuLink to="/family" label="Familiekring" Icon={PeopleIcon} />
           </li>
+          <li>
+            <MenuLink to="/privacy" label="Privacy & AI" Icon={DocumentIcon} />
+          </li>
         </ul>
 
         <Button type="button" variant="secondary" onClick={handleLogout}>

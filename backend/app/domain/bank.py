@@ -7,6 +7,10 @@ from decimal import Decimal
 from app.domain.iban import normalize_iban
 from app.domain.models import Account, AccountType, Category, Transaction, User
 
+# Per-transfer ceiling. The API schema enforces it too; the bank re-checks so that every caller
+# (API, Kate Skills, scripts) is held to the same rule.
+MAX_TRANSFER = Decimal("10000.00")
+
 
 class TransferError(Exception):
     """A transfer that is well-formed but not allowed by business rules."""
@@ -75,6 +79,11 @@ class Bank:
 
     # --- owner-scoped writes -------------------------------------------------------------------
     def transfer(self, owner_id: str, request: TransferRequest, today: date) -> Transaction:
+        amount = request.amount
+        if not amount.is_finite() or amount <= 0 or amount > MAX_TRANSFER:
+            raise TransferError("Invalid amount")
+        if amount != amount.quantize(Decimal("0.01")):
+            raise TransferError("Amount has more than 2 decimals")
         to_iban = normalize_iban(request.to_iban)
         with self._lock:
             source = self.account_for(owner_id, request.from_account_id)

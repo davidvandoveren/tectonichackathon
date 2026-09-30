@@ -4,13 +4,17 @@ Separate from `routers/kate.py` (Kate's chat) on purpose: the proactive half of 
 deterministic and must keep working when no model is reachable.
 """
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, HTTPException, Response, status
 
 from app.dependencies import BankDep, CurrentUser, KateStateDep, TodayDep
 from app.moments import engine
+from app.moments.moments import RECIPES
 from app.moments.schemas import ConsentIn, ConsentOut, FeedOut
 
 router = APIRouter(tags=["kate"])
+
+# Only real moment types can be dismissed; anything else would be stored per customer forever.
+_MOMENT_TYPES = frozenset(recipe.type for recipe in RECIPES)
 
 
 @router.get("/kate/feed", response_model=FeedOut)
@@ -50,5 +54,7 @@ def update_consent(user: CurrentUser, state: KateStateDep, choice: ConsentIn) ->
 @router.post("/kate/feed/{moment_type}/dismiss", status_code=status.HTTP_204_NO_CONTENT)
 def dismiss(moment_type: str, user: CurrentUser, state: KateStateDep, today: TodayDep) -> Response:
     """ "Niet meer tonen". The suggestion returns as explained silence, not as nothing."""
+    if moment_type not in _MOMENT_TYPES:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Moment not found")
     state.dismiss(user.id, moment_type, today)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

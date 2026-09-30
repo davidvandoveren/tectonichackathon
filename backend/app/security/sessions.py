@@ -4,6 +4,10 @@ import threading
 import time
 from dataclasses import dataclass
 
+# Oldest sessions of a user are revoked beyond this, so repeated logins (or one-click demo logins)
+# cannot grow the store without bound. Generous: during the demo many judges share one persona.
+MAX_SESSIONS_PER_USER = 50
+
 
 @dataclass(frozen=True)
 class Session:
@@ -31,6 +35,7 @@ class SessionStore:
         token = secrets.token_urlsafe(32)
         with self._lock:
             self._purge_expired()
+            self._evict_oldest(user_id, keep=MAX_SESSIONS_PER_USER - 1)
             self._sessions[self._key(token)] = Session(user_id, time.monotonic() + self._ttl)
         return token
 
@@ -47,6 +52,11 @@ class SessionStore:
     def revoke(self, token: str) -> None:
         with self._lock:
             self._sessions.pop(self._key(token), None)
+
+    def _evict_oldest(self, user_id: str, keep: int) -> None:
+        own = sorted((s.expires_at, k) for k, s in self._sessions.items() if s.user_id == user_id)
+        for _, key in own[: max(0, len(own) - keep)]:
+            del self._sessions[key]
 
     def _purge_expired(self) -> None:
         now = time.monotonic()

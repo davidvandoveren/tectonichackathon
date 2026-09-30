@@ -90,4 +90,10 @@
   font-size: 0.75rem;
   color: var(--kbc-slate);
   padding: var(--space-4);
+  /* Stay clear of the floating view-mode toggle, which is fixed to the bottom of the screen. */
+  padding-bottom: calc(var(--touch-target) + var(--space-6) + env(safe-area-inset-bottom, 0px));
+}
+
+.footer a {
+  color: var(--kbc-blue-dark);
 }

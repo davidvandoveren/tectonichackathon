@@ -47,7 +47,7 @@ interface Message extends ChatTurn {
 
 /** Shown on screen and sent as Kate's first turn: she has already said she is an AI. */
 const GREETING =
-  "Hallo, ik ben Kate, je digitale assistent. Ik ben een AI. Vraag me iets over je geld, of zeg bv. “Stuur Lucas 25 euro voor de pizza”.";
+  "Hallo, ik ben Kate, de digitale assistent van de bank. Ik ben een AI. Stel gerust een vraag over geldzaken, of zeg bv. “Stuur Lucas 25 euro voor de pizza”.";
 
 const SUGGESTIONS = [
   "Hoeveel gaf ik deze maand uit?",

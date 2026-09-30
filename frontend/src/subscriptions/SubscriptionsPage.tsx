@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router";
 import { ApiError } from "../api/client";
 import { PageHeader } from "../components/PageHeader";
 import { Skeleton } from "../components/Skeleton";
@@ -204,6 +205,13 @@ function Overview({ data, onUpdated, onRemove, onReplaced }: OverviewProps) {
         )}
       </section>
 
+      {data.spending_consent === false && (
+        <p className={styles.consentNotice} role="status">
+          Je gaf Kate geen toestemming om je uitgaven te bekijken, dus zoeken we niet naar abonnementen. Je ziet
+          alleen wat je zelf toevoegde. <Link to="/kate">Aanpassen bij "Wat weet Kate?"</Link>
+        </p>
+      )}
+
       {notes.length > 0 && (
         <section aria-labelledby="noticed-heading">
           <h2 id="noticed-heading" className={styles.sectionTitle}>
@@ -225,7 +233,13 @@ function Overview({ data, onUpdated, onRemove, onReplaced }: OverviewProps) {
           Alle abonnementen
         </h2>
         {subs.length === 0 ? (
-          <EmptyState message="We zien geen terugkerende abonnementen op je rekeningen." />
+          <EmptyState
+            message={
+              data.spending_consent === false
+                ? "Nog geen abonnementen toegevoegd."
+                : "We zien geen terugkerende abonnementen op je rekeningen."
+            }
+          />
         ) : (
           <div className={styles.stack}>
             {subs.map((sub) => (

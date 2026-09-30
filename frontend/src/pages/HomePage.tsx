@@ -10,6 +10,9 @@ import { Skeleton } from "../components/Skeleton";
 import { ErrorState } from "../components/ErrorState";
 import { EmptyState } from "../components/EmptyState";
 import { getFeedActions, type FeedAction } from "../skills/skillsApi";
+import { ChannelNotification } from "../moments/ChannelNotification";
+import { SilencedList } from "../moments/SilencedList";
+import { useKateFeed } from "../moments/useKateFeed";
 import { TileViewToggle, type TileLayout } from "../components/TileViewToggle";
 import { TransferIcon } from "../components/icons/TransferIcon";
 import buttonStyles from "../components/Button.module.css";
@@ -31,6 +34,7 @@ export function HomePage() {
   const [insightsState, setInsightsState] = useState<LoadState<Insight[]>>(INITIAL_STATE);
   const [tileLayout, setTileLayout] = useState<TileLayout>("grid");
   const [feedActions, setFeedActions] = useState<Record<string, FeedAction>>({});
+  const kateFeed = useKateFeed();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -88,6 +92,7 @@ export function HomePage() {
 
   return (
     <div className={styles.page}>
+      <ChannelNotification items={kateFeed.items} />
       <div className={styles.titleRow}>
         <h1 className={styles.title}>Betalen</h1>
         <div className={styles.titleActions}>
@@ -112,6 +117,7 @@ export function HomePage() {
             onDismissed={dismissInsight}
           />
         )}
+        <SilencedList silenced={kateFeed.silenced} />
       </section>
 
       {accountsState.isLoading && (

@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 
 from app.domain.bank import Bank
+from app.domain.models import Category, Transaction
 from app.domain.seed import seed_bank
 from app.skills.base import Level, Mandate
 from app.skills.moments import draft_for_moment
@@ -36,6 +37,28 @@ def test_card_packages_add_then_drop(service: SkillsService) -> None:
     assert "84,00" in approve(service, "u_jan", "cards.drop_package", {"package": "reis"})
     with pytest.raises(NotEligibleError):
         service.propose("u_jan", "cards.drop_package", {"package": "reis"}, "ui", WHY, TODAY)
+
+
+def test_a_package_the_customer_already_pays_for_can_be_dropped() -> None:
+    bank = Bank()
+    seed_bank(bank, "pw", TODAY)
+    bank.add_transaction(
+        Transaction(
+            id="t_fee",
+            account_id="a_jan_1",
+            booked_at=date(2026, 9, 3),
+            description="Luxepakket kredietkaart",
+            counterparty="KBC Bank",
+            amount=Decimal("-25.00"),
+            category=Category.OTHER,
+        )
+    )
+    service = SkillsService(bank, default_registry())
+    assert "300,00" in approve(service, "u_jan", "cards.drop_package", {"package": "luxe"})
+    # Dropped stays dropped, even though the old fee booking is still in the history.
+    with pytest.raises(NotEligibleError):
+        service.propose("u_jan", "cards.drop_package", {"package": "luxe"}, "ui", WHY, TODAY)
+    approve(service, "u_jan", "cards.add_package", {"package": "luxe"})
 
 
 def test_adding_a_paid_package_can_never_be_automatic(service: SkillsService) -> None:

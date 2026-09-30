@@ -69,7 +69,7 @@ notices everything and says everything is worse than one that notices nothing.
   engine takes p50 0.73 ms per customer, which is about 28 CPU-minutes for all 2.3 M KBC
   customers, with no LLM.
 - **Personas that each tell one story.** Emma (first salary), Jan (moving house), Marie (retired,
-  idle savings), Sofie (manual savings habit, loyal fuel station, unused Luxepakket), Lucas
+  idle savings), Sofie (manual savings habit, loyal fuel station, unused Luxepakket), Bram
   (financially tight: warned before the rent, offers held back) and Els (inheritance: Kate stays
   quiet commercially and guides instead).
 

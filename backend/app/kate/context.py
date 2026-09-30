@@ -8,51 +8,40 @@ trade union, dating) is neutralised before it can reach the model or a profile.
 import json
 import unicodedata
 from collections import defaultdict
-from dataclasses import dataclass
+from collections.abc import Collection
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
 
 from app.domain.bank import Bank
-from app.domain.models import Category, Transaction, User
+from app.domain.models import Account, Category, Transaction, User
+from app.privacy.sensitive import NEUTRAL_LABEL, SENSITIVE_KEYWORDS, is_sensitive
 
 RECENT_DAYS = 30
 MAX_RECENT_TRANSACTIONS = 15
 MAX_TEXT = 60
 
 # GDPR art. 9-style categories: never labelled, never profiled, never commented on.
-SENSITIVE_KEYWORDS = (
-    "apotheek",
-    "pharmacie",
-    "pharmacy",
-    "psycholoog",
-    "psychiater",
-    "therapeut",
-    "ziekenhuis",
-    "hospitalisatie",
-    "dokter",
-    "kliniek",
-    "mutualiteit",
-    "ziekenfonds",
-    "kerk",
-    "moskee",
-    "synagoge",
-    "parochie",
-    "partij",
-    "vakbond",
-    "acv",
-    "abvv",
-    "aclvb",
-    "tinder",
-    "bumble",
-    "grindr",
-    "dating",
-)
-NEUTRAL_LABEL = "Overige uitgave"
+# Kept importable from here for existing callers (moments/signals.py).
+__all__ = [
+    "NEUTRAL_LABEL",
+    "SENSITIVE_KEYWORDS",
+    "CustomerContext",
+    "build_context",
+    "clean_text",
+    "is_sensitive",
+]
 
-
-def is_sensitive(transaction: Transaction) -> bool:
-    text = f"{transaction.counterparty} {transaction.description}".lower()
-    return any(keyword in text for keyword in SENSITIVE_KEYWORDS)
+#: The customer's data-consent domains (same names as `PUT /kate/consent`). Plain strings on
+#: purpose: `moments/` imports this module, so importing its `Domain` here would be circular.
+ALL_DOMAINS = frozenset(("income", "spending", "balances", "products"))
+#: How a switched-off domain is named to the model (and so to the customer).
+WITHHELD_LABELS = {
+    "spending": "uitgaven en transacties",
+    "income": "inkomsten",
+    "balances": "saldi",
+    "products": "rekeningen en producten",
+}
 
 
 def clean_text(value: str, limit: int = MAX_TEXT) -> str:
@@ -71,6 +60,8 @@ class CustomerContext:
     accounts: list[dict[str, str]]
     spend_last_30_days: dict[str, str]
     recent_transactions: list[dict[str, str]]
+    #: Data the customer did not allow Kate to use; she must say so instead of guessing.
+    withheld: list[str] = field(default_factory=list)
 
     def as_data_block(self) -> str:
         """JSON handed to the model strictly as data, never as instructions."""
@@ -82,17 +73,30 @@ class CustomerContext:
                 "accounts": self.accounts,
                 "spend_last_30_days": self.spend_last_30_days,
                 "recent_transactions": self.recent_transactions,
+                "withheld": self.withheld,
             },
             ensure_ascii=False,
         )
 
 
-def build_context(bank: Bank, user: User, today: date) -> CustomerContext:
-    accounts = bank.accounts_for(user.id)
+def build_context(
+    bank: Bank, user: User, today: date, consent: Collection[str] | None = None
+) -> CustomerContext:
+    """Only the domains in `consent` (default: all) reach the model; the rest is listed as
+    `withheld` so Kate can say she may not look, rather than inventing an answer."""
+    allowed = ALL_DOMAINS if consent is None else frozenset(consent) & ALL_DOMAINS
+    accounts = bank.accounts_for(user.id) if "products" in allowed else []
     transactions = bank.all_transactions_for(user.id)
     since = today - timedelta(days=RECENT_DAYS)
     recent = sorted(
-        (t for t in transactions if t.booked_at > since), key=lambda t: t.booked_at, reverse=True
+        (
+            t
+            for t in transactions
+            if t.booked_at > since
+            and ("spending" in allowed if t.amount < 0 else "income" in allowed)
+        ),
+        key=lambda t: t.booked_at,
+        reverse=True,
     )
 
     spend: defaultdict[str, Decimal] = defaultdict(Decimal)
@@ -105,12 +109,18 @@ def build_context(bank: Bank, user: User, today: date) -> CustomerContext:
         first_name=user.first_name,
         persona=user.persona,
         today=today,
-        accounts=[
-            {"name": a.name, "type": a.type.value, "balance": f"{a.balance:.2f}"} for a in accounts
-        ],
+        accounts=[_account_view(a, show_balance="balances" in allowed) for a in accounts],
         spend_last_30_days={k: f"{v:.2f}" for k, v in sorted(spend.items())},
         recent_transactions=[_transaction_view(t) for t in recent[:MAX_RECENT_TRANSACTIONS]],
+        withheld=[WITHHELD_LABELS[d] for d in sorted(ALL_DOMAINS - allowed)],
     )
+
+
+def _account_view(account: Account, *, show_balance: bool) -> dict[str, str]:
+    view = {"name": account.name, "type": account.type.value}
+    if show_balance:
+        view["balance"] = f"{account.balance:.2f}"
+    return view
 
 
 def _transaction_view(t: Transaction) -> dict[str, str]:

@@ -19,8 +19,8 @@ schrap je (zie *Plan B*).
 
 | # | Scène | Persona | Duur | Status |
 |---|---|---|---|---|
-| 1 | Zelfde app, andere Kate | Emma ↔ Lucas | 20 s | ✅ via inloggen · ⏳ naast elkaar: David |
-| 2 | Kate houdt zich bewust in | Lucas | 25 s | ✅ `/kate/feed` (API) · 🔍 home #37 · ⏳ stiltes zichtbaar in UI |
+| 1 | Zelfde app, andere Kate | Emma ↔ Bram | 20 s | ✅ via inloggen · ⏳ naast elkaar: David |
+| 2 | Kate houdt zich bewust in | Bram | 25 s | ✅ `/kate/feed` (API) · 🔍 home #37 · ⏳ stiltes zichtbaar in UI |
 | 3 | Tijdmachine: het loon blijft uit | Jan | 30 s | ✅ API · ⏳ knop in UI |
 | 4 | Een gewoonte automatiseren | Sofie | 20 s | 🔍 persona #29 · ✅ backend *Bevestig* · ⏳ knop op kaart |
 | 5 | Just say it | Emma | 15 s | ✅ |
@@ -32,9 +32,9 @@ schrap je (zie *Plan B*).
 
 ## 1 · Zelfde app, andere Kate (20 s)
 
-**Beeld:** Emma en Lucas naast elkaar (telefoonkaders). Anders: log eerst in als Emma, knip, en
-log dan in als Lucas.
-**Kate:** Emma krijgt "Proficiat met je eerste loon!". Lucas krijgt geen reclame, maar een
+**Beeld:** Emma en Bram naast elkaar (telefoonkaders). Anders: log eerst in als Emma, knip, en
+log dan in als Bram.
+**Kate:** Emma krijgt "Proficiat met je eerste loon!". Bram krijgt geen reclame, maar een
 waarschuwing over zijn huur.
 **Voice-over:**
 > "KBC's Kate herkent vandaag meer dan 140 situaties. Die zijn allemaal met de hand geschreven.
@@ -43,7 +43,7 @@ waarschuwing over zijn huur.
 
 ## 2 · Kate houdt zich bewust in (25 s)
 
-**Persona:** `lucas`, met € 212 op zijn zichtrekening en € 720 huur op de 1e.
+**Persona:** `bram`, met € 212 op zijn zichtrekening en € 720 huur op de 1e.
 **Klik:** open de kaart en daarna *Waarom zie ik dit?*
 **Kate:** `cashflow_risk` via **push**. De reden gebruikt zijn eigen bedragen. Onder "Bewust niet
 gezegd" staat zijn supermarkt-deal met als reden `cashflow_first`: *"Je saldo staat krap.
@@ -53,7 +53,7 @@ Voorstellen die je geld kosten houden we daarom even voor ons."*
 > wanneer ze moet zwijgen. Een aanbod dat geld kost, houdt ze in zolang je buffer krap is. Een
 > voorstel dat je geld bespaart, houdt ze nooit in."
 
-*Plan B:* als de stiltes nog niet in de UI staan, toon dan de persona-trace van Lucas op het
+*Plan B:* als de stiltes nog niet in de UI staan, toon dan de persona-trace van Bram op het
 jury-dashboard (scène 7).
 
 ## 3 · Tijdmachine: het loon blijft uit (30 s)
@@ -129,7 +129,7 @@ Toon daarna de Aikido-screenshot "na".
 | Ontbreekt | Vervang door |
 |---|---|
 | Twee telefoons naast elkaar | Na elkaar inloggen, met een harde knip |
-| Stiltes niet zichtbaar in de UI | Persona-trace van Lucas op `/jury` |
+| Stiltes niet zichtbaar in de UI | Persona-trace van Bram op `/jury` |
 | Tijdmachine-knop | Swagger (`/api/docs`, alleen in dev) of een `curl`, gevolgd door een refresh van home (#37) |
 | *Bevestig*-knop op kaart | Scène 4 schrappen of vervangen door `python scripts/skills_tour.py --persona sofie` (#38) in een terminal |
 | Jury-dashboard | De benchmarkcijfers als slide |

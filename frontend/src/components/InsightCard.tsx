@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { isSafeInternalPath } from "../lib/cta";
 import type { Insight } from "../api/types";
 import { KateConfirm } from "../skills/KateConfirm";
+import { UrgencyMeter } from "../moments/UrgencyMeter";
 import type { FeedAction } from "../skills/skillsApi";
 import { ChevronDownIcon } from "./icons/ChevronDownIcon";
 import styles from "./InsightCard.module.css";
@@ -29,6 +30,7 @@ export function InsightCard({ insight, action, onDismissed }: InsightCardProps) 
     <article className={styles.card}>
       <p className={styles.kind}>Kate</p>
       <h3 className={styles.title}>{insight.title}</h3>
+      <UrgencyMeter urgency={insight.urgency} channel={insight.channel} />
       <p className={styles.body}>{insight.body}</p>
 
       {action && <KateConfirm action={action} onDismissed={onDismissed ?? (() => undefined)} />}

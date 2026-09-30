@@ -27,6 +27,8 @@ class SavingsGoal:
 @dataclass
 class CustomerHoldings:
     card_packages: set[str] = field(default_factory=set)
+    # Packages dropped via Kate: an old fee booking must not make them count as held again.
+    dropped_packages: set[str] = field(default_factory=set)
     active_deals: set[str] = field(default_factory=set)
     standing_orders: list[StandingOrder] = field(default_factory=list)
     goals: list[SavingsGoal] = field(default_factory=list)

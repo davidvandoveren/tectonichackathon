@@ -73,6 +73,8 @@ Fed by the moments engine (see [Kate feed](#kate-feed-the-moments-engine)): home
 ### Kate (chat, voice, speech recognition)
 All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_REQUESTS_PER_MINUTE`, default 20 → `429`). Upstream failures (Gemini/ElevenLabs) → `503`. Without keys Kate runs in **demo mode** (`llm: "mock"`, canned answers) and the UI falls back to the browser's own speech recognition and voice.
 
+**Data consent:** Kate's chat only receives the kinds of data the customer allowed via `PUT /api/v1/kate/consent` (`spending` → spend + outgoing transactions, `income` → incoming, `balances` → balances, `products` → accounts). What is switched off is listed to the model as `withheld`, and Kate says she has no access instead of guessing. Sensitive spending is defined once in `backend/app/privacy/sensitive.py`.
+
 `GET /api/v1/kate/status` → `{"llm": "mock" | "gemini", "voice": true, "speech_recognition": true}`
 
 `POST /api/v1/kate/chat` body `{"message": "Stuur Lucas 25 euro voor de pizza", "history": [{"role": "kate" | "user", "text": "…"}]}` (message ≤ 1000 chars, history ≤ 10 turns) →
@@ -173,6 +175,8 @@ Detection is **automatic**; the customer never has to enter anything. Recently d
 
 `POST /api/v1/subscriptions` body `{"name": "Streamz", "amount": "9.99", "next_charge": "2026-10-15"}` (`next_charge` optional) → `201` + overview. Optional manual add, e.g. for a subscription paid with another bank's card (`source: "manual"`).
 
+With the `spending` consent switched off, nothing is detected: `subscriptions` only holds what the customer added manually and `spending_consent` is `false` (the page explains why and links to `/kate`).
+
 `POST /api/v1/subscriptions/{id}/feedback` body `{"still_used": false, "remind_to_cancel": true}` → the updated subscription (`status: "cancel_reminder"`, `remind_on` = 3 days before the next charge). `404` if the id is not one of *your* subscriptions.
 
 ### Kate Skills – what Kate can do, and may do (see `docs/design/kate-skills.md`)
@@ -254,3 +258,19 @@ Roles: `partner`, `parent`, `child`, `grandparent`, `grandchild`, `godparent`, `
 `POST /api/v1/family/pots/{id}/contributions` body `{"from_account_id": "a_marie_1", "amount": "50.00", "note": "Van oma"}` → `201 Pot`. Uses the normal transfer rules (own account, no credit card, enough funds, max € 10.000).
 
 Every endpoint answers **`404` for "unknown" and "not yours" alike** (another customer's link or pot, an account that is not yours), so nothing can be enumerated. Demo logins added for this: `lucas` (Emma's fiancé) and `noor` (Jan's daughter, 17, turns 18 in three weeks).
+
+### Jury dashboard (admin only)
+`GET /api/v1/admin/dashboard?size=10000` (`size` 100–10 000) → Kate's real engine (`moments.engine.run`, unchanged) run over a reproducible synthetic population, plus a trace per demo persona. Same `AdminUser` gate as the time machine: `404` for everyone else, off unless `ADMIN_USERNAMES` is set. Follows the time machine's clock. Cached per (size, day); a cold 10 000 run takes ~10 s.
+```json
+{"today": "2026-09-30",
+ "population": {"size": 10000, "with_message": 5470, "interrupted": 1053, "silent": 4530, "nothing_at_all": 4257, "held_back": 273,
+   "by_moment": {"deal_match": 2312, "idle_savings": 1439}, "by_channel": {"feed": 5018, "push": 635, "sms": 163, "call": 255},
+   "silence_reasons": {"low_confidence": 414}, "silence_labels": {"low_confidence": "…"},
+   "archetypes": [{"archetype": "salary_missing", "label": "Loon blijft uit", "customers": 308, "with_message": 308, "interrupted": 308, "silent": 0, "top_moments": ["income_missing"]}],
+   "p50_ms": 0.73, "p95_ms": 1.17, "p99_ms": 1.6, "kbc_customers": 2300000, "full_bank_cpu_minutes": 28.1},
+ "personas": [{"username": "jan", "display_name": "Jan Maes", "persona": "…", "signals": [{"type": "…", "evidence": "…"}],
+   "moments": [{"type": "moving_house", "urgency": "obligation", "confidence": "0.60"}],
+   "actions": [{"title": "Ga je verhuizen?", "channel": "feed", "urgency": "57", "reason": "…"}], "silenced": []}]}
+```
+UI: `/jury` (full width, outside the phone frame).
+

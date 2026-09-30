@@ -66,6 +66,10 @@ export interface Insight {
   reason: string;
   /** Moment type from the Kate engine (optional: older backends omit it). */
   moment?: string;
+  /** 0–100, bands in docs/api.md; the channel Kate chose; how sure she is (0–1). */
+  urgency?: number;
+  channel?: string;
+  confidence?: number;
 }
 
 export interface TransferRequest {

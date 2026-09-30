@@ -173,6 +173,14 @@ class MockChat:
                     },
                 )
 
+        if any(word in lower for word in _SPEND_WORDS + _BALANCE_WORDS) and context.withheld:
+            asked = "uitgaven en transacties" if any(w in lower for w in _SPEND_WORDS) else "saldi"
+            if asked in context.withheld:
+                return _json(
+                    intro + f"Daar heb ik geen toegang toe: je koos ervoor dat ik je {asked} niet "
+                    "gebruik. Je kan dat altijd aanpassen in de app onder 'Wat weet Kate?'."
+                )
+
         if any(word in lower for word in _SPEND_WORDS):
             spend = context.spend_last_30_days
             total = sum((Decimal(v) for v in spend.values()), Decimal(0))

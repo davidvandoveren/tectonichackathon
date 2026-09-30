@@ -471,3 +471,18 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
 }
+
+.consentNotice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: #e3f5fd;
+  color: var(--color-navy-800);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.consentNotice a {
+  color: var(--color-accent-dark);
+  font-weight: 600;
+}

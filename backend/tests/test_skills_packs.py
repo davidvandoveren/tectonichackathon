@@ -132,7 +132,7 @@ def test_mandate_is_scoped_to_one_action(service: SkillsService) -> None:
         ("card_package_waste", {}, "cards.drop_package"),
         (
             "deal_match",
-            {"counterparty": "Q8", "category": "transport", "yearly_spend": "1820.00"},
+            {"counterparty": "Q8 Leuven", "category": "transport", "yearly_spend": "1820.00"},
             "deals.activate",
         ),
         ("moving_house", {}, "insurance.home_quote"),
@@ -158,6 +158,25 @@ def test_engine_meta_becomes_the_right_params() -> None:
     assert risk is not None and risk.params == {"amount": "207.60"}
     deal = draft_for_moment("deal_match", {"category": "groceries"})
     assert deal is not None and deal.params == {"category": "groceries"}
+
+
+def test_public_transport_is_not_a_fuel_deal() -> None:
+    assert (
+        draft_for_moment("deal_match", {"counterparty": "De Lijn", "category": "transport"}) is None
+    )
+    assert draft_for_moment("deal_match", {"counterparty": "NMBS", "category": "transport"}) is None
+    fuel = draft_for_moment(
+        "deal_match", {"counterparty": "TotalEnergies", "category": "transport"}
+    )
+    assert fuel is not None and fuel.params == {"category": "fuel"}
+
+
+def test_sensitive_merchants_never_get_an_action() -> None:
+    # Health, religion, politics, trade union: never profiled, never offered anything.
+    for merchant, category in (("Apotheek", "other"), ("Apotheek Leuven", "groceries")):
+        assert (
+            draft_for_moment("deal_match", {"counterparty": merchant, "category": category}) is None
+        )
 
 
 def test_unknown_or_incomplete_moments_give_no_action() -> None:

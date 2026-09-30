@@ -13,6 +13,8 @@ from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal
 
+from pydantic import ValidationError
+
 from app.domain.bank import Bank, TransferError
 from app.skills.base import Action, Level, Mandate, Outcome, Params, SkillContext
 from app.skills.consent import Consent, ConsentStore
@@ -63,6 +65,13 @@ class Proposal:
 
 
 @dataclass(frozen=True)
+class Preview:
+    action: Action
+    summary: str
+    level: Level
+
+
+@dataclass(frozen=True)
 class ActivityEntry:
     at: datetime
     event: Event
@@ -110,6 +119,26 @@ class SkillsService:
         ]
 
     # --- proposals -----------------------------------------------------------------------------
+    def preview(
+        self, owner_id: str, action_id: str, raw_params: Mapping[str, Any], today: date
+    ) -> Preview | None:
+        """What a proposal would look like, without storing anything.
+
+        None when Kate may not use the action (`off`), the params do not validate, or the
+        customer cannot do it right now: then there is simply nothing to offer.
+        """
+        action = self._action(action_id)
+        level = self._consent.get(owner_id, action).level
+        if level == Level.OFF:
+            return None
+        try:
+            params = action.params.model_validate(dict(raw_params))
+        except ValidationError:
+            return None
+        if action.eligible(self._context(owner_id, today), params) is not None:
+            return None
+        return Preview(action, action.summary(params), level)
+
     def propose(
         self,
         owner_id: str,

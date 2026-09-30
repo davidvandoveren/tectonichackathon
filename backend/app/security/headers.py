@@ -12,6 +12,9 @@ _CSP = "; ".join(
         "media-src 'self' blob:",  # Kate's voice is played from an in-memory blob
         "connect-src 'self'",
         "object-src 'none'",
+        "frame-src 'none'",
+        "worker-src 'self'",
+        "manifest-src 'self'",
         "base-uri 'self'",
         "form-action 'self'",
         "frame-ancestors 'none'",
@@ -27,6 +30,10 @@ SECURITY_HEADERS = {
     "Permissions-Policy": "camera=(), microphone=(self), geolocation=(), payment=()",
     "Cross-Origin-Opener-Policy": "same-origin",
     "Cross-Origin-Resource-Policy": "same-origin",
+    "X-Permitted-Cross-Domain-Policies": "none",
+    # A bank look-alike prototype must never show up in search results (anti-phishing, and it
+    # holds only synthetic data anyway).
+    "X-Robots-Tag": "noindex, nofollow",
 }
 
 _UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}

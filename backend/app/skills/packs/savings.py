@@ -7,7 +7,7 @@ from pydantic import Field, field_validator
 
 from app.domain.models import AccountType
 from app.skills.base import Action, Money, Outcome, Params, Risk, Skill, SkillContext, clean, euro
-from app.skills.holdings import SavingsGoal
+from app.skills.holdings import MAX_GOALS, SavingsGoal
 from app.skills.packs._accounts import move_between_own, own_account
 
 
@@ -76,6 +76,12 @@ class GoalParams(Params):
         return clean(value)
 
 
+def _room_for_goal(ctx: SkillContext, _: GoalParams) -> str | None:
+    if len(ctx.holdings.of(ctx.owner_id).goals) >= MAX_GOALS:
+        return f"Je hebt al {MAX_GOALS} spaardoelen."
+    return None
+
+
 def _create_goal(ctx: SkillContext, params: GoalParams) -> Outcome:
     with ctx.holdings.lock:
         ctx.holdings.of(ctx.owner_id).goals.append(
@@ -91,6 +97,7 @@ create_goal = Action(
     risk=Risk.PRODUCT_CHANGE,
     params=GoalParams,
     summary=lambda p: f"Spaardoel '{p.name}' van {euro(p.target)}",
+    eligible=_room_for_goal,
     execute=_create_goal,
 )
 

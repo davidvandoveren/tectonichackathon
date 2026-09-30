@@ -9,6 +9,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+# Per customer; card packages and deals are bounded by their fixed catalogues already.
+MAX_STANDING_ORDERS = 10
+MAX_GOALS = 20
+
 
 @dataclass(frozen=True)
 class StandingOrder:

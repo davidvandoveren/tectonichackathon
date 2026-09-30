@@ -6,11 +6,11 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator
 
+from app.domain.bank import MAX_TRANSFER
 from app.domain.iban import format_iban, is_valid_iban, normalize_iban
 from app.domain.models import AccountType, Category
 
 Money = Annotated[Decimal, PlainSerializer(lambda value: f"{value:.2f}", return_type=str)]
-MAX_TRANSFER = Decimal("10000.00")
 
 
 class ApiModel(BaseModel):

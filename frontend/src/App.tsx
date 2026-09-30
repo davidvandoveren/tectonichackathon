@@ -11,6 +11,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
 import { KateConsentPage } from "./skills/KateConsentPage";
+import { FamilyPage } from "./family/FamilyPage";
 
 export function App() {
   return (
@@ -31,6 +32,7 @@ export function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/kate" element={<KateConsentPage />} />
+            <Route path="/family" element={<FamilyPage />} />
           </Route>
           <Route path="/404" element={<NotFoundPage />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

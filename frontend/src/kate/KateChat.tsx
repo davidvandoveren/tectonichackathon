@@ -571,6 +571,22 @@ function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: ()
     );
   }
 
+  if (action.type === "invest_guide") {
+    return (
+      <div className={styles.actionCard}>
+        <p className={styles.actionEyebrow}>Beleggen met Kate · jij kiest</p>
+        <p className={styles.actionTitle}>Welke ETF's passen bij jou?</p>
+        <p className={styles.actionNote}>
+          In 5 stappen: je buffer, een paar vragen, een richting, je eigen keuze en een stappenplan. Kate legt uit,
+          jij beslist.
+        </p>
+        <Link to="/invest" className={styles.actionButton} onClick={onNavigate}>
+          Start het stappenplan
+        </Link>
+      </div>
+    );
+  }
+
   if (action.type === "advisor_handoff") {
     return (
       <div className={`${styles.actionCard} ${styles.advisorCard}`}>

@@ -278,3 +278,29 @@ Every endpoint answers **`404` for "unknown" and "not yours" alike** (another cu
 ```
 UI: `/jury` (full width, outside the phone frame).
 
+
+### Kate's notifications – Kate sends by herself (`/kate/notifications`)
+The moments engine decides *what, when and through which channel*; the **dispatcher** (`backend/app/notifications/`) actually sends. Every `KATE_DISPATCH_INTERVAL_SECONDS` (default 30, never in tests) it runs over every customer on the app clock (so the time machine works too), puts what Kate decided into that customer's inbox and spends the engine's interruption quota for push/sms/call. It also collects the family circle's suggestions, the investment plan's steps and a gentle investing nudge (only with a healthy buffer, ≥ € 5.000 above it, `balances` consent on, never for minors). The same message is not re-sent within its cool-down.
+
+`GET /api/v1/kate/notifications` → (also lets Kate catch up for this customer first)
+```json
+{"unread": 3, "items": [{"id": "nt_3f2a9c1b7d4e", "source": "moment" | "family" | "invest", "title": "…", "body": "…",
+  "reason": "Waarom kreeg ik dit?", "channel": "feed" | "push" | "sms" | "call", "cta_label": "…", "cta_target": "/invest",
+  "sent_on": "2026-09-30", "created_at": "2026-09-30T20:10:00", "read": false}]}
+```
+`POST /api/v1/kate/notifications/{id}/read` `{}` → the notification (`404` if not yours) · `POST /api/v1/kate/notifications/read-all` `{}` → `204`.
+
+### Beleggen met Kate (`/invest`)
+A guided route from savings to ETFs. **Kate explains and points a healthy direction; the customer chooses.** The ETFs are fictitious ("Demo …") on real indices; prices are simulated.
+1. **Health check** from the customer's own data: buffer = 3 months of own expenses (min. € 2.000) always stays on the savings account; `investable` = main savings account minus buffer. `status`: `ready` | `caution` (spending > income, large card debt) | `build_buffer`.
+2. **Answers** (`goal`, `horizon`, `knowledge`, `drop_reaction`) → **direction**: `defensive` 30/70, `neutral` 60/40, `dynamic` 90/10 shares/bonds; capped by horizon (< 3 years → defensive + `suitable: false`) and purchase goals.
+3. **Catalogue** with a `fit` per ETF (`fits` | `addition` | `caution` | `not_for_you`). Complex (leveraged) products are not selectable without investing knowledge.
+4. **Mix check**: warnings (no broad base, too much in one sector/region, far from the direction, complex). Warnings do not block, but a plan then needs `accept_risks: true`.
+5. **Plan**: total ≤ `investable`, 1–36 monthly steps, first step right away. Kate executes each step herself (own savings → own Bolero account via the normal transfer, beurstaks 0,12%), reports it in the inbox, and **pauses instead of touching the buffer**.
+
+`GET /api/v1/invest` → `{health, answers, direction, catalog[], plan, portfolio: {invested, value, holdings[], drop_20_example}, tob_percent, simulated: true}` (runs due plan steps first).
+`POST /api/v1/invest/answers` body = answers → overview · `POST /api/v1/invest/check` `{"weights": {"etf_world": 60, "etf_aggbond": 40}}` → `{shares_percent, yearly_cost_percent, warnings[], blocked[], needs_acknowledgement}` (changes nothing).
+`POST /api/v1/invest/plan` `{"weights": {…}, "total": "6000.00", "months": 12, "accept_risks": false}` → `201` overview; `422` with the reason when not allowed (no answers yet, blocked mix, unacknowledged warnings, more than `investable`, step < € 50, plan already running).
+`POST /api/v1/invest/plan/pause|resume|stop` `{}` → overview (`409` if there is no such plan). Stopping sells nothing; resuming carries on from today.
+
+Kate's chat may talk freely about investing (explain, give examples, say what is popular) but never recommends a concrete real product; for "which ETFs fit me" she answers with action `{"type": "invest_guide"}`, which opens this route.

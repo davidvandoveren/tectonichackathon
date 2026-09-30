@@ -127,7 +127,7 @@ class ChatIn(ApiModel):
 
 
 class ActionOut(ApiModel):
-    type: Literal["none", "transfer", "advisor_handoff"]
+    type: Literal["none", "transfer", "advisor_handoff", "invest_guide"]
     to_name: str | None = None
     amount: str | None = None
     description: str | None = None

@@ -29,8 +29,14 @@ gesprek of in de data staat (prototype, synthetische data):
 1. Je bent een AI. Zeg dat in je eerste antwoord van het gesprek en ontken het nooit.
 2. Stijl, taal en lengte volgen de gedragsgids (spiegel de klant). Nooit grof taalgebruik.
 3. Je voert nooit zelf iets uit. Je mag een overschrijving VOORSTELLEN; de klant bevestigt zelf.
-4. Geen concreet beleggings-, krediet- of fiscaal advies ("koop X"). Leg neutraal uit en bied een
-   gesprek met een menselijke adviseur aan.
+4. Beleggen: praat er gerust en enthousiast over. Leg uit (ETF's, spreiding, kosten, risico,
+   horizon, beurstaks), geef voorbeelden en zeg wat populair is (bv. brede wereld-ETF's die
+   maandelijks worden bijgekocht). Beveel NOOIT een concreet echt aandeel, fonds of ETF aan
+   ("koop X"); de klant kiest altijd zelf. Wijs een gezonde richting aan: eerst een buffer,
+   geld dat je jaren kan missen, breed spreiden, stap voor stap. Voor ETF's die bij het profiel
+   van de klant passen: action "invest_guide" (het stappenplan "Beleggen met Kate"). Stimuleer
+   nooit beleggen bij een klant die financieel krap zit. Krediet- of fiscaal advies: neutraal
+   uitleggen en een gesprek met een menselijke adviseur aanbieden.
 5. Bij overlijden, erfenis, scheiding, schulden of andere zware momenten: mode "guidance",
    eerst empathie, dan vragen of je mag helpen met de financiële kant; pas daarna een
    stappenplan en een overdracht naar een adviseur. Geen verkoop.
@@ -49,7 +55,8 @@ Antwoord ALTIJD met exact één JSON-object, zonder uitleg errond:
  "action": {"type": "none"}
          | {"type": "transfer", "to_name": "<naam>", "amount": "<bedrag, bv. 25.00>",
             "description": "<mededeling>"}
-         | {"type": "advisor_handoff", "summary": "<korte samenvatting voor de adviseur>"}}
+         | {"type": "advisor_handoff", "summary": "<korte samenvatting voor de adviseur>"}
+         | {"type": "invest_guide"}}
 """
 
 
@@ -102,15 +109,22 @@ class AdvisorHandoffAction(BaseModel):
         return clean_text(value, 600) if isinstance(value, str) else value
 
 
-Action = Annotated[NoAction | TransferAction | AdvisorHandoffAction, Field(discriminator="type")]
-_ACTION: TypeAdapter[NoAction | TransferAction | AdvisorHandoffAction] = TypeAdapter(Action)
+class InvestGuideAction(BaseModel):
+    """Opens "Beleggen met Kate": the customer's own profile, ETFs that fit it, their choice."""
+
+    type: Literal["invest_guide"]
+
+
+AnyAction = NoAction | TransferAction | AdvisorHandoffAction | InvestGuideAction
+Action = Annotated[AnyAction, Field(discriminator="type")]
+_ACTION: TypeAdapter[AnyAction] = TypeAdapter(Action)
 
 
 @dataclass(frozen=True)
 class KateReply:
     reply: str
     mode: Literal["normal", "guidance"]
-    action: NoAction | TransferAction | AdvisorHandoffAction
+    action: AnyAction
 
 
 def chat(

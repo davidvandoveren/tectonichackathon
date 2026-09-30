@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr | None = None
     gemini_model: str = "gemini-2.5-flash"
     elevenlabs_api_key: SecretStr | None = None
+    # Two Kate voices. The default per customer follows the gender registered on the customer
+    # record (see app/kate/voices.py); the customer can always switch.
+    elevenlabs_voice_id_female: str | None = None
+    elevenlabs_voice_id_male: str | None = None
+    # Deprecated single voice; used as the female voice when the specific one is not set.
     elevenlabs_voice_id: str | None = None
     elevenlabs_tts_model: str = "eleven_multilingual_v2"
     elevenlabs_stt_model: str = "scribe_v1"

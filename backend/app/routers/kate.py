@@ -13,6 +13,7 @@ from app.kate import assistant
 from app.kate.context import build_context
 from app.kate.llm import ChatModel, ChatTurn, GeminiChat, KateUnavailableError, MockChat
 from app.kate.voice import ElevenLabsVoice
+from app.kate.voices import VoiceKind, VoicePreferences, default_voice
 from app.schemas import ApiModel
 from app.security.rate_limit import RequestLimiter
 
@@ -32,9 +33,15 @@ def get_chat_model(settings: SettingsDep) -> ChatModel:
 def get_voice(settings: SettingsDep) -> ElevenLabsVoice | None:
     if not settings.elevenlabs_api_key:
         return None
+    voice_ids: dict[VoiceKind, str] = {}
+    female = settings.elevenlabs_voice_id_female or settings.elevenlabs_voice_id
+    if female:
+        voice_ids["female"] = female
+    if settings.elevenlabs_voice_id_male:
+        voice_ids["male"] = settings.elevenlabs_voice_id_male
     return ElevenLabsVoice(
         settings.elevenlabs_api_key.get_secret_value(),
-        settings.elevenlabs_voice_id,
+        voice_ids,
         settings.elevenlabs_tts_model,
         settings.elevenlabs_stt_model,
     )
@@ -47,7 +54,13 @@ def rate_limited_user(request: Request, user: CurrentUser) -> User:
     return user
 
 
+def get_voice_preferences(request: Request) -> VoicePreferences:
+    prefs: VoicePreferences = request.app.state.kate_voice_preferences
+    return prefs
+
+
 ChatModelDep = Annotated[ChatModel, Depends(get_chat_model)]
+VoicePrefsDep = Annotated[VoicePreferences, Depends(get_voice_preferences)]
 VoiceDep = Annotated[ElevenLabsVoice | None, Depends(get_voice)]
 LimitedUser = Annotated[User, Depends(rate_limited_user)]
 
@@ -96,6 +109,17 @@ class TranscribeOut(ApiModel):
     text: str
 
 
+class VoiceOut(ApiModel):
+    voice: VoiceKind
+    default_voice: VoiceKind
+    # Which voices ElevenLabs is configured for (empty: the browser's own voice is used).
+    available: list[VoiceKind]
+
+
+class VoiceIn(ApiModel):
+    voice: VoiceKind
+
+
 # --- endpoints ---------------------------------------------------------------------------------
 @router.get("/status", response_model=StatusOut)
 def kate_status(_: CurrentUser, model: ChatModelDep, voice: VoiceDep) -> StatusOut:
@@ -131,12 +155,31 @@ def kate_chat(
     )
 
 
+@router.get("/voice", response_model=VoiceOut)
+def get_kate_voice(user: CurrentUser, voice: VoiceDep, prefs: VoicePrefsDep) -> VoiceOut:
+    return VoiceOut(
+        voice=prefs.voice_for(user.id),
+        default_voice=default_voice(user.id),
+        available=voice.available() if voice else [],
+    )
+
+
+@router.post("/voice", response_model=VoiceOut)
+def set_kate_voice(
+    body: VoiceIn, user: CurrentUser, voice: VoiceDep, prefs: VoicePrefsDep
+) -> VoiceOut:
+    prefs.choose(user.id, body.voice)
+    return get_kate_voice(user, voice, prefs)
+
+
 @router.post("/speech", response_class=Response)
-def kate_speech(body: SpeechIn, _: LimitedUser, voice: VoiceDep) -> Response:
+def kate_speech(
+    body: SpeechIn, user: LimitedUser, voice: VoiceDep, prefs: VoicePrefsDep
+) -> Response:
     if voice is None or not voice.can_speak:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Stem is niet geconfigureerd")
     try:
-        audio = voice.speak(body.text)
+        audio = voice.speak(body.text, prefs.voice_for(user.id))
     except KateUnavailableError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
     return Response(content=audio, media_type="audio/mpeg")

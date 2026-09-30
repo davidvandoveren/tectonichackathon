@@ -54,3 +54,32 @@ export function sumMoney(amounts: string[]): string {
   const totalCents = amounts.reduce((total, amount) => total + toCents(amount), 0n);
   return fromCents(totalCents);
 }
+
+export interface MoneyParts {
+  /** "-" for negative amounts, "" otherwise. */
+  sign: string;
+  /** Thousands-grouped integer part (space-separated, e.g. "1 234"). */
+  integer: string;
+  /** Two-digit decimal part, e.g. "50". */
+  decimals: string;
+  currency: string;
+}
+
+/** Groups a plain digit string into thousands with a space, e.g. "13023" -> "13 023". */
+function groupThousands(digits: string): string {
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+/**
+ * Splits a decimal amount string into display parts for the KBC-style tile
+ * amount ("13 023,97 EUR": integer part large, decimals + currency small).
+ * Never does float arithmetic — grouping is done on the integer-cents string.
+ */
+export function splitMoney(amount: string, currency: string): MoneyParts {
+  const cents = toCents(amount);
+  const isNegative = cents < 0n;
+  const absolute = isNegative ? -cents : cents;
+  const integerDigits = (absolute / 100n).toString();
+  const decimals = (absolute % 100n).toString().padStart(2, "0");
+  return { sign: isNegative ? "-" : "", integer: groupThousands(integerDigits), decimals, currency };
+}

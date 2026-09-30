@@ -1,15 +1,14 @@
 .bar {
   position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: var(--max-width-app);
-  height: var(--tabbar-height);
   display: flex;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  box-shadow: 0 -2px 10px rgba(0, 54, 101, 0.06);
+  height: var(--tabbar-height);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--kbc-surface);
+  border-top: 1px solid var(--kbc-line);
+  flex-shrink: 0;
 }
 
 .tab {
@@ -18,14 +17,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   min-height: var(--touch-target);
   text-decoration: none;
-  color: var(--color-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 600;
+  color: var(--kbc-slate);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-default);
 }
 
 .active {
-  color: var(--color-accent-dark);
+  color: var(--kbc-blue);
+  font-weight: var(--font-weight-bold);
 }

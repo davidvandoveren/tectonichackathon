@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, isValidAmount, sumMoney, toAmountString } from "./money";
+import { formatMoney, isValidAmount, splitMoney, sumMoney, toAmountString } from "./money";
 
 describe("formatMoney", () => {
   it("formats a positive euro amount in nl-BE", () => {
@@ -68,5 +68,43 @@ describe("sumMoney", () => {
 
   it("returns 0.00 for an empty list", () => {
     expect(sumMoney([])).toBe("0.00");
+  });
+});
+
+describe("splitMoney", () => {
+  it("splits a large amount into grouped integer and decimal parts", () => {
+    expect(splitMoney("13023.97", "EUR")).toEqual({
+      sign: "",
+      integer: "13 023",
+      decimals: "97",
+      currency: "EUR",
+    });
+  });
+
+  it("marks negative amounts with a sign and drops it from the digits", () => {
+    expect(splitMoney("-42.17", "EUR")).toEqual({
+      sign: "-",
+      integer: "42",
+      decimals: "17",
+      currency: "EUR",
+    });
+  });
+
+  it("pads a whole amount to two decimals", () => {
+    expect(splitMoney("25", "EUR")).toEqual({
+      sign: "",
+      integer: "25",
+      decimals: "00",
+      currency: "EUR",
+    });
+  });
+
+  it("formats zero without a sign", () => {
+    expect(splitMoney("0.00", "EUR")).toEqual({
+      sign: "",
+      integer: "0",
+      decimals: "00",
+      currency: "EUR",
+    });
   });
 });

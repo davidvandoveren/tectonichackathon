@@ -64,6 +64,8 @@ export interface Insight {
   cta_label: string;
   cta_target: string;
   reason: string;
+  /** Moment type from the Kate engine (optional: older backends omit it). */
+  moment?: string;
 }
 
 export interface TransferRequest {

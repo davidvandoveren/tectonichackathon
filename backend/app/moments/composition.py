@@ -102,6 +102,35 @@ COPY: Mapping[str, Copy] = {
         cta_label="Bekijk de deal",
         cta_target="/",
     ),
+    "card_package_waste": Copy(
+        title="Betaal je voor iets dat je niet gebruikt?",
+        body=(
+            "Je betaalt elke maand voor een kaartpakket met reisvoordelen, maar we zien geen "
+            "reizen. Opzeggen kan altijd, en je krijgt het terug als je het nodig hebt."
+        ),
+        body_template=(
+            "Het {package_name} kost je {yearly_cost_label} per jaar, maar we zien geen reizen. "
+            "Zeg je het op, dan hou je dat bedrag zelf. Terugnemen kan altijd."
+        ),
+        template_keys=("package_name", "yearly_cost_label"),
+        cta_label="Pakket opzeggen",
+        cta_target="/",
+    ),
+    "card_package_gap": Copy(
+        title="Reis je verzekerd?",
+        body=(
+            "Je reist, maar je hebt geen Reispakket. Dat dekt annulering, de franchise van een "
+            "huurwagen en vertraagde bagage."
+        ),
+        body_template=(
+            "We zagen {trips} reisuitgave(n), de laatste bij {last_merchant}. Het Reispakket "
+            "({reis_monthly_label} per maand) dekt annulering, de franchise van een huurwagen "
+            "en vertraagde bagage."
+        ),
+        template_keys=("trips", "last_merchant", "reis_monthly_label"),
+        cta_label="Bekijk het Reispakket",
+        cta_target="/",
+    ),
 }
 
 FALLBACK = Copy(

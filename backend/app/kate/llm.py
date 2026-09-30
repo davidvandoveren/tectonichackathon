@@ -6,7 +6,9 @@ and the tests work without any key or network. Both return the raw JSON text des
 """
 
 import json
+import logging
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Literal, Protocol
@@ -16,7 +18,9 @@ import httpx
 from app.kate.context import CustomerContext
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-TIMEOUT_SECONDS = 20.0
+TIMEOUT_SECONDS = 25.0
+
+logger = logging.getLogger("kbc_poc.kate")
 
 
 class KateUnavailableError(Exception):
@@ -38,9 +42,9 @@ class ChatModel(Protocol):
 class GeminiChat:
     name = "gemini"
 
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, fallback_models: Sequence[str] = ()) -> None:
         self._api_key = api_key
-        self._model = model
+        self._models = [model, *(m for m in fallback_models if m and m != model)]
 
     def complete(self, system: str, turns: list[ChatTurn], context: CustomerContext) -> str:
         body = {
@@ -52,21 +56,51 @@ class GeminiChat:
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "temperature": 0.4,
-                "maxOutputTokens": 2048,
+                "maxOutputTokens": 4096,
             },
         }
-        try:
-            response = httpx.post(
-                GEMINI_URL.format(model=self._model),
-                headers={"x-goog-api-key": self._api_key},
-                json=body,
-                timeout=TIMEOUT_SECONDS,
-            )
-            response.raise_for_status()
-            text: str = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
-            raise KateUnavailableError("Gemini request failed") from exc
-        return text
+        last_error: Exception | None = None
+        for model in self._models:
+            try:
+                response = httpx.post(
+                    GEMINI_URL.format(model=model),
+                    headers={"x-goog-api-key": self._api_key},
+                    json=body,
+                    timeout=TIMEOUT_SECONDS,
+                )
+                if response.status_code == 404:  # model not available for this key: try the next
+                    logger.warning("Gemini model %s not available (404), trying next", model)
+                    last_error = httpx.HTTPStatusError(
+                        "model not found", request=response.request, response=response
+                    )
+                    continue
+                response.raise_for_status()
+                return _answer_text(response.json())
+            except httpx.HTTPStatusError as exc:
+                # Log the provider's reason (e.g. "API key not valid"), never the key.
+                logger.warning(
+                    "Gemini %s failed: HTTP %s %s",
+                    model,
+                    exc.response.status_code,
+                    exc.response.text[:300],
+                )
+                raise KateUnavailableError("Gemini request failed") from exc
+            except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError) as exc:
+                logger.warning("Gemini %s failed: %s", model, type(exc).__name__)
+                raise KateUnavailableError("Gemini request failed") from exc
+        raise KateUnavailableError("No Gemini model available") from last_error
+
+
+def _answer_text(payload: dict[str, object]) -> str:
+    """The answer text, skipping the model's internal "thought" parts."""
+    candidates = payload.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("no candidates (blocked or empty answer)")
+    parts = candidates[0].get("content", {}).get("parts", [])
+    text = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
+    if not text.strip():
+        raise ValueError("empty answer")
+    return text
 
 
 _TRANSFER = re.compile(
@@ -76,6 +110,8 @@ _TRANSFER = re.compile(
     re.IGNORECASE,
 )
 _GUIDANCE_WORDS = ("overleden", "overlijden", "erfenis", "gestorven", "begrafenis")
+_OFFER = "Als je wil, kan ik je helpen met wat er financieel geregeld moet worden."
+_YES_WORDS = ("ja", "graag", "oké", "oke", "ok", "yes", "goed", "doe maar", "alstublieft", "aub")
 _SPEND_WORDS = ("uitgegeven", "uitgaven", "spend", "besteed")
 _BALANCE_WORDS = ("saldo", "hoeveel staat", "hoeveel geld")
 
@@ -91,18 +127,27 @@ class MockChat:
         is_first = not any(t.role == "kate" for t in turns)
         intro = "Hallo, ik ben Kate, je digitale assistent (AI). " if is_first else ""
 
-        if any(word in lower for word in _GUIDANCE_WORDS):
+        last_kate = next((t.text for t in reversed(turns[:-1]) if t.role == "kate"), "")
+        if _OFFER in last_kate and _is_yes(lower):
             return _json(
-                intro + "Wat verdrietig, gecondoleerd. Ik help je stap voor stap, zonder haast: "
-                "1) de overlijdensakte, 2) een attest of akte van erfopvolging, 3) daarna kan een "
-                "adviseur de rekeningen met je overlopen. Zal ik een gesprek met een adviseur "
-                "klaarzetten, zodat je je verhaal niet opnieuw hoeft te doen?",
+                "Oké, stap voor stap en zonder haast: 1) de overlijdensakte, 2) een attest of "
+                "akte van erfopvolging, 3) daarna overloopt een adviseur de rekeningen met je. "
+                "Ik zet dat gesprek voor je klaar, dan hoef je je verhaal niet opnieuw te doen.",
                 mode="guidance",
                 action={
                     "type": "advisor_handoff",
                     "summary": "Klant meldt een overlijden in de familie en vraagt hulp bij de "
                     "erfenis. Begeleiding gewenst, geen commerciële voorstellen.",
                 },
+            )
+
+        if any(word in lower for word in _GUIDANCE_WORDS):
+            return _json(
+                intro
+                + "Wat verschrikkelijk, gecondoleerd. Neem gerust je tijd. "
+                + _OFFER
+                + " Zal ik dat rustig met je overlopen?",
+                mode="guidance",
             )
 
         if match := _TRANSFER.search(message):
@@ -144,6 +189,11 @@ class MockChat:
 
 def _nl(amount: Decimal) -> str:
     return f"{amount:,.2f}".replace(",", " ").replace(".", ",")
+
+
+def _is_yes(text: str) -> bool:
+    words = re.findall(r"[a-zà-ÿ]+", text)
+    return any(w in _YES_WORDS for w in words) or "doe maar" in text
 
 
 def _parse_amount(raw: str) -> Decimal | None:

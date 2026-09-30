@@ -4,29 +4,30 @@
   gap: var(--space-2);
   min-width: 82%;
   scroll-snap-align: start;
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  background: var(--kbc-surface);
+  border-radius: var(--radius-sm);
   padding: var(--space-4);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-tile);
+  border-top: 3px solid var(--kbc-blue);
 }
 
 .kind {
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-accent-dark);
+  color: var(--kbc-blue);
 }
 
 .title {
   font-size: 1.0625rem;
-  font-weight: 700;
-  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
 }
 
 .body {
   font-size: 0.9375rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
 }
 
 .cta {
@@ -35,10 +36,10 @@
   align-items: center;
   min-height: var(--touch-target);
   padding: 0 var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--color-accent);
-  color: var(--color-navy-900);
-  font-weight: 600;
+  border-radius: var(--radius-lg);
+  background: var(--kbc-blue);
+  color: #ffffff;
+  font-weight: var(--font-weight-bold);
   text-decoration: none;
   margin-top: var(--space-1);
 }
@@ -52,9 +53,9 @@
   margin-top: var(--space-1);
   border: none;
   background: none;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
   align-self: flex-start;
 }
@@ -69,8 +70,8 @@
 
 .reason {
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
-  background: var(--color-bg);
+  color: var(--kbc-slate);
+  background: var(--kbc-bg-muted);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
 }

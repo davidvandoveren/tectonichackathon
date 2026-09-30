@@ -17,7 +17,9 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Literal
 
+from app.moments.ledger import euro
 from app.moments.signals import Signal
+from app.skills.packs.cards import PACKAGES
 
 Urgency = Literal["risk", "obligation", "opportunity"]
 
@@ -106,6 +108,19 @@ RECIPES: tuple[Recipe, ...] = (
         urgency="opportunity",
         weights={"merchant_concentration": 1.0},
     ),
+    Recipe(
+        type="card_package_waste",
+        urgency="opportunity",
+        # The bank telling a customer to pay it less: the most trust-building thing Kate can do.
+        weights={"paid_package_unused": 1.0},
+    ),
+    Recipe(
+        type="card_package_gap",
+        urgency="opportunity",
+        weights={"travel_spend": 1.0},
+        counters={"travel_cover_held": 1.0},
+        requires=("travel_spend",),
+    ),
 )
 
 
@@ -133,6 +148,8 @@ def _meta_for(recipe: Recipe, supporting: Sequence[Signal]) -> dict[str, str]:
         merged.update(signal.meta)
     if recipe.type == "savings_habit_automatable" and "median_amount" in merged:
         merged["amount"] = merged["median_amount"]
+    if recipe.type == "card_package_gap":
+        merged["reis_monthly_label"] = euro(PACKAGES["reis"].monthly)
     return merged
 
 
@@ -140,6 +157,8 @@ def _value_for(recipe: Recipe, meta: Mapping[str, str]) -> Decimal | None:
     """Estimated euros per year, used to rank suggestions against each other."""
     if recipe.type == "savings_habit_automatable" and "amount" in meta:
         return Decimal(meta["amount"]) * 12
+    if recipe.type == "card_package_waste" and "yearly_cost" in meta:
+        return Decimal(meta["yearly_cost"])
     if recipe.type == "deal_match" and "yearly_spend" in meta:
         return (Decimal(meta["yearly_spend"]) * DEAL_CASHBACK_RATE).quantize(Decimal("0.01"))
     return None

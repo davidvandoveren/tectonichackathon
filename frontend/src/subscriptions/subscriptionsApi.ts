@@ -19,6 +19,8 @@ export interface Subscription {
   reason: string;
   status: SubscriptionStatus;
   remind_on: string | null;
+  source: "detected" | "manual";
+  is_new: boolean;
 }
 
 export interface SubscriptionsOverview {
@@ -27,6 +29,7 @@ export interface SubscriptionsOverview {
   yearly_total: string;
   yearly_savings: string;
   hidden_sensitive: number;
+  dismissed: number;
 }
 
 export function getSubscriptions(signal?: AbortSignal): Promise<SubscriptionsOverview> {
@@ -38,6 +41,19 @@ export function sendSubscriptionFeedback(
   feedback: { still_used: boolean; remind_to_cancel?: boolean }
 ): Promise<Subscription> {
   return apiClient.post<Subscription>(`/subscriptions/${encodeURIComponent(id)}/feedback`, feedback);
+}
+
+/** "Klopt dit niet? Verwijder" (dismissed: true) and its undo (dismissed: false). */
+export function setDismissed(id: string, dismissed: boolean): Promise<SubscriptionsOverview> {
+  return apiClient.post<SubscriptionsOverview>(`/subscriptions/${encodeURIComponent(id)}/dismiss`, { dismissed });
+}
+
+export function addSubscription(input: {
+  name: string;
+  amount: string;
+  next_charge?: string;
+}): Promise<SubscriptionsOverview> {
+  return apiClient.post<SubscriptionsOverview>("/subscriptions", input);
 }
 
 export const GROUP_LABELS: Record<string, string> = {

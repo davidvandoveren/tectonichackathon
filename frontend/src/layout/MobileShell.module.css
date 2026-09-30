@@ -1,0 +1,50 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--kbc-bg-muted);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  height: var(--mobile-topbar-height);
+  flex-shrink: 0;
+  padding: 0 var(--space-4);
+  background: var(--kbc-surface);
+  border-bottom: 1px solid var(--kbc-line);
+}
+
+.iconButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin-right: calc(var(--space-2) * -1);
+  border: none;
+  background: transparent;
+  color: var(--kbc-blue);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kbc-red);
+}
+
+.content {
+  flex: 1;
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
+  background: var(--kbc-bg-muted);
+}

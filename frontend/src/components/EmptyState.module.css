@@ -1,7 +1,7 @@
 .empty {
   padding: var(--space-4);
   text-align: center;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
+  color: var(--kbc-slate);
+  background: var(--kbc-surface);
   border-radius: var(--radius-md);
 }

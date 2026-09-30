@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
+import { Link } from "react-router";
 import { getAccounts } from "../api/accounts";
 import { getInsights } from "../api/insights";
 import { ApiError } from "../api/client";
 import type { Account, Insight } from "../api/types";
-import { greeting } from "../lib/dates";
-import { formatMoney, sumMoney } from "../lib/money";
-import { AccountCard } from "../components/AccountCard";
+import { AccountSection } from "../components/AccountSection";
 import { InsightCarousel } from "../components/InsightCarousel";
 import { Skeleton } from "../components/Skeleton";
 import { ErrorState } from "../components/ErrorState";
 import { EmptyState } from "../components/EmptyState";
-import { Wordmark } from "../components/Wordmark";
+import { getFeedActions, type FeedAction } from "../skills/skillsApi";
+import { TileViewToggle, type TileLayout } from "../components/TileViewToggle";
+import { TransferIcon } from "../components/icons/TransferIcon";
+import buttonStyles from "../components/Button.module.css";
 import styles from "./HomePage.module.css";
 
 interface LoadState<T> {
@@ -23,9 +24,10 @@ interface LoadState<T> {
 const INITIAL_STATE = { data: null, error: null, isLoading: true };
 
 export function HomePage() {
-  const { user } = useAuth();
   const [accountsState, setAccountsState] = useState<LoadState<Account[]>>(INITIAL_STATE);
   const [insightsState, setInsightsState] = useState<LoadState<Insight[]>>(INITIAL_STATE);
+  const [tileLayout, setTileLayout] = useState<TileLayout>("grid");
+  const [feedActions, setFeedActions] = useState<Record<string, FeedAction>>({});
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,6 +45,10 @@ export function HomePage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // Optional: without Kate Skills actions the cards simply keep their plain link.
+    getFeedActions(controller.signal)
+      .then((list) => setFeedActions(Object.fromEntries(list.map((a) => [a.moment, a]))))
+      .catch(() => setFeedActions({}));
     getInsights(controller.signal)
       .then((data) => setInsightsState({ data, error: null, isLoading: false }))
       .catch((error: unknown) => {
@@ -55,68 +61,67 @@ export function HomePage() {
     return () => controller.abort();
   }, []);
 
-  const totalBalance =
-    accountsState.data && accountsState.data.length > 0
-      ? formatMoney(
-          sumMoney(accountsState.data.map((account) => account.balance)),
-          accountsState.data[0].currency
-        )
-      : null;
+  const accounts = accountsState.data ?? [];
+  const currentAccounts = accounts.filter((account) => account.type === "current");
+  const savingsAccounts = accounts.filter((account) => account.type === "savings");
+  const creditCardAccounts = accounts.filter((account) => account.type === "credit_card");
 
   return (
     <div className={styles.page}>
-      <section className={styles.hero}>
-        <Wordmark />
-        <p className={styles.greeting}>
-          {greeting()}, {user?.first_name}
-        </p>
-        <p className={styles.balanceLabel}>Totaal saldo</p>
-        <p className={styles.balance}>
-          {accountsState.isLoading ? <Skeleton height={36} width={160} /> : (totalBalance ?? "–")}
-        </p>
-      </section>
+      <div className={styles.titleRow}>
+        <h1 className={styles.title}>Betalen</h1>
+        <div className={styles.titleActions}>
+          <TileViewToggle value={tileLayout} onChange={setTileLayout} />
+          <Link to="/transfer" className={`${buttonStyles.button} ${buttonStyles.primary}`}>
+            <TransferIcon aria-hidden="true" />
+            Overschrijving
+          </Link>
+        </div>
+      </div>
 
       <section className={styles.section} aria-labelledby="insights-heading">
         <h2 id="insights-heading" className={styles.sectionTitle}>
-          Voor jou
+          Kate · Voor jou
         </h2>
-        {insightsState.isLoading && (
-          <div className={styles.padded}>
-            <Skeleton height={160} />
-          </div>
+        {insightsState.isLoading && <Skeleton height={160} />}
+        {insightsState.error && <ErrorState message={insightsState.error} />}
+        {insightsState.data && (
+          <InsightCarousel
+            insights={insightsState.data}
+            actions={feedActions}
+            onDismissed={(id) =>
+              setInsightsState((state) => ({
+                ...state,
+                data: state.data?.filter((insight) => insight.id !== id) ?? null,
+              }))
+            }
+          />
         )}
-        {insightsState.error && (
-          <div className={styles.padded}>
-            <ErrorState message={insightsState.error} />
-          </div>
-        )}
-        {insightsState.data && <InsightCarousel insights={insightsState.data} />}
       </section>
 
-      <section className={styles.section} aria-labelledby="accounts-heading">
-        <h2 id="accounts-heading" className={styles.sectionTitle}>
-          Rekeningen
-        </h2>
-        <div className={styles.padded}>
-          {accountsState.isLoading && (
-            <div className={styles.accountList}>
-              <Skeleton height={72} />
-              <Skeleton height={72} />
-            </div>
-          )}
-          {accountsState.error && <ErrorState message={accountsState.error} />}
-          {accountsState.data && accountsState.data.length === 0 && (
-            <EmptyState message="Je hebt nog geen rekeningen." />
-          )}
-          {accountsState.data && accountsState.data.length > 0 && (
-            <div className={styles.accountList}>
-              {accountsState.data.map((account) => (
-                <AccountCard key={account.id} account={account} />
-              ))}
-            </div>
-          )}
+      {accountsState.isLoading && (
+        <div className={styles.section}>
+          <Skeleton height={110} />
+          <Skeleton height={110} />
         </div>
-      </section>
+      )}
+
+      {accountsState.error && <ErrorState message={accountsState.error} />}
+
+      {accountsState.data && accounts.length === 0 && <EmptyState message="Je hebt nog geen rekeningen." />}
+
+      {accountsState.data && accounts.length > 0 && (
+        <>
+          <AccountSection title="Zichtrekeningen" accounts={currentAccounts} layout={tileLayout} />
+          <AccountSection title="Spaarrekeningen" accounts={savingsAccounts} layout={tileLayout} />
+          <AccountSection
+            title="Kredietkaarten en prepaidkaart"
+            accounts={creditCardAccounts}
+            layout={tileLayout}
+            emptyMessage="Geen kredietkaart of prepaidkaart"
+          />
+        </>
+      )}
     </div>
   );
 }

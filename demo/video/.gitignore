@@ -1,0 +1,7 @@
+# generated (re-create with the steps in README.md)
+*.mp4
+*.webm
+*.mp3
+shots/
+raw/
+timeline.json

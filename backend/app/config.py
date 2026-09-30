@@ -9,7 +9,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Runtime configuration, read from environment variables (and `.env` locally)."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # `.env` in the working directory, or one level up (the project root) when started from
+    # `backend/`. Real environment variables always win.
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
     app_env: Literal["development", "test", "production"] = "development"
     # Password shared by the synthetic demo personas. Never commit a value for it.
@@ -33,10 +35,12 @@ class Settings(BaseSettings):
         return frozenset(name.strip() for name in self.admin_usernames.split(",") if name.strip())
 
     # --- Kate assistant (chat, voice, speech recognition) --------------------------------------
-    # "mock" answers with canned replies so the app works without any API key.
-    kate_llm_provider: Literal["mock", "gemini"] = "mock"
+    # "auto" uses Gemini as soon as GEMINI_API_KEY is set, else canned demo replies ("mock").
+    kate_llm_provider: Literal["auto", "mock", "gemini"] = "auto"
     gemini_api_key: SecretStr | None = None
     gemini_model: str = "gemini-2.5-flash"
+    # Tried in order when the configured model is not available for this key (404).
+    gemini_fallback_models: str = "gemini-flash-latest,gemini-2.0-flash"
     elevenlabs_api_key: SecretStr | None = None
     # Two Kate voices. The default per customer follows the gender registered on the customer
     # record (see app/kate/voices.py); the customer can always switch.

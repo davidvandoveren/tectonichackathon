@@ -4,6 +4,7 @@ export interface KateStatus {
   llm: "mock" | "gemini";
   voice: boolean;
   speech_recognition: boolean;
+  mock_reason?: string | null;
 }
 
 export interface KateAction {

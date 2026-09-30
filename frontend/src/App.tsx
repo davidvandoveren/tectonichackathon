@@ -10,6 +10,7 @@ import { TransferPage } from "./pages/TransferPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
+import { KateConsentPage } from "./skills/KateConsentPage";
 
 export function App() {
   return (
@@ -29,6 +30,7 @@ export function App() {
             <Route path="/transfer" element={<TransferPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
+            <Route path="/kate" element={<KateConsentPage />} />
           </Route>
           <Route path="/404" element={<NotFoundPage />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

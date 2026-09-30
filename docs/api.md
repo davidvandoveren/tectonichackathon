@@ -59,9 +59,16 @@ Rules: amount `> 0`, max 2 decimals, ≤ 10000.00, ≤ available balance; IBAN m
 ### Insights ("Voor jou") – the personalization hook
 `GET /api/v1/insights` →
 ```json
-[{"id": "i_…", "kind": "moment", "title": "Eerste loon ontvangen?", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever."}]
+[{"id": "i_first_salary_u_emma", "kind": "moment", "title": "Proficiat met je eerste loon!", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever.",
+  "moment": "first_salary", "urgency": 39, "channel": "feed", "confidence": 0.82}]
 ```
-`reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present. Today these come from simple rules in `backend/app/services/insights.py`; this is where the PoC's personalization engine plugs in.
+`reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present.
+
+Fed by the moments engine (see [Kate feed](#kate-feed-the-moments-engine)): home shows exactly the items of `GET /kate/feed`, in the same order (highest urgency first), and obeys the same consent switches, dismissals and time machine. What Kate deliberately keeps quiet about is only in the feed's `silenced`.
+
+- `kind`: `alert` (a risk, e.g. a missing salary), `guidance` (needs an advisor), otherwise `moment`.
+- `moment` is the moment type: pass it to `POST /kate/feed/{moment}/dismiss` for "Niet meer tonen".
+- `urgency` (0–100), `channel` and `confidence` (0–1) are **optional additions**; the original fields keep their meaning, so older clients keep working.
 
 ### Kate (chat, voice, speech recognition)
 All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_REQUESTS_PER_MINUTE`, default 20 → `429`). Upstream failures (Gemini/ElevenLabs) → `503`. Without keys Kate runs in **demo mode** (`llm: "mock"`, canned answers) and the UI falls back to the browser's own speech recognition and voice.
@@ -110,6 +117,7 @@ is fully deterministic — no model, no network call — so it cannot fail durin
 ```
 
 - `id` is the moment type, stable across requests, and is what you pass to the dismiss endpoint.
+  Moment types: `cashflow_risk`, `income_missing` (risk) · `moving_house` (obligation) · `first_salary`, `idle_savings`, `savings_habit_automatable`, `deal_match`, `card_package_waste` (pays for Reis-/Luxepakket, no travel seen → drop it and save), `card_package_gap` (travels, no Reispakket) (opportunity).
 - `urgency` is `0–100`. Bands do not overlap: `risk` 70–100, `obligation` 40–69, `opportunity` 10–39, so a risk can never be outranked by a confident nudge. Items come back ranked, highest first.
 - `channel` is one of `feed`, `push`, `sms`, `call`, `none`. **At most one item per response uses an interruptive channel** (`push`/`sms`/`call`); the rest fall back to `feed`.
 - `reason` is the "Waarom zie ik dit?" text. It is assembled from the evidence that produced the moment, so it can never drift from what was actually observed. Always present, never empty.
@@ -122,6 +130,8 @@ is fully deterministic — no model, no network call — so it cannot fail durin
 `GET /api/v1/kate/consent` → `{"income": true, "spending": true, "balances": true, "products": true}`
 
 `PUT /api/v1/kate/consent` body `{"domain": "spending", "allowed": false}` → the updated object. An unknown domain gives `422`.
+
+`products` covers what Kate reads about the customer's KBC products (card packages); switching it off silences `card_package_waste` and lets `card_package_gap` fire without knowing a package is held.
 
 Consent is applied **before** signal extraction, so a domain the customer switched off is never computed rather than computed and filtered. Switching off `spending` visibly changes the feed.
 
@@ -156,6 +166,12 @@ Requires the caller's username to be listed in `ADMIN_USERNAMES`. Anyone else �
  "monthly_total": "36.47", "yearly_total": "437.64", "yearly_savings": "0.00", "hidden_sensitive": 0}
 ```
 `flags`: `price_increase`, `duplicate` (two services in the same `group`), `trial_converted`. The bank does not know *usage*, so we never guess it; the customer answers. Sensitive subscriptions (health, religion, politics, trade union, dating) are only counted in `hidden_sensitive`, never shown or analysed.
+
+Detection is **automatic**; the customer never has to enter anything. Recently detected ones have `is_new: true` (UI: "Nieuw gedetecteerd · Klopt dit niet? Verwijder").
+
+`POST /api/v1/subscriptions/{id}/dismiss` body `{"dismissed": true}` → removes it from the list with one click (the overview is returned; `dismissed` counts them). `{"dismissed": false}` undoes it. `404` if not yours.
+
+`POST /api/v1/subscriptions` body `{"name": "Streamz", "amount": "9.99", "next_charge": "2026-10-15"}` (`next_charge` optional) → `201` + overview. Optional manual add, e.g. for a subscription paid with another bank's card (`source: "manual"`).
 
 `POST /api/v1/subscriptions/{id}/feedback` body `{"still_used": false, "remind_to_cancel": true}` → the updated subscription (`status: "cancel_reminder"`, `remind_on` = 3 days before the next charge). `404` if the id is not one of *your* subscriptions.
 
@@ -195,3 +211,15 @@ Every KBC function (payments, savings, cards, deals, insurance, loans, investing
 [{"at": "2026-09-30T18:40:00Z", "event": "proposed" | "suggested" | "executed" | "failed" | "declined" | "expired" | "consent_changed",
   "action": "savings.move_to_savings", "summary": "€ 50,00 naar je spaarrekening", "source": "moment", "reason": "…"}]
 ```
+
+#### Feed cards → confirmable actions
+`GET /api/v1/skills/feed-actions` → for each card in `GET /kate/feed` that Kate can act on (join on feed `id` == `moment`):
+```json
+[{"moment": "first_salary", "action": "savings.create_goal", "title": "Spaardoel maken",
+  "summary": "Spaardoel 'Buffer' van € 5 955,00", "level": "prepare", "can_confirm": true}]
+```
+No entry = no button on that card (no matching action, the customer switched the action `off`, or it is not possible right now). `can_confirm: false` = level `suggest`: show the summary, no button. Cards at sensitive merchants (health, religion, politics, trade union) never get an action.
+
+`POST /api/v1/proposals/from-moment` body `{"moment": "first_salary"}` → `201` proposal (same shape as `POST /proposals`, `source: "moment"`, `reason` = the engine's evidence). The server recomputes the moment itself, so a client cannot choose the amounts; a moment that is not in this customer's feed right now → `404`; consent `off` → `403`; not possible → `409`; extra fields → `422`.
+
+Card flow: **Bevestig** → `POST /proposals/from-moment` → `POST /proposals/{id}/approve` `{}` → show `outcome.message` (`navigate`: open `outcome.navigate_to`; `advisor_handoff`: show that an advisor will call). **Nee, bedankt** → `POST /kate/feed/{moment}/dismiss` `{}`.

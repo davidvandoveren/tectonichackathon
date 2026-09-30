@@ -10,9 +10,10 @@ from typing import Annotated, Any, Literal, cast
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from app.dependencies import CurrentUser, TodayDep
+from app.dependencies import BankDep, CurrentUser, KateStateDep, TodayDep
 from app.skills.base import Action, Level, Mandate, Outcome
 from app.skills.consent import Consent, ConsentError
+from app.skills.feed import feed_drafts
 from app.skills.service import (
     ActivityEntry,
     InvalidStateError,
@@ -75,6 +76,19 @@ class ProposalIn(ApiModel):
     params: dict[str, Any] = Field(default_factory=dict)
     source: Source
     reason: str = Field(min_length=1, max_length=400)
+
+
+class FeedActionOut(ApiModel):
+    moment: str
+    action: str
+    title: str
+    summary: str
+    level: LevelName
+    can_confirm: bool
+
+
+class FromMomentIn(ApiModel):
+    moment: str = Field(min_length=1, max_length=64)
 
 
 class OutcomeOut(ApiModel):
@@ -217,6 +231,59 @@ def create_proposal(
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     return _proposal(proposal)
+
+
+@router.get("/skills/feed-actions", response_model=list[FeedActionOut])
+def feed_actions(
+    user: CurrentUser, bank: BankDep, state: KateStateDep, skills: SkillsDep, today: TodayDep
+) -> list[FeedActionOut]:
+    """For each card in `/kate/feed` that Kate can act on: what exactly, and whether to show a
+    confirm button. A card without an entry gets no button."""
+    out = []
+    for item in feed_drafts(bank, user, today, state):
+        preview = skills.preview(user.id, item.draft.action_id, item.draft.params, today)
+        if preview is None:
+            continue
+        out.append(
+            FeedActionOut(
+                moment=item.moment,
+                action=preview.action.id,
+                title=preview.action.title,
+                summary=preview.summary,
+                level=cast(LevelName, preview.level.label),
+                can_confirm=preview.level >= Level.PREPARE,
+            )
+        )
+    return out
+
+
+@router.post(
+    "/proposals/from-moment", response_model=ProposalOut, status_code=status.HTTP_201_CREATED
+)
+def proposal_from_moment(
+    body: FromMomentIn,
+    user: CurrentUser,
+    bank: BankDep,
+    state: KateStateDep,
+    skills: SkillsDep,
+    today: TodayDep,
+) -> ProposalOut:
+    """Confirm a feed card. The server recomputes the moment, so amounts cannot be forged and a
+    moment that is not in this customer's feed right now does not exist (404)."""
+    item = next((d for d in feed_drafts(bank, user, today, state) if d.moment == body.moment), None)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Moment not found")
+    return create_proposal(
+        ProposalIn(
+            action=item.draft.action_id,
+            params=item.draft.params,
+            source="moment",
+            reason=item.reason[:400],
+        ),
+        user,
+        skills,
+        today,
+    )
 
 
 @router.get("/proposals", response_model=list[ProposalOut])

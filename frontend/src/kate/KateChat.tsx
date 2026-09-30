@@ -20,6 +20,7 @@ import {
   canUseBrowserRecognition,
   listenWithBrowser,
   speakWithBrowser,
+  warmUpVoices,
   startRecording,
   stopBrowserSpeech,
   type Recording,
@@ -46,7 +47,7 @@ interface Message extends ChatTurn {
 
 /** Shown on screen and sent as Kate's first turn: she has already said she is an AI. */
 const GREETING =
-  "Hallo, ik ben Kate, je digitale assistent. Ik ben een AI. Vraag me iets over je geld, of zeg bv. “Stuur Lucas 25 euro voor de pizza”.";
+  "Hallo, ik ben Kate, de digitale assistent van de bank. Ik ben een AI. Stel gerust een vraag over geldzaken, of zeg bv. “Stuur Lucas 25 euro voor de pizza”.";
 
 const SUGGESTIONS = [
   "Hoeveel gaf ik deze maand uit?",
@@ -82,6 +83,7 @@ export function KateChat({ hideLauncher = false }: KateChatProps) {
   }, []);
   const [voice, setVoice] = useState<VoiceKind>("female");
   const [speakingId, setSpeakingId] = useState<number | null>(null);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
   const [mic, setMic] = useState<MicState>("idle");
   const recording = useRef<StopHandle | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -90,7 +92,9 @@ export function KateChat({ hideLauncher = false }: KateChatProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!open || status) return;
+    if (!open) return;
+    warmUpVoices();
+    if (status) return;
     const controller = new AbortController();
     getKateVoice(controller.signal)
       .then((settings) => setVoice(settings.voice))
@@ -141,18 +145,22 @@ export function KateChat({ hideLauncher = false }: KateChatProps) {
     if (status?.voice) {
       try {
         const url = URL.createObjectURL(await fetchSpeech(text));
-        audio.current = new Audio(url);
-        audio.current.onended = () => {
+        const player = new Audio(url);
+        audio.current = player;
+        const done = () => {
           URL.revokeObjectURL(url);
-          setSpeakingId(null);
+          setSpeakingId((current) => (current === id ? null : current));
         };
-        await audio.current.play();
+        player.onended = done;
+        player.onerror = done;
+        await player.play();
         return;
-      } catch {
-        // fall through to the browser voice
+      } catch (err) {
+        console.warn("ElevenLabs-stem niet beschikbaar, browserstem wordt gebruikt:", err);
+        setVoiceNotice("Kate's stem (ElevenLabs) werkt nu niet; ik lees voor met de stem van je browser.");
       }
     }
-    speakWithBrowser(text, () => setSpeakingId(null), voice);
+    speakWithBrowser(text, () => setSpeakingId((current) => (current === id ? null : current)), voice);
   }
 
   async function send(text: string) {
@@ -291,6 +299,18 @@ export function KateChat({ hideLauncher = false }: KateChatProps) {
             </button>
           ))}
         </div>
+      )}
+
+      {status?.llm === "mock" && (
+        <p className={styles.demoBanner} role="status">
+          <strong>Demo-modus:</strong> Kate gebruikt vaste voorbeeldantwoorden, Gemini is niet gekoppeld.
+          {status.mock_reason ? ` Oorzaak: ${status.mock_reason}.` : ""}
+        </p>
+      )}
+      {voiceNotice && (
+        <p className={styles.demoBanner} role="status">
+          {voiceNotice}
+        </p>
       )}
 
       {guidance && (

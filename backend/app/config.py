@@ -22,6 +22,18 @@ class Settings(BaseSettings):
     login_max_failures: int = 5
     login_window_seconds: int = 5 * 60
 
+    # --- Kate assistant (chat, voice, speech recognition) --------------------------------------
+    # "mock" answers with canned replies so the app works without any API key.
+    kate_llm_provider: Literal["mock", "gemini"] = "mock"
+    gemini_api_key: SecretStr | None = None
+    gemini_model: str = "gemini-2.5-flash"
+    elevenlabs_api_key: SecretStr | None = None
+    elevenlabs_voice_id: str | None = None
+    elevenlabs_tts_model: str = "eleven_multilingual_v2"
+    elevenlabs_stt_model: str = "scribe_v1"
+    # Per customer, per minute, across all Kate endpoints (LLM/voice calls cost money).
+    kate_max_requests_per_minute: int = 20
+
     @field_validator("demo_password")
     @classmethod
     def _password_strength(cls, value: SecretStr) -> SecretStr:

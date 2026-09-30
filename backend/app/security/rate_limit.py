@@ -33,3 +33,13 @@ class FailureLimiter:
         with self._lock:
             for key in keys:
                 self._failures.pop(key, None)
+
+
+class RequestLimiter(FailureLimiter):
+    """Caps requests per key in a sliding window (cost/abuse protection for LLM and voice calls)."""
+
+    def allow(self, key: str) -> bool:
+        if self.is_blocked(key):
+            return False
+        self.record_failure(key)  # every request counts, not only failures
+        return True

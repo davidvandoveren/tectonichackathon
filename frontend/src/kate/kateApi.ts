@@ -5,6 +5,7 @@ export interface KateStatus {
   voice: boolean;
   speech_recognition: boolean;
   mock_reason?: string | null;
+  voice_reason?: string | null;
 }
 
 export interface KateAction {
@@ -82,7 +83,16 @@ export async function fetchSpeech(text: string): Promise<Blob> {
     body: JSON.stringify({ text }),
   });
   if (!response.ok) {
-    throw new ApiError(response.status, "Kate's stem is niet beschikbaar.");
+    let detail = "Kate's stem is niet beschikbaar.";
+    try {
+      const body: unknown = await response.json();
+      if (body && typeof body === "object" && "detail" in body && typeof body.detail === "string") {
+        detail = body.detail;
+      }
+    } catch {
+      // not JSON: keep the generic message
+    }
+    throw new ApiError(response.status, detail);
   }
   return response.blob();
 }

@@ -19,7 +19,7 @@ from app.domain.seed import seed_bank
 from app.kate import assistant
 from app.kate.context import build_context
 from app.kate.llm import GeminiChat, KateUnavailableError
-from app.kate.voice import ElevenLabsVoice
+from app.kate.voice import ElevenLabsVoice, voice_ids_from
 from app.kate.voices import VoiceKind
 
 OK, FAIL, SKIP = "✅", "❌", "⏭️ "
@@ -68,12 +68,11 @@ def main() -> int:
     if not settings.elevenlabs_api_key:
         print(f"{SKIP} ElevenLabs: ELEVENLABS_API_KEY is empty (browser voice will be used)")
         return 1 if failures else 0
-    voice_ids: dict[VoiceKind, str] = {}
-    female = settings.elevenlabs_voice_id_female or settings.elevenlabs_voice_id
-    if female:
-        voice_ids["female"] = female
-    if settings.elevenlabs_voice_id_male:
-        voice_ids["male"] = settings.elevenlabs_voice_id_male
+    voice_ids = voice_ids_from(
+        settings.elevenlabs_voice_id_female,
+        settings.elevenlabs_voice_id_male,
+        settings.elevenlabs_voice_id,
+    )
     voice = ElevenLabsVoice(
         settings.elevenlabs_api_key.get_secret_value(),
         voice_ids,

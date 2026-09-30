@@ -12,7 +12,7 @@ from app.domain.models import User
 from app.kate import assistant
 from app.kate.context import build_context
 from app.kate.llm import ChatModel, ChatTurn, GeminiChat, KateUnavailableError, MockChat
-from app.kate.voice import ElevenLabsVoice
+from app.kate.voice import ElevenLabsVoice, voice_ids_from
 from app.kate.voices import VoiceKind, VoicePreferences, default_voice
 from app.schemas import ApiModel
 from app.security.rate_limit import RequestLimiter
@@ -43,17 +43,18 @@ def _mock_reason(settings: SettingsDep) -> str | None:
 
 
 def get_voice(settings: SettingsDep) -> ElevenLabsVoice | None:
-    if not settings.elevenlabs_api_key:
+    if (
+        not settings.elevenlabs_api_key
+        or not settings.elevenlabs_api_key.get_secret_value().strip()
+    ):
         return None
-    voice_ids: dict[VoiceKind, str] = {}
-    female = settings.elevenlabs_voice_id_female or settings.elevenlabs_voice_id
-    if female:
-        voice_ids["female"] = female
-    if settings.elevenlabs_voice_id_male:
-        voice_ids["male"] = settings.elevenlabs_voice_id_male
     return ElevenLabsVoice(
         settings.elevenlabs_api_key.get_secret_value(),
-        voice_ids,
+        voice_ids_from(
+            settings.elevenlabs_voice_id_female,
+            settings.elevenlabs_voice_id_male,
+            settings.elevenlabs_voice_id,
+        ),
         settings.elevenlabs_tts_model,
         settings.elevenlabs_stt_model,
     )
@@ -124,6 +125,8 @@ class StatusOut(ApiModel):
     speech_recognition: bool
     # Why Kate runs on canned demo replies (shown to the demo team), or null when Gemini is on.
     mock_reason: str | None = None
+    # Why Kate reads aloud with the browser's voice instead of ElevenLabs, or null.
+    voice_reason: str | None = None
 
 
 class SpeechIn(ApiModel):
@@ -167,6 +170,9 @@ def kate_status(
         voice=voice is not None and voice.can_speak,
         speech_recognition=voice is not None,
         mock_reason=None if is_gemini else _mock_reason(settings),
+        voice_reason=None
+        if voice is not None
+        else "ELEVENLABS_API_KEY ontbreekt in .env (of de server werd niet herstart)",
     )
 
 
@@ -226,7 +232,8 @@ def kate_speech(
     try:
         audio = voice.speak(body.text, prefs.voice_for(user.id))
     except KateUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
+        # The reason is our own text (see kate/voice.py `explain`), never the provider's or a key.
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Kate's stem: {exc}") from exc
     return Response(content=audio, media_type="audio/mpeg")
 
 
@@ -245,5 +252,7 @@ def kate_transcribe(body: TranscribeIn, _: LimitedUser, voice: VoiceDep) -> Tran
     try:
         text = voice.transcribe(audio, body.mime_type)
     except KateUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, f"Spraakherkenning: {exc}"
+        ) from exc
     return TranscribeOut(text=text.strip()[:1000])

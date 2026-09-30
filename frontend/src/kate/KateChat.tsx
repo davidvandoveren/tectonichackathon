@@ -170,8 +170,11 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
         return;
       } catch (err) {
         console.warn("ElevenLabs-stem niet beschikbaar, browserstem wordt gebruikt:", err);
-        setVoiceNotice("Kate's stem (ElevenLabs) werkt nu niet; ik lees voor met de stem van je browser.");
+        const why = err instanceof ApiError ? ` Oorzaak: ${err.detail}` : "";
+        setVoiceNotice(`Kate's stem (ElevenLabs) werkt nu niet; ik lees voor met de stem van je browser.${why}`);
       }
+    } else if (status?.voice_reason) {
+      setVoiceNotice(`Voorlezen met de stem van je browser. ElevenLabs staat uit: ${status.voice_reason}.`);
     }
     speakWithBrowser(text, () => setSpeakingId((current) => (current === id ? null : current)), voice);
   }

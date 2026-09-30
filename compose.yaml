@@ -4,6 +4,10 @@ services:
     build: .
     ports:
       - "127.0.0.1:8080:8080"
+    # Everything in .env (API keys for Gemini/ElevenLabs, ADMIN_USERNAMES, ...) reaches the app.
+    env_file:
+      - path: .env
+        required: false
     environment:
       APP_ENV: development
       COOKIE_SECURE: "false"

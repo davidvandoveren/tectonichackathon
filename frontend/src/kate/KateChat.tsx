@@ -5,12 +5,15 @@ import { AuthContext } from "../auth/AuthContext";
 import {
   fetchSpeech,
   getKateStatus,
+  getKateVoice,
+  setKateVoice,
   sendKateMessage,
   transcribe,
   transferLink,
   type ChatTurn,
   type KateAction,
   type KateStatus,
+  type VoiceKind,
 } from "./kateApi";
 import {
   canRecord,
@@ -65,6 +68,7 @@ export function KateChat() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speakReplies, setSpeakReplies] = useState(false);
+  const [voice, setVoice] = useState<VoiceKind>("female");
   const [speakingId, setSpeakingId] = useState<number | null>(null);
   const [mic, setMic] = useState<MicState>("idle");
   const recording = useRef<StopHandle | null>(null);
@@ -76,6 +80,9 @@ export function KateChat() {
   useEffect(() => {
     if (!open || status) return;
     const controller = new AbortController();
+    getKateVoice(controller.signal)
+      .then((settings) => setVoice(settings.voice))
+      .catch(() => undefined);
     getKateStatus(controller.signal)
       .then(setStatus)
       .catch(() => setStatus({ llm: "mock", voice: false, speech_recognition: false }));
@@ -101,6 +108,16 @@ export function KateChat() {
     setSpeakingId(null);
   }
 
+  async function chooseVoice(kind: VoiceKind) {
+    stopAudio();
+    setVoice(kind);
+    try {
+      setVoice((await setKateVoice(kind)).voice);
+    } catch {
+      // keep the local choice; the next load resyncs
+    }
+  }
+
   function close() {
     stopAudio();
     setOpen(false);
@@ -123,7 +140,7 @@ export function KateChat() {
         // fall through to the browser voice
       }
     }
-    speakWithBrowser(text, () => setSpeakingId(null));
+    speakWithBrowser(text, () => setSpeakingId(null), voice);
   }
 
   async function send(text: string) {
@@ -244,6 +261,24 @@ export function KateChat() {
           </button>
         </div>
       </header>
+
+      {speakReplies && (
+        <div className={styles.voiceBar} role="radiogroup" aria-label="Stem van Kate">
+          <span>Stem van Kate</span>
+          {(["female", "male"] as const).map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              role="radio"
+              aria-checked={voice === kind}
+              className={`${styles.voiceOption} ${voice === kind ? styles.voiceSelected : ""}`}
+              onClick={() => void chooseVoice(kind)}
+            >
+              {kind === "female" ? "Vrouw" : "Man"}
+            </button>
+          ))}
+        </div>
+      )}
 
       {guidance && (
         <p className={styles.guidanceBanner}>

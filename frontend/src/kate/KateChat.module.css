@@ -142,6 +142,43 @@
   background: var(--color-accent);
 }
 
+.voiceBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-navy-800);
+  color: var(--color-text-on-navy);
+  font-size: 0.85rem;
+}
+
+.voiceBar > span {
+  flex: 1;
+  opacity: 0.85;
+}
+
+.voiceOption {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.voiceSelected {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  font-weight: 700;
+}
+
+.voiceOption:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .guidanceBanner {
   display: flex;
   align-items: center;

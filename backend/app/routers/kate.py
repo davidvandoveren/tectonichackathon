@@ -25,9 +25,21 @@ _UNAVAILABLE = "Kate is even niet bereikbaar. Probeer het straks opnieuw."
 
 # --- dependencies ------------------------------------------------------------------------------
 def get_chat_model(settings: SettingsDep) -> ChatModel:
-    if settings.kate_llm_provider == "gemini" and settings.gemini_api_key:
-        return GeminiChat(settings.gemini_api_key.get_secret_value(), settings.gemini_model)
+    if settings.kate_llm_provider != "mock" and settings.gemini_api_key:
+        return GeminiChat(
+            settings.gemini_api_key.get_secret_value(),
+            settings.gemini_model,
+            [m.strip() for m in settings.gemini_fallback_models.split(",")],
+        )
     return MockChat()
+
+
+def _mock_reason(settings: SettingsDep) -> str | None:
+    if settings.kate_llm_provider == "mock":
+        return "KATE_LLM_PROVIDER staat op mock"
+    if not settings.gemini_api_key:
+        return "GEMINI_API_KEY ontbreekt in .env (of de server werd niet herstart)"
+    return None
 
 
 def get_voice(settings: SettingsDep) -> ElevenLabsVoice | None:
@@ -94,6 +106,8 @@ class StatusOut(ApiModel):
     llm: Literal["mock", "gemini"]
     voice: bool
     speech_recognition: bool
+    # Why Kate runs on canned demo replies (shown to the demo team), or null when Gemini is on.
+    mock_reason: str | None = None
 
 
 class SpeechIn(ApiModel):
@@ -122,12 +136,16 @@ class VoiceIn(ApiModel):
 
 # --- endpoints ---------------------------------------------------------------------------------
 @router.get("/status", response_model=StatusOut)
-def kate_status(_: CurrentUser, model: ChatModelDep, voice: VoiceDep) -> StatusOut:
+def kate_status(
+    _: CurrentUser, settings: SettingsDep, model: ChatModelDep, voice: VoiceDep
+) -> StatusOut:
     """Tells the frontend which features are live (it falls back to the browser otherwise)."""
+    is_gemini = model.name == "gemini"
     return StatusOut(
-        llm="gemini" if model.name == "gemini" else "mock",
+        llm="gemini" if is_gemini else "mock",
         voice=voice is not None and voice.can_speak,
         speech_recognition=voice is not None,
+        mock_reason=None if is_gemini else _mock_reason(settings),
     )
 
 

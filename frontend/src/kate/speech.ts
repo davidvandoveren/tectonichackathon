@@ -91,9 +91,19 @@ const FEMALE_HINTS = /female|vrouw|femme|ellen|colette|claire|fenna|lotte|amelie
 const MALE_HINTS = /\bmale\b|man\b|homme|xander|arthur|frank|bart|maarten/i;
 
 function browserVoice(lang: string, kind: "female" | "male"): SpeechSynthesisVoice | undefined {
-  const voices = speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(lang.slice(0, 2)));
+  const all = speechSynthesis.getVoices();
+  const voices = all.filter((v) => v.lang.toLowerCase().startsWith(lang.slice(0, 2)));
   const hint = kind === "male" ? MALE_HINTS : FEMALE_HINTS;
   return voices.find((v) => hint.test(v.name)) ?? voices.find((v) => v.lang === lang) ?? voices[0];
+}
+
+let currentUtterances: SpeechSynthesisUtterance[] = []; // kept referenced: Chrome drops GC'd ones
+let keepAlive: number | undefined;
+
+/** Split into sentences: Chrome silently stops utterances longer than ~15 seconds. */
+function chunks(text: string): string[] {
+  const parts = text.match(/[^.!?]+[.!?]*\s*/g) ?? [text];
+  return parts.map((p) => p.trim()).filter(Boolean);
 }
 
 /** Fallback when ElevenLabs is not configured. Browsers rarely label gender, so this is best effort. */
@@ -103,21 +113,53 @@ export function speakWithBrowser(
   kind: "female" | "male" = "female",
   lang = "nl-BE"
 ): void {
-  if (typeof speechSynthesis === "undefined") {
+  if (typeof speechSynthesis === "undefined" || typeof SpeechSynthesisUtterance === "undefined") {
     onEnd?.();
     return;
   }
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
+  stopBrowserSpeech();
   const voice = browserVoice(lang, kind);
-  if (voice) utterance.voice = voice;
-  if (kind === "male" && (!voice || !MALE_HINTS.test(voice.name))) utterance.pitch = 0.8;
-  utterance.onend = () => onEnd?.();
-  utterance.onerror = () => onEnd?.();
-  speechSynthesis.speak(utterance);
+  const pieces = chunks(text);
+  currentUtterances = pieces.map((piece, index) => {
+    const utterance = new SpeechSynthesisUtterance(piece);
+    utterance.lang = voice?.lang ?? lang;
+    if (voice) utterance.voice = voice;
+    if (kind === "male" && (!voice || !MALE_HINTS.test(voice.name))) utterance.pitch = 0.8;
+    if (index === pieces.length - 1) {
+      utterance.onend = () => finish(onEnd);
+    }
+    utterance.onerror = (event) => {
+      // "interrupted"/"canceled" is us stopping on purpose.
+      if (event.error !== "interrupted" && event.error !== "canceled") console.warn("Voorlezen mislukt:", event.error);
+      finish(onEnd);
+    };
+    return utterance;
+  });
+  // Chrome drops speak() calls that follow cancel() in the same tick.
+  window.setTimeout(() => {
+    currentUtterances.forEach((utterance) => speechSynthesis.speak(utterance));
+    // Chrome pauses long speech in the background; nudging it keeps it going.
+    keepAlive = window.setInterval(() => {
+      if (!speechSynthesis.speaking) return;
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }, 10_000);
+  }, 60);
+}
+
+function finish(onEnd?: () => void): void {
+  window.clearInterval(keepAlive);
+  currentUtterances = [];
+  onEnd?.();
 }
 
 export function stopBrowserSpeech(): void {
+  window.clearInterval(keepAlive);
+  currentUtterances = [];
   if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+}
+
+/** Voices load asynchronously in Chrome; ask early so the first "Voorlezen" has one. */
+export function warmUpVoices(): void {
+  if (typeof speechSynthesis !== "undefined") speechSynthesis.getVoices();
 }

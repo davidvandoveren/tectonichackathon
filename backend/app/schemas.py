@@ -100,3 +100,8 @@ class InsightOut(ApiModel):
     cta_label: str
     cta_target: str
     reason: str
+    # Added by the moments engine (see docs/api.md); older clients can ignore them.
+    moment: str | None = None
+    urgency: int | None = Field(default=None, ge=0, le=100)
+    channel: str | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)

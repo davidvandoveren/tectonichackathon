@@ -33,26 +33,34 @@ Werkende demo boven breedte. We kiezen **één demo-verhaal** dat de twee demosc
 
 ## 3. Taakverdeling
 
-### 3.0 Werkelijke verdeling (stand 30/09, ±20:30) – dit geldt
+### 3.0 Werkelijke verdeling (stand 30/09, ±22:00) – dit geldt
 
 De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebouwd is. **Deze tabel is de waarheid**; pas hem aan zodra je iets oppakt.
 
 | Onderdeel | Eigenaar | Code | Status |
 |---|---|---|---|
 | Basis-app: login, rekeningen, overschrijvingen, security, CI, Cloud Run | David | `backend/app/{routers,security,domain}/`, `Dockerfile`, `.github/` | ✅ op `main`, live |
-| UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David · **Claude-sessie UI** (#18) | `frontend/**` (behalve `kate/`, `subscriptions/`) | 🚧 `feature/kbc-touch-ui` |
+| UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David · **Claude-sessie UI** (#18) | `frontend/**` (behalve `kate/`, `subscriptions/`) | ✅ #27 op `main` (Cloud Run-uitrol wordt nagekeken) |
 | Kate-chat (Gemini/mock), stem (ElevenLabs), erfenis-modus | Sander | `backend/app/kate/`, `routers/kate.py`, `frontend/src/kate/` | ✅ #12 op `main` |
 | Abonnementenbeheer ("Gebruik je dit nog?") | Sander | `backend/app/subscriptions/`, `routers/subscriptions.py`, `frontend/src/subscriptions/` | ✅ #14 op `main` |
 | Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine, data-toestemming (`PUT /kate/consent`) | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | ✅ #15 op `main` |
-| Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
-| Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | 🔍 PR #20 |
+| Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | ✅ #16 op `main` |
+| Feed-kaart → *Bevestigen*: `GET /skills/feed-actions`, `POST /proposals/from-moment` (server rekent het moment zelf opnieuw uit) | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #34 |
+| Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | ✅ #20 op `main` |
 | README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
-| Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #29 (issue #26), **MUST** |
-| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🚧 `feature/insights-engine` – niet aan beginnen |
-| Jury-dashboard (10.000 klanten) | Sander (#25) | – | 🚧 |
-| Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David (frontend) | `frontend/` | ⏳ na #15/#16 |
+| Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #29, **MUST** – niet aan beginnen |
+| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🔍 PR #37 |
+| **Fix #35:** geen `deal_match` (of ander moment) op gevoelige uitgaven zoals de apotheek; openbaar vervoer is geen deal-handelaar | Alexandre · **Claude-sessie Insights** (#35) | `backend/app/moments/` (+ tests) | 🔍 PR #45 |
+| Momenten `card_package_waste` + `card_package_gap` (ontwerp §5.2), prijzen uit Skills `cards`-pack (niet dupliceren) | Alexandre · **Claude-sessie Insights** (#39) | `backend/app/moments/` (+ tests), feed-sectie `docs/api.md` | 🔍 PR #47 |
+| Jury-dashboard (10.000 klanten) | Sander (#25) | – | 🔍 PR #30 |
+| **Family circle**: gekoppelde accounts (wederzijdse toestemming, rechten per link), gedeeld potje, 18 jaar = voogdij stopt | Sander · **Claude-sessie Family** (#28) | `backend/app/family/`, `routers/family.py`, `frontend/src/family/` | ✅ eerste versie klaar (branch `claude/tectonic-hackathon-repo-setup-u4va4c`) |
+| Sleutelcheck Gemini + ElevenLabs (`check_kate_keys`) | – | – | 🔍 PR #33 |
+| Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David · **Claude-sessie UI** (#18) | `frontend/` | ⏳ backend klaar zodra #34 op `main` staat (kaartflow in `docs/api.md`) |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
-| Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |
+| Aikido baseline + eind-scan | Alexandre (zelf, in Aikido) | – | 🚧 baseline bezig |
+| Builderbase-projecttekst + demoscript (< 3 min) | Alexandre · **Claude-sessie Personas** (#42) | nieuw: `docs/submission.md`, `docs/demo-script.md` | 🔍 PR #50 |
+| Personas briefing-scenario's: **financieel krap** (`cashflow_risk` + bewuste stilte) en **erfenis** (context voor erfenis-modus) | Alexandre · **Claude-sessie Personas** (#43) | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #48 (na #29) |
+| Demovideo opnemen | **nog toe te wijzen** | – | ⏳ na demoscript (#42) |
 
 **David werkt met twee Claude-sessies tegelijk; zo zijn ze afgebakend:**
 
@@ -69,7 +77,8 @@ Nieuwe taken worden eerst als issue geclaimd (regel 0) voor een van beide sessie
 - Eén lijst gevoelige categorieën: nu dubbel in `kate/context.py` en `subscriptions/detect.py` → samenvoegen in één gedeelde module.
 - Eén bron voor kaartpakketprijzen: Skills `cards`-pack en `moments/catalog.py`.
 - ✅ Alexandre = Alexandre Chun = "Chun" uit 3.1.
-- **Brein → acties is al gekoppeld:** #16 `draft_for_moment()` zet elk moment uit #15 (ook `income_missing`) om in een vooraf ingevulde Skills-actie. Feed-kaarten kunnen dus een *Bevestigen*-knop krijgen zonder extra backendwerk.
+- **Brein → acties:** #16 `draft_for_moment()` zet elk moment uit #15 (ook `income_missing`) om in een vooraf ingevulde Skills-actie; #34 stelt dat beschikbaar voor de feed-kaarten (`/skills/feed-actions` + `/proposals/from-moment`).
+- **Privacy (#35, Alexandre):** de engine maakt een `deal_match` van een vaste apotheek (gezondheid = gevoelig) en van De Lijn/NMBS. Skills biedt daar sinds #34 geen actie meer aan, maar de kaart zelf staat nog in de feed; fix hoort in `moments/`.
 - **Toestemming = twee lagen, één scherm:** data (`PUT /kate/consent {domain, allowed}`, #15) en acties (`PUT /skills/consent/{action_id}`, #16). Abonnementen (#14) moeten het domein `spending` respecteren (Sander).
 
 ### 3.1 Oorspronkelijke verdeling (achterhaald, ter referentie)

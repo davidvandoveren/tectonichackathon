@@ -37,7 +37,7 @@ function notifyUnauthorized(): void {
   }
 }
 
-type HttpMethod = "GET" | "POST";
+type HttpMethod = "GET" | "POST" | "PUT";
 
 interface RequestOptions {
   method?: HttpMethod;
@@ -98,4 +98,6 @@ export const apiClient = {
   get: <T>(path: string, signal?: AbortSignal): Promise<T> => request<T>(path, { method: "GET", signal }),
   post: <T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> =>
     request<T>(path, { method: "POST", body, signal }),
+  put: <T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> =>
+    request<T>(path, { method: "PUT", body, signal }),
 };

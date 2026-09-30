@@ -69,7 +69,9 @@ def test_kate_requires_login(client: TestClient) -> None:
 
 def test_status_defaults_to_mock_without_keys(emma: TestClient) -> None:
     response = emma.get("/api/v1/kate/status")
-    assert response.json() == {"llm": "mock", "voice": False, "speech_recognition": False}
+    body = response.json()
+    assert (body["llm"], body["voice"], body["speech_recognition"]) == ("mock", False, False)
+    assert "GEMINI_API_KEY" in body["mock_reason"]
 
 
 def test_mock_chat_discloses_ai_and_prefills_transfer(emma: TestClient) -> None:
@@ -86,12 +88,31 @@ def test_mock_chat_discloses_ai_and_prefills_transfer(emma: TestClient) -> None:
     }
 
 
-def test_mock_chat_switches_to_guidance_for_bereavement(emma: TestClient) -> None:
-    body = emma.post(
+def test_mock_chat_bereavement_first_empathy_then_offer_then_plan(emma: TestClient) -> None:
+    first = emma.post(
         "/api/v1/kate/chat", json={"message": "Mijn moeder is overleden, wat met de erfenis?"}
     ).json()
-    assert body["mode"] == "guidance"
-    assert body["action"]["type"] == "advisor_handoff"
+    assert first["mode"] == "guidance"
+    assert first["action"]["type"] == "none"  # no plan or hand-off before the customer says yes
+    assert "gecondoleerd" in first["reply"] and "financieel" in first["reply"]
+
+    history = [
+        {"role": "user", "text": "Mijn moeder is overleden, wat met de erfenis?"},
+        {"role": "kate", "text": first["reply"]},
+    ]
+    second = emma.post("/api/v1/kate/chat", json={"message": "ja graag", "history": history})
+    assert second.json()["action"]["type"] == "advisor_handoff"
+
+
+def test_style_guide_is_part_of_the_prompt() -> None:
+    from app.kate.assistant import SYSTEM_PROMPT, load_style_guide
+
+    guide = load_style_guide()
+    assert "Spiegel de klant" in guide
+    assert "tenzij de klant expliciet" in guide.lower()
+    assert guide in SYSTEM_PROMPT
+    # The hard rules come after the guide and win over it.
+    assert SYSTEM_PROMPT.index("HARDE REGELS") > SYSTEM_PROMPT.index("GEDRAGSGIDS")
 
 
 def test_context_only_contains_own_data(emma: TestClient) -> None:
@@ -114,7 +135,7 @@ def test_invalid_model_action_is_dropped(emma: TestClient) -> None:
     _use_model(emma, model)
     body = emma.post("/api/v1/kate/chat", json={"message": "hoi"}).json()
     assert body["action"]["type"] == "none"
-    assert body["reply"].startswith("Ik ben Kate")  # AI disclosure enforced
+    assert body["reply"].startswith("Kate hier, digitale assistent (AI).")  # AI disclosure enforced
 
 
 def test_unknown_action_type_is_dropped(emma: TestClient) -> None:

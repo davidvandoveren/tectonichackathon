@@ -47,9 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await logoutRequest();
-    setUser(null);
-    setStatus("unauthenticated");
+    try {
+      await logoutRequest();
+    } catch {
+      // Still sign out locally: the session cookie expires on its own on the server.
+    } finally {
+      setUser(null);
+      setStatus("unauthenticated");
+    }
   }, []);
 
   return <AuthContext.Provider value={{ status, user, login, demoLogin, logout }}>{children}</AuthContext.Provider>;

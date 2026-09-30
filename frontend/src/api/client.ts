@@ -1,7 +1,7 @@
 /**
  * Small typed fetch wrapper for the `/api/v1` backend.
  * - Session is an HttpOnly cookie; we never read or store a token.
- * - Every state-changing request sends `Content-Type: application/json`.
+ * - Every state-changing request sends `Content-Type: application/json` and a JSON body.
  * - Any 401 response notifies subscribers so the app can route to /login.
  */
 
@@ -64,9 +64,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     signal,
   };
 
-  if (body !== undefined) {
+  if (method !== "GET") {
+    // Every state-changing call is JSON, even without a payload: the backend's CSRF guard answers
+    // 415 to a POST without `Content-Type: application/json` (that broke logging out).
     headers["Content-Type"] = "application/json";
-    init.body = JSON.stringify(body);
+    init.body = JSON.stringify(body ?? {});
   }
 
   let response: Response;

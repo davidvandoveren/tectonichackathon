@@ -1,11 +1,9 @@
+/* In the flow at the bottom of the mobile shell (not fixed), so it can never scroll away. */
 .bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   height: var(--tabbar-height);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: content-box;
+  padding-bottom: var(--home-indicator-space, env(safe-area-inset-bottom, 0px));
   background: var(--kbc-surface);
   border-top: 1px solid var(--kbc-line);
   flex-shrink: 0;

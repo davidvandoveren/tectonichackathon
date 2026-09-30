@@ -8,8 +8,9 @@ import httpx
 import pytest
 
 from app.config import Settings
+from app.kate import assistant
 from app.kate.context import CustomerContext
-from app.kate.llm import GeminiChat, KateUnavailableError, MockChat, _answer_text
+from app.kate.llm import ChatTurn, GeminiChat, KateUnavailableError, MockChat, _answer_text
 from app.routers.kate import get_chat_model
 from tests.conftest import DEMO_PASSWORD
 
@@ -76,3 +77,64 @@ def test_answer_skips_thought_parts_and_rejects_empty() -> None:
         _answer_text({"candidates": []})
     with pytest.raises(ValueError):
         _answer_text({"candidates": [{"content": {"parts": [{"text": "  "}]}}]})
+
+
+# --- robustness against real-world model output and client history ------------------------------
+def test_history_is_reshaped_to_what_gemini_accepts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """After a failed request the browser sends two user turns in a row, and the window can start
+    on a Kate turn. Gemini rejects that, which used to break every following message."""
+    sent: list[Any] = []
+
+    def fake_post(url: str, **kwargs: Any) -> httpx.Response:
+        sent.append(kwargs["json"]["contents"])
+        return _response(
+            200, {"candidates": [{"content": {"parts": [{"text": json.dumps(ANSWER)}]}}]}
+        )
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    turns = [
+        ChatTurn("kate", "Hallo, ik ben Kate."),
+        ChatTurn("user", "vraag die faalde"),
+        ChatTurn("user", "nieuwe vraag"),
+    ]
+    GeminiChat("k", "m").complete("system", turns, CONTEXT)
+    roles = [c["role"] for c in sent[0]]
+    assert roles == ["user"]
+    assert [p["text"] for p in sent[0][0]["parts"]] == ["vraag die faalde", "nieuwe vraag"]
+
+
+def test_malformed_candidate_is_unavailable_not_a_crash() -> None:
+    with pytest.raises(ValueError):
+        _answer_text({"candidates": ["oops"]})
+    with pytest.raises(ValueError):
+        _answer_text({"candidates": [{"finishReason": "SAFETY"}]})
+
+
+def test_cut_off_json_shows_the_text_that_made_it() -> None:
+    reply = assistant._parse(
+        '{"reply": "Je gaf deze maand \\"veel\\" uit aan',
+    )
+    assert reply.reply == 'Je gaf deze maand "veel" uit aan'
+    assert "{" not in assistant._parse('{"mode": "normal", "rep').reply
+
+
+@pytest.mark.parametrize(
+    ("amount", "expected"),
+    [("25,00", "25.00"), ("€ 25", "25"), ("1.250,50", "1250.50"), ("25 euro", "25"), (25, "25")],
+)
+def test_loosely_written_transfer_amounts_are_kept(amount: object, expected: str) -> None:
+    raw = json.dumps(
+        {
+            "reply": "Klaargezet.",
+            "action": {
+                "type": "transfer",
+                "to_name": "Lucas",
+                "amount": amount,
+                "description": None,
+            },
+        }
+    )
+    action = assistant._parse(raw).action
+    assert isinstance(action, assistant.TransferAction)
+    assert str(action.amount) == expected
+    assert action.description == ""

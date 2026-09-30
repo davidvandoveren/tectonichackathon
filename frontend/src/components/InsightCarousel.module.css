@@ -7,8 +7,11 @@
   margin: 0 calc(var(--space-4) * -1);
 }
 
+/* One card and a peek of the next, like a real banking app (the card used to shrink to its text). */
 .item {
   display: flex;
+  flex: 0 0 min(84%, 340px);
+  scroll-snap-align: start;
 }
 
 .item:first-child {

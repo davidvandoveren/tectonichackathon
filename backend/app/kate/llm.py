@@ -50,10 +50,7 @@ class GeminiChat:
     def complete(self, system: str, turns: list[ChatTurn], context: CustomerContext) -> str:
         body = {
             "systemInstruction": {"parts": [{"text": system}]},
-            "contents": [
-                {"role": "user" if t.role == "user" else "model", "parts": [{"text": t.text}]}
-                for t in turns
-            ],
+            "contents": _gemini_contents(turns),
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "temperature": 0.4,
@@ -98,12 +95,34 @@ class GeminiChat:
         raise KateUnavailableError("No Gemini model available") from last_error
 
 
+def _gemini_contents(turns: list[ChatTurn]) -> list[dict[str, object]]:
+    """Turns as Gemini wants them: starting with the user and alternating user/model.
+
+    The browser keeps the conversation, so after a failed request it can send two user turns in a
+    row, and the history window can start on a Kate turn. Gemini rejects such a conversation, and
+    then every next message fails too. Merge same-role neighbours and drop leading model turns.
+    """
+    merged: list[tuple[str, list[dict[str, str]]]] = []
+    for turn in turns:
+        role = "user" if turn.role == "user" else "model"
+        if not merged and role == "model":
+            continue
+        if merged and merged[-1][0] == role:
+            merged[-1][1].append({"text": turn.text})
+        else:
+            merged.append((role, [{"text": turn.text}]))
+    return [{"role": role, "parts": parts} for role, parts in merged]
+
+
 def _answer_text(payload: dict[str, object]) -> str:
     """The answer text, skipping the model's internal "thought" parts."""
     candidates = payload.get("candidates")
-    if not isinstance(candidates, list) or not candidates:
+    if not isinstance(candidates, list) or not candidates or not isinstance(candidates[0], dict):
         raise ValueError("no candidates (blocked or empty answer)")
-    parts = candidates[0].get("content", {}).get("parts", [])
+    content = candidates[0].get("content")
+    parts = content.get("parts", []) if isinstance(content, dict) else []
+    if not isinstance(parts, list):
+        raise ValueError("malformed answer")
     text = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
     if not text.strip():
         raise ValueError("empty answer")

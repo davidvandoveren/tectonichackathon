@@ -4,66 +4,139 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-6) var(--space-4);
-  background: var(--kbc-bg-muted);
+  padding: var(--space-5) var(--space-4);
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, var(--kbc-bg-muted) 70%);
 }
 
 .device {
-  /* iPhone proportions (390 x 844): height follows the viewport, width follows the ratio. */
+  /* iPhone proportions (390 x 844 screen): height follows the viewport, width the ratio. */
   position: relative;
-  height: min(var(--phone-height), calc(100vh - var(--space-8)));
-  aspect-ratio: 390 / 844;
-  width: auto;
-  border-radius: 48px;
-  padding: 10px;
-  background: #111418;
+  height: min(calc(var(--phone-height) + 24px), calc(100vh - var(--space-6)));
+  aspect-ratio: 414 / 868;
+  /* Without this, wide content (a carousel) stretches the phone: aspect-ratio yields to min-content. */
+  min-width: 0;
+  flex-shrink: 0;
+  border-radius: 58px;
+  padding: 12px;
+  background: linear-gradient(145deg, #3a3f46, #16191d 40%, #2a2e34);
   box-shadow:
-    0 0 0 1px #2b3036,
-    0 20px 50px rgba(13, 42, 80, 0.25);
+    inset 0 0 0 2px #50565e,
+    inset 0 0 0 5px #0b0d10,
+    0 30px 60px rgba(13, 42, 80, 0.28),
+    0 8px 18px rgba(13, 42, 80, 0.18);
 }
 
-/* Dynamic Island */
-.device::before {
-  content: "";
+/* Side buttons (titanium). */
+.sideButton {
   position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30%;
-  height: 26px;
-  border-radius: 999px;
-  background: #000;
-  z-index: 2;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #2a2e34, #5b626b);
+}
+
+.action,
+.volumeUp,
+.volumeDown {
+  left: -3px;
+}
+
+.action {
+  top: 15%;
+  height: 4%;
+}
+
+.volumeUp {
+  top: 22%;
+  height: 7.5%;
+}
+
+.volumeDown {
+  top: 31%;
+  height: 7.5%;
+}
+
+.power {
+  right: -3px;
+  top: 25%;
+  height: 11%;
+  background: linear-gradient(270deg, #2a2e34, #5b626b);
 }
 
 .screen {
+  position: relative;
   height: 100%;
   width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* Room for the status bar / Dynamic Island, and no desktop scrollbar inside the phone. */
-  padding-top: 44px;
-  scrollbar-width: none;
-  border-radius: 38px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 46px;
   background: var(--kbc-surface);
   display: flex;
   flex-direction: column;
+  /* Room for the home indicator under the tab bar and Kate's composer. */
+  --home-indicator-space: 22px;
+}
+
+.statusBar {
   position: relative;
-  /* Establishes a containing block for position:fixed descendants (the tab
-     bar, floating toggle), so they pin to this simulated screen instead of
-     the real browser viewport. */
+  flex-shrink: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 26px 0 34px;
+  background: var(--kbc-surface);
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  z-index: 70;
+}
+
+.time {
+  min-width: 54px;
+  text-align: center;
+}
+
+.island {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 31%;
+  height: 32px;
+  border-radius: 999px;
+  background: #000;
+}
+
+.indicators {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The app. `transform` makes this the containing block for position:fixed descendants (Kate,
+   toasts), so they pin to the simulated screen instead of the browser window. It does not scroll
+   itself: the mobile shell's content area does. */
+.viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   transform: translateZ(0);
-  /* Kate's overlay sizes itself to the app column; inside the frame that is the screen. */
-  --max-width-app: 100vw;
+  --app-height: 100%;
+  --max-width-app: 100%;
 }
 
-.screen::-webkit-scrollbar {
-  display: none;
-}
-
-/* Kate's floating launcher sits in the top bar, left of the bell, instead of under the island. */
-.screen button[aria-label="Open Kate"] {
-  top: 50px;
-  right: 60px;
-  min-height: 36px;
+.homeIndicator {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 36%;
+  height: 5px;
+  border-radius: 999px;
+  background: #0b0d10;
+  z-index: 80;
+  pointer-events: none;
 }

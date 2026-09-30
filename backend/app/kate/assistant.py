@@ -67,6 +67,13 @@ def system_prompt(style_guide: str | None = None) -> str:
 
 SYSTEM_PROMPT = system_prompt()
 
+# Said per turn, so the model does not re-introduce herself in every reply (rule 1 is met once).
+FIRST_TURN_NOTE = "GESPREKSSTAND: dit is je eerste antwoord; zeg kort dat je Kate bent, een AI."
+LATER_TURN_NOTE = (
+    "GESPREKSSTAND: je hebt je al voorgesteld als AI. Stel je niet opnieuw voor en begin niet "
+    "met een begroeting; antwoord meteen op de vraag. Vraagt de klant of je een AI bent: ja."
+)
+
 
 class NoAction(BaseModel):
     type: Literal["none"]
@@ -88,6 +95,12 @@ class AdvisorHandoffAction(BaseModel):
     type: Literal["advisor_handoff"]
     summary: str = Field(min_length=1, max_length=600)
 
+    @field_validator("summary", mode="before")
+    @classmethod
+    def _shorten(cls, value: object) -> object:
+        # A long summary used to fail validation and silently drop the whole handoff.
+        return clean_text(value, 600) if isinstance(value, str) else value
+
 
 Action = Annotated[NoAction | TransferAction | AdvisorHandoffAction, Field(discriminator="type")]
 _ACTION: TypeAdapter[NoAction | TransferAction | AdvisorHandoffAction] = TypeAdapter(Action)
@@ -104,10 +117,13 @@ def chat(
     model: ChatModel, context: CustomerContext, history: list[ChatTurn], message: str
 ) -> KateReply:
     turns = [*history, ChatTurn(role="user", text=message)]
-    system = f"{SYSTEM_PROMPT}\n<customer_data>\n{context.as_data_block()}\n</customer_data>"
+    is_first = not any(t.role == "kate" for t in history)
+    system = (
+        f"{SYSTEM_PROMPT}\n{FIRST_TURN_NOTE if is_first else LATER_TURN_NOTE}\n"
+        f"<customer_data>\n{context.as_data_block()}\n</customer_data>"
+    )
     raw = model.complete(system, turns, context)
     reply = _parse(raw)
-    is_first = not any(t.role == "kate" for t in history)
     if is_first and "AI" not in reply.reply:
         # AI Act art. 50 transparency, even if the model forgot rule 1.
         text = f"{AI_DISCLOSURE} {reply.reply}"[:MAX_REPLY]

@@ -274,8 +274,15 @@
 
 .userRow {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
   animation: fadeIn 0.2s ease-out;
+}
+
+.shortenedNote {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
 }
 
 .kateRow {
@@ -671,6 +678,11 @@
   color: var(--color-text-muted);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
+}
+
+.counterOver {
+  color: var(--color-danger);
+  font-weight: 600;
 }
 
 .crashNotice {

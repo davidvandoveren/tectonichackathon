@@ -7,6 +7,7 @@ import {
   fetchSpeech,
   getKateStatus,
   getKateVoice,
+  MAX_MESSAGE,
   setKateVoice,
   sendKateMessage,
   transcribe,
@@ -47,6 +48,8 @@ interface Message extends ChatTurn {
   id: number;
   action?: KateAction;
   guidance?: boolean;
+  /** A user question that was longer than MAX_MESSAGE: Kate only read the start. */
+  shortened?: boolean;
 }
 
 /** Shown on screen and sent as Kate's first turn: she has already said she is an AI. */
@@ -60,8 +63,7 @@ const SUGGESTIONS = [
   "Mijn moeder is overleden, wat moet ik doen?",
 ];
 
-/** Same limit as the API; longer questions are cut here instead of failing. */
-const MAX_MESSAGE = 1000;
+const SHORTENED_NOTE = `Je vraag was lang: Kate las de eerste ${MAX_MESSAGE} tekens.`;
 
 type MicState = "idle" | "listening" | "transcribing";
 type StopHandle = Recording | { stop: () => void };
@@ -104,6 +106,7 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
   const recording = useRef<StopHandle | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const nextId = useRef(1);
+  const inFlight = useRef(false);
   const listEnd = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -180,13 +183,20 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
   }
 
   async function send(text: string) {
-    const message = text.trim().slice(0, MAX_MESSAGE);
-    if (!message || busy) return;
+    const trimmed = text.trim();
+    // A ref, not the `busy` state: two submits in the same tick (double tap, Enter + click, voice
+    // finishing while typing) both see a stale `busy === false` and would send twice.
+    if (!trimmed || inFlight.current) return;
+    inFlight.current = true;
+    // Too long (pasted text, a long voice transcript): cut and say so, never refuse or fail.
+    const shortened = trimmed.length > MAX_MESSAGE;
+    const message = trimmed.slice(0, MAX_MESSAGE);
+    const userId = nextId.current++;
     const history: ChatTurn[] = [
       { role: "kate", text: GREETING },
       ...messages.map(({ role, text: t }) => ({ role, text: t })),
     ];
-    setMessages((current) => [...current, { id: nextId.current++, role: "user", text: message }]);
+    setMessages((current) => [...current, { id: userId, role: "user", text: message, shortened }]);
     setInput("");
     setError(null);
     setBusy(true);
@@ -194,13 +204,14 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
       const response = await sendKateMessage(message, history);
       const id = nextId.current++;
       setMessages((current) => [
-        ...current,
+        ...current.map((m) => (m.id === userId && response.truncated ? { ...m, shortened: true } : m)),
         { id, role: "kate", text: response.reply, action: response.action, guidance: response.mode === "guidance" },
       ]);
       if (speakReplies) void speak(id, response.reply);
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Kate is even niet bereikbaar.");
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
@@ -357,6 +368,7 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
           message.role === "user" ? (
             <div key={message.id} className={styles.userRow}>
               <p className={`${styles.bubble} ${styles.user}`}>{message.text}</p>
+              {message.shortened && <p className={styles.shortenedNote}>{SHORTENED_NOTE}</p>}
             </div>
           ) : (
             <div key={message.id} className={styles.kateRow}>
@@ -423,14 +435,20 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder={mic === "transcribing" ? "Even omzetten naar tekst…" : "Vraag het aan Kate"}
-              maxLength={MAX_MESSAGE}
               aria-label="Bericht aan Kate"
               aria-describedby={input.length > MAX_MESSAGE - 200 ? "kate-count" : undefined}
+              aria-invalid={input.length > MAX_MESSAGE || undefined}
               disabled={mic === "transcribing"}
             />
+            {/* No maxLength: a paste would be cut silently. The counter warns, send shortens. */}
             {input.length > MAX_MESSAGE - 200 && (
-              <span id="kate-count" className={styles.counter} aria-live="polite">
+              <span
+                id="kate-count"
+                className={`${styles.counter} ${input.length > MAX_MESSAGE ? styles.counterOver : ""}`}
+                aria-live="polite"
+              >
                 {input.length}/{MAX_MESSAGE}
+                {input.length > MAX_MESSAGE ? " · te lang, Kate leest het begin" : ""}
               </span>
             )}
             {input.trim() ? (

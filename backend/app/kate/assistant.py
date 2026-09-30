@@ -107,7 +107,8 @@ def chat(
     is_first = not any(t.role == "kate" for t in history)
     if is_first and "AI" not in reply.reply:
         # AI Act art. 50 transparency, even if the model forgot rule 1.
-        reply = KateReply(f"{AI_DISCLOSURE} {reply.reply}", reply.mode, reply.action)
+        text = f"{AI_DISCLOSURE} {reply.reply}"[:MAX_REPLY]
+        reply = KateReply(text, reply.mode, reply.action)
     return reply
 
 

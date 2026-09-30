@@ -5,7 +5,7 @@ import binascii
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.dependencies import BankDep, CurrentUser, SettingsDep, TodayDep
 from app.domain.models import User
@@ -78,14 +78,30 @@ LimitedUser = Annotated[User, Depends(rate_limited_user)]
 
 
 # --- schemas -----------------------------------------------------------------------------------
+# Hard caps against abuse; anything between the soft limit and the cap is trimmed, never refused,
+# so a long earlier answer can never make the next question fail.
+MAX_TURN_TEXT = assistant.MAX_REPLY
+MAX_HISTORY = 10
+
+
 class ChatTurnIn(ApiModel):
     role: Literal["user", "kate"]
-    text: str = Field(min_length=1, max_length=1200)
+    text: str = Field(min_length=1, max_length=8000)
+
+    @field_validator("text")
+    @classmethod
+    def _trim(cls, value: str) -> str:
+        return value[:MAX_TURN_TEXT]
 
 
 class ChatIn(ApiModel):
     message: str = Field(min_length=1, max_length=1000)
-    history: list[ChatTurnIn] = Field(default_factory=list, max_length=10)
+    history: list[ChatTurnIn] = Field(default_factory=list, max_length=100)
+
+    @field_validator("history")
+    @classmethod
+    def _recent_only(cls, value: list[ChatTurnIn]) -> list[ChatTurnIn]:
+        return value[-MAX_HISTORY:]
 
 
 class ActionOut(ApiModel):
@@ -111,7 +127,12 @@ class StatusOut(ApiModel):
 
 
 class SpeechIn(ApiModel):
-    text: str = Field(min_length=1, max_length=assistant.MAX_REPLY)
+    text: str = Field(min_length=1, max_length=8000)
+
+    @field_validator("text")
+    @classmethod
+    def _trim(cls, value: str) -> str:
+        return value[: assistant.MAX_REPLY]
 
 
 class TranscribeIn(ApiModel):

@@ -49,6 +49,80 @@ This merges our strongest candidates into one story: the Moments Engine (old ide
 4. **Marie** *talks* to Kate (voice) → calm answer + "Shall I book a call with your advisor?"
 5. Close on the trust screen + one line on how it scales (rules for everyone, LLM only on demand).
 
+## Kate 2.0 – additions from Sander's team briefing
+
+Same direction as above, framed as **the brain behind the next generation of Kate**. Today Kate works from 140+ predefined situations. Kate 2.0 understands customers through their *situation, needs and timing* instead of loose rules. We show it inside a simulated KBC Mobile environment and build no new app. Goal: a **stronger relationship**, not more product sales.
+
+### Three pillars
+
+1. **Pick up signals:** transactions, in-app behavior, life events, and what the customer tells Kate.
+2. **Recognise situation and needs:** life phase plus what is going on right now.
+3. **Right moment, right channel:** feed card, push, SMS/mail, or even a phone call.
+
+### Feature ideas (with their guardrails)
+
+| Feature | Idea | Guardrails |
+|---|---|---|
+| **a. Urgency meter** | Every action gets an urgency score. More urgent means a more direct channel: feed card → push → SMS/mail → (optional) **AI phone call** via ElevenLabs. | Always say it's an AI (AI Act Art. 50, in force since 2 Aug 2026). Kate says so at the start of every call. Call only with per-channel opt-in and only at high urgency. **Show when Kate deliberately sends nothing**, because not spamming is a feature. |
+| **b. Transaction tracker** | Categorise transactions, spot patterns and life events (new salary, rent disappears, salary missing, big purchase), then make suggestions. | **Never infer or label sensitive categories** (health, religion, politics, trade union, sexual orientation): label them "other", and they never feed the profile. Descriptions are untrusted data, never LLM instructions. |
+| **c. Big financial decisions** | Buying a home, inheritance, moving in together, first job, retirement: a tailored step plan, info gathering, explanation, preparation. Example: *"my mother died, what do I do with the inheritance?"* → Kate switches to a **guidance mode** (step plan, documents, no marketing). | **The decision always stays with a human**: Kate prepares a hand-off to a KBC advisor with full context. **Access to the deceased's products only after heir verification** (an authorization check, relevant for Aikido). |
+| **d. Investing** | Explain strategies, help the customer understand their own situation and risk profile, prepare for an advisor meeting. | Neutral and educational, no "buy X" advice (MiFID, suitability test). Portfolio management is at most a concept with explicit consent + human advisor, and never autonomous trading. |
+| **e. Subscription manager** | Detect recurring payments: price increases, duplicate subscriptions ("two streaming services with the same offer"), forgotten trials that became paid. Saves the customer money with data the bank already has. | The bank doesn't know usage, so never guess it. Ask *"Do you still use this?"* with *yes / no, remind me to cancel*. Don't analyse subscriptions in sensitive categories (health apps, religious/political orgs, trade union, dating). |
+
+### f. Family circle – linked accounts (idea: Sander)
+
+Customers can **link their KBC accounts to the people around them**: fiancé(e), spouse/partner, child, grandchild, godchild, mother, father, step-parents, and so on. This creates an **"organic" environment where everything fits together**. Kate understands the customer as part of a family, not as a loose individual, and helps across the whole circle at the right moments.
+
+**What Kate does with it (examples):**
+- **Parents and children:** at the right moments Kate suggests options for the child: start a savings account at birth, pocket-money account with parental controls at 12, first own card at 16, first job / student job at 18, help with a first home deposit later.
+- **Grandparents / godparents:** "Your godchild turns 18 next month. Want to set up a gift to their savings account?" (only if both sides agreed to the link).
+- **Engaged / married / living together:** share a **joint account** or a shared "pot" (rent, groceries, holiday) next to their own accounts. Kate helps both: splits costs, sets up a savings goal for the wedding or a house, and prepares the talk with an advisor about a joint mortgage or marriage contract.
+- **Life events ripple through the circle:** a birth, a wedding or a death in the family shows up for the linked people with relevant (and respectful) guidance. Example: the inheritance guidance mode (feature c) knows who the heirs in the circle are, but still requires heir verification.
+- **Care for older parents:** an adult child can, with explicit permission, get limited visibility to help a parent (e.g. alert on unusual payments = fraud protection), without taking over control.
+
+**Boundaries (every link has its own, within legal limits):**
+- **Mutual, explicit consent** for every link. Both sides accept, and each can end the link at any time. A link is never inferred from transactions ("these two send each other money, so they're a couple" is **not** allowed).
+- **Granular sharing per link:** seeing nothing / seeing only that the link exists / seeing a shared pot / seeing balances / being able to act. Default = minimum. Linking ≠ seeing everything.
+- **Minors:** parents/legal guardians have legal authority over a minor's account, and that ends automatically at **18**. The child then decides what the parent may still see. Kate addresses children in age-appropriate language and does no marketing to minors.
+- **Joint accounts:** both holders see the same thing. Kate's suggestions about a joint account go to **both**, never "secretly" to one of them. Personal accounts stay private, even for a spouse.
+- **Protection against abuse:** in case of divorce, conflict or financial abuse, one partner can end sharing immediately without the other being able to block it. Kate never nudges one person to give another person access. Watch for elderly people being pressured into giving access.
+- **Death:** a link gives **no** automatic access to a deceased person's products. Heir verification still applies (feature c).
+- **Sensitive data never flows through the circle:** sensitive categories (health, religion, etc.) are never shown to linked people, not even to a parent or spouse.
+- **Security (Aikido):** every endpoint checks server-side that the logged-in customer has an **active, consented link with the right permission level** for the other person's data. This is a classic IDOR/authorization risk, so it's a strong showcase for the security score.
+
+**Demo idea:** a young couple links accounts → they get a shared "Wedding" pot → Kate proposes a savings plan to both → their parent (linked, only "gift" permission) gets the option to contribute. Or: a child turns 18 → the parent's access ends automatically and Kate asks the child what may still be shared.
+
+### Privacy and ethics rules (GDPR / AI Act)
+
+- ✅ Use the customer's own KBC data to help that customer, transparently.
+- ✅ Use what the customer tells Kate only for the purpose they told it for, never for unsolicited marketing.
+- ✅ Every suggestion has **"Waarom zie ik dit?"**.
+- ✅ **Consent toggles** per signal type and per channel. Always respect an objection to marketing profiling.
+- ⚠️ Credit or investment proposals: only with a human advisor, and never pushing people who are in financial difficulty.
+- ❌ No sensitive inferences, no manipulation or dark patterns, no exploiting vulnerability, no social scoring, no discrimination via proxies (postcode, name).
+- ❌ Don't store emotions ("customer is depressed"); adapting tone is fine.
+- ❌ No fully automated decisions with big consequences (e.g. refusing credit).
+
+Pitch line: *"a bank you dare to tell about such a moment, because you know it helps you and doesn't profit from it."*
+
+### Demo elements
+
+- **Time machine:** a "fast-forward 1 week" button (admin-only endpoint) that injects new transactions so Kate reacts live. This is the most important demo element.
+- **Jury dashboard:** per persona signal → recognised situation → chosen action → reason, plus an overview across **10,000 synthetic customers** (how many got which action, and how many deliberately got nothing).
+- **Synthetic data:** 5–8 detailed personas with 6–12 months of transactions and built-in life moments (student with first job, young couple, inheritance scenario, financially tight, retiree), plus a 10k-customer mode to show scale.
+- **Mock KBC Mobile UI:** our own design with a clear "concept/prototype" label, **no copied KBC logos or assets**.
+
+Demo flow (< 3 min): (1) two personas side by side, same app, very different Kate → (2) time machine: salary doesn't arrive, Kate reacts via the right channel on the urgency meter → (3) customer tells Kate about an inheritance, Kate guides end-to-end with advisor hand-off → (4) subscriptions: "you're paying twice for the same thing, do you still use this?" → (5) dashboard: "this is what it looks like for 2.3M customers", including how many got nothing.
+
+### Extra security points from the briefing
+
+- Real login per persona (even in the demo), correctly validated session/JWT.
+- **Every** endpoint checks server-side that the data belongs to the logged-in customer (never trust an ID from URL/body).
+- Heir verification before access to someone else's products.
+- Time-machine and admin endpoints (dashboard, data generation) only for a separate **admin role**.
+- Pydantic input validation, **rate limiting on LLM endpoints**.
+- Transaction texts and chat messages treated as data, not instructions.
+
 ## Scale strategy (answers guiding question 5)
 
 - **Tiered intelligence:** rules/light ML for all 2.3M → LLM only for shortlisted moments or when the customer talks to Kate → human for high-value/sensitive cases.
@@ -90,3 +164,6 @@ Kept for reference; the useful parts are folded into Kate above.
 ## Parking lot
 
 _Drop new ideas here (one line each, with your name) – we'll sort them in._
+
+- (Sander) Merge the demo scripts: David's (Emma/Jan/Marie, "just say it") and the briefing's (time machine, inheritance, subscriptions, 10k dashboard). Which 3 features do we make really work?
+- (Sander) Add personas for the briefing's scenarios: financially tight (salary missing), inheritance, young couple, duplicate subscriptions.

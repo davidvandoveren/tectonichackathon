@@ -114,13 +114,14 @@ passes the result to `propose(source="moment", reason=<its evidence>)`.
 
 | Moment (engine) | Action (skill) | Params from |
 |---|---|---|
-| `savings_habit_automatable` | `payments.standing_order` (own savings) | `meta.amount`, `meta.day` |
+| `savings_habit_automatable` | `payments.standing_order` (own savings) | `meta.amount`, `meta.day_of_month` (capped at 28) |
 | `first_salary` | `savings.create_goal` | salary amount |
 | `idle_savings` | `investing.prepare_meeting` (regulated → advisor) | – |
-| `cashflow_risk` | `savings.move_to_current` | shortfall |
+| `cashflow_risk` | `savings.move_to_current` | `meta.obligation - meta.balance` |
+| `income_missing` | `advisor.book_call` | `meta.counterparty`, `meta.days_overdue` |
 | `card_package_gap` | `cards.add_package` (Reispakket) | – |
 | `card_package_waste` | `cards.drop_package` (Luxepakket) | – |
-| `deal_match` | `deals.activate` | `meta.category` |
+| `deal_match` | `deals.activate` | `meta.category` (spending category → deal: transport → fuel, leisure → dining) |
 | `moving_house` | `insurance.home_quote` (regulated → advisor) | – |
 
 So a Kate recommendation = **moment** (engine: why now, how sure) + **action** (skill: what

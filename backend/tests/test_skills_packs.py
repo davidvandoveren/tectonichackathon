@@ -110,13 +110,31 @@ def test_mandate_is_scoped_to_one_action(service: SkillsService) -> None:
 @pytest.mark.parametrize(
     ("moment", "meta", "action"),
     [
-        ("savings_habit_automatable", {"amount": "150.00", "day": "28"}, "payments.standing_order"),
-        ("first_salary", {"amount": "1985.00"}, "savings.create_goal"),
-        ("idle_savings", {}, "investing.prepare_meeting"),
-        ("cashflow_risk", {"shortfall": "120.50"}, "savings.move_to_current"),
+        # meta exactly as the Moments Engine (PR #15) emits it
+        (
+            "savings_habit_automatable",
+            {"amount": "150.00", "median_amount": "150.00", "day_of_month": "30.5"},
+            "payments.standing_order",
+        ),
+        ("first_salary", {"amount": "1985.00", "baseline": "310.00"}, "savings.create_goal"),
+        ("idle_savings", {"savings": "64250.00", "months": "24"}, "investing.prepare_meeting"),
+        (
+            "cashflow_risk",
+            {"balance": "212.40", "obligation": "420.00"},
+            "savings.move_to_current",
+        ),
+        (
+            "income_missing",
+            {"counterparty": "Acme Logistics BV", "days_overdue": "9", "amount": "3120.00"},
+            "advisor.book_call",
+        ),
         ("card_package_gap", {}, "cards.add_package"),
         ("card_package_waste", {}, "cards.drop_package"),
-        ("deal_match", {"category": "fuel"}, "deals.activate"),
+        (
+            "deal_match",
+            {"counterparty": "Q8", "category": "transport", "yearly_spend": "1820.00"},
+            "deals.activate",
+        ),
         ("moving_house", {}, "insurance.home_quote"),
     ],
 )
@@ -131,7 +149,20 @@ def test_every_engine_moment_maps_to_a_valid_action(
     registered.params.model_validate(draft.params)
 
 
+def test_engine_meta_becomes_the_right_params() -> None:
+    habit = draft_for_moment(
+        "savings_habit_automatable", {"amount": "150.00", "day_of_month": "30.5"}
+    )
+    assert habit is not None and habit.params == {"amount": "150.00", "day": 28}
+    risk = draft_for_moment("cashflow_risk", {"balance": "212.40", "obligation": "420.00"})
+    assert risk is not None and risk.params == {"amount": "207.60"}
+    deal = draft_for_moment("deal_match", {"category": "groceries"})
+    assert deal is not None and deal.params == {"category": "groceries"}
+
+
 def test_unknown_or_incomplete_moments_give_no_action() -> None:
     assert draft_for_moment("something_new", {}) is None
-    assert draft_for_moment("deal_match", {"category": "casino"}) is None
+    assert draft_for_moment("deal_match", {"category": "housing"}) is None
     assert draft_for_moment("cashflow_risk", {}) is None
+    # Balance already covers the obligation: nothing to top up.
+    assert draft_for_moment("cashflow_risk", {"balance": "500.00", "obligation": "420.00"}) is None

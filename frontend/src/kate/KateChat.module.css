@@ -1,0 +1,240 @@
+.launcher {
+  position: fixed;
+  top: var(--space-4);
+  right: max(var(--space-4), calc((100vw - var(--max-width-app)) / 2 + var(--space-4)));
+  z-index: 40;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border-radius: 50%;
+  border: 2px solid var(--color-text-on-navy);
+  background: var(--color-accent);
+  color: var(--color-text-on-navy);
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+
+.panel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--max-width-app);
+  margin: 0 auto;
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--color-navy-900);
+  color: var(--color-text-on-navy);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.iconButton {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.guidanceBanner {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: #eef6ee;
+  color: var(--color-success);
+  font-size: 0.85rem;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.userRow,
+.kateRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.userRow {
+  align-items: flex-end;
+}
+
+.kateRow {
+  align-items: flex-start;
+}
+
+.bubble {
+  margin: 0;
+  max-width: 85%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.kate {
+  align-self: flex-start;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+}
+
+.user {
+  align-self: flex-end;
+  background: var(--color-navy-800);
+  color: var(--color-text-on-navy);
+}
+
+.typing {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.actionCard {
+  max-width: 85%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.actionCard p {
+  margin: 0 0 var(--space-2);
+}
+
+.actionTitle {
+  font-weight: 700;
+}
+
+.actionNote {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.summary {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.actionButton {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-navy-800);
+  color: var(--color-text-on-navy);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionButton:disabled {
+  background: var(--color-success);
+  cursor: default;
+}
+
+.error {
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+.inputRow {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.mic,
+.send {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  cursor: pointer;
+}
+
+.mic {
+  background: var(--color-bg);
+  font-size: 1.2rem;
+}
+
+.micActive {
+  background: var(--color-danger);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.send {
+  padding: 0 var(--space-4);
+  background: var(--color-accent);
+  color: var(--color-text-on-navy);
+  font-weight: 600;
+}
+
+.send:disabled,
+.mic:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .micActive {
+    animation: none;
+  }
+}

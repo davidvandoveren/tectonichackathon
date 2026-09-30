@@ -111,7 +111,7 @@ class MockChat:
                 name = match.group("name").strip().title()
                 what = (match.group("what") or "").strip()
                 return _json(
-                    intro + f"Ik heb een overschrijving van € {amount:.2f} naar {name} "
+                    intro + f"Ik heb een overschrijving van € {_nl(amount)} naar {name} "
                     "klaargezet. Controleer ze en bevestig zelf.",
                     action={
                         "type": "transfer",
@@ -125,19 +125,25 @@ class MockChat:
             spend = context.spend_last_30_days
             total = sum((Decimal(v) for v in spend.values()), Decimal(0))
             top = sorted(spend.items(), key=lambda kv: Decimal(kv[1]), reverse=True)[:3]
-            parts = ", ".join(f"{k} € {v}" for k, v in top)
+            parts = ", ".join(f"{k} € {_nl(Decimal(v))}" for k, v in top)
             return _json(
-                intro + f"De voorbije 30 dagen gaf je € {total:.2f} uit. Grootste posten: {parts}."
+                intro + f"De voorbije 30 dagen gaf je € {_nl(total)} uit. Grootste posten: {parts}."
             )
 
         if any(word in lower for word in _BALANCE_WORDS):
-            parts = ", ".join(f"{a['name']}: € {a['balance']}" for a in context.accounts)
+            parts = ", ".join(
+                f"{a['name']}: € {_nl(Decimal(a['balance']))}" for a in context.accounts
+            )
             return _json(intro + f"Je saldi: {parts}.")
 
         return _json(
             intro + f"Ik ben er voor je, {context.first_name}. Je kan me vragen stellen over je "
             "uitgaven of saldo, of zeggen: 'Stuur Lucas 25 euro voor de pizza'."
         )
+
+
+def _nl(amount: Decimal) -> str:
+    return f"{amount:,.2f}".replace(",", " ").replace(".", ",")
 
 
 def _parse_amount(raw: str) -> Decimal | None:

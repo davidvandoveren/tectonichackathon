@@ -127,9 +127,10 @@ def _mount_frontend(app: FastAPI, static_dir: Path) -> None:
         app.mount("/assets", StaticFiles(directory=assets), name="assets")
     index = static_dir / "index.html"
 
-    @app.get("/{path:path}", include_in_schema=False)
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     def spa(path: str) -> FileResponse:
-        if path.startswith("api/"):
+        # No dotfiles (.env, .git/, .htaccess): answering them with index.html reads as a leak.
+        if path.startswith("api/") or any(part.startswith(".") for part in path.split("/")):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
         candidate = (static_dir / path).resolve()
         if path and candidate.is_file() and candidate.is_relative_to(static_dir):

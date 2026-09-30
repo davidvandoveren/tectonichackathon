@@ -6,6 +6,7 @@ import time
 from collections.abc import Iterator
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -189,3 +190,33 @@ def test_security_txt_and_noindex(client: TestClient) -> None:
     assert response.status_code == 200
     assert "Contact:" in response.text and "Expires:" in response.text
     assert response.headers["x-robots-tag"] == "noindex, nofollow"
+
+
+# --- static files ------------------------------------------------------------------------------
+@pytest.fixture
+def spa_client(settings: Settings, tmp_path: Path) -> Iterator[TestClient]:
+    (tmp_path / "index.html").write_text("<!doctype html><title>spa</title>")
+    (tmp_path / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
+    settings.static_dir = tmp_path
+    with TestClient(create_app(settings)) as test_client:
+        yield test_client
+
+
+@pytest.mark.parametrize(
+    "path", ["/.env", "/.git/config", "/.git/HEAD", "/.htaccess", "/.svn/entries", "/a/.env"]
+)
+def test_dotfiles_are_not_served_as_the_spa(spa_client: TestClient, path: str) -> None:
+    # The SPA fallback used to answer 200 + index.html, which scanners report as an exposed file.
+    response = spa_client.get(path)
+    assert response.status_code == 404
+    assert "spa" not in response.text
+
+
+def test_spa_routes_and_files_still_work(spa_client: TestClient) -> None:
+    assert spa_client.get("/privacy").status_code == 200
+    assert spa_client.get("/robots.txt").text.startswith("User-agent")
+    assert spa_client.get("/.well-known/security.txt").status_code == 200
+
+
+def test_head_is_allowed_on_the_spa(spa_client: TestClient) -> None:
+    assert spa_client.head("/").status_code == 200

@@ -1,136 +1,174 @@
 # Demoscript – video < 3 min
 
-Eigenaar: Alexandre (#42). Eén verhaal, zeven scènes, ± 170 s. Elke scène zegt welke persona, wat
-je klikt, wat Kate doet en wat de voice-over zegt. De kolom **Status** zegt of het vandaag al werkt
-op `main` of op welke PR het wacht. Werk die kolom bij tot de opname. Wat bij de opname niet werkt,
-schrap je (zie *Plan B*).
+Eigenaar: Alexandre (#42). Eén verhaal in zeven scènes, ± 170 s. Elke scène zegt welke persona,
+wat je klikt, wat er op het scherm komt en wat de voice-over zegt.
 
-**Voorbereiding**
-- Draai de Cloud Run-versie of lokaal met `PASSWORDLESS_LOGIN=true` (één klik per persona) en
-  `ADMIN_USERNAMES=jan` (tijdmachine).
-- Zet de Gemini- en ElevenLabs-keys in `.env` en controleer ze met
-  `cd backend && python -m scripts.check_kate_keys` (#33). Zonder keys werkt alles in demomodus,
-  maar dan is de stem die van de browser.
-- Start elke opname met een **verse server**. Alle data zit in het geheugen, en de tijdmachine
-  verzet de klok voor de hele app.
-- Neem de scènes apart op en monteer ze achteraf. Zo kan één fout niet de hele opname verpesten.
+De schermteksten tussen aanhalingstekens zijn **nagekeken op de echte app**. Ik heb het gerepeteerd
+via de API op `main` plus #29 (Sofie) en #48 (Lucas, Els), in demomodus zonder API-keys. Wat nog
+niet gebouwd is, staat in [Nog te bouwen voor de demo](#nog-te-bouwen-voor-de-demo). Voor elk
+gat is er een plan B.
 
 ## Overzicht
 
-| # | Scène | Persona | Duur | Status |
+| # | Scène | Persona | Duur | Klaar? |
 |---|---|---|---|---|
-| 1 | Zelfde app, andere Kate | Emma ↔ Lucas | 20 s | ✅ via inloggen · ⏳ naast elkaar: David |
-| 2 | Kate houdt zich bewust in | Lucas | 25 s | ✅ `/kate/feed` (API) · 🔍 home #37 · ⏳ stiltes zichtbaar in UI |
-| 3 | Tijdmachine: het loon blijft uit | Jan | 30 s | ✅ API · ⏳ knop in UI |
-| 4 | Een gewoonte automatiseren | Sofie | 20 s | 🔍 persona #29 · ✅ backend *Bevestig* · ⏳ knop op kaart |
-| 5 | Just say it | Emma | 15 s | ✅ |
-| 6 | Erfenis: begeleiden in plaats van verkopen | Els | 30 s | 🔍 persona #48 · ✅ chat, stem, erfenismodus |
-| 7 | Zo ziet dit eruit voor 2,3 miljoen klanten | – | 25 s | 🔍 dashboard #30 |
-| | Slot: vertrouwen en veiligheid | – | 10 s | ✅ tekst · ⏳ toestemmingsscherm |
+| 1 | Dezelfde deal, twee antwoorden | Emma ↔ Lucas | 35 s | ✅ na elkaar · ⏳ naast elkaar, stilte zichtbaar |
+| 2 | Tijdmachine: het loon blijft uit | Jan | 25 s | ✅ API · ⏳ knop, kanaal-badge |
+| 3 | Kate automatiseert wat je al doet | Sofie | 25 s | ✅ na merge #29 |
+| 4 | Just say it | Emma | 15 s | ✅ |
+| 5 | Erfenis: begeleiden in plaats van verkopen | Els | 30 s | ✅ na merge #48 |
+| 6 | Zo ziet dit eruit voor 2,3 miljoen klanten | – | 25 s | 🔍 #30 |
+| 7 | Slot: jij beslist | Emma | 15 s | ✅ |
+
+## Voorbereiding
+
+1. Start een **verse server**. Alle data zit in het geheugen en de tijdmachine verzet de klok voor
+   de hele app. Gebruik `PASSWORDLESS_LOGIN=true` (inloggen met één klik) en
+   `ADMIN_USERNAMES=jan` (tijdmachine).
+2. Voor de echte stem en Gemini zet je de keys in `.env` en controleer je ze met
+   `cd backend && python -m scripts.check_kate_keys`. Zonder keys werkt alles ook: dan gebruikt
+   Kate vaste antwoorden en de stem van de browser.
+3. Zet het toestel in de **mobiele weergave** (telefoonkader) en zoom de browser op 125 %, zodat
+   de tekst leesbaar is in de video.
+4. Neem **elke scène apart** op en monteer achteraf. Herstart de server vóór scène 2 (de
+   tijdmachine), zodat de klok daarna niet verzet blijft voor de andere scènes.
 
 ---
 
-## 1 · Zelfde app, andere Kate (20 s)
+## 1 · Dezelfde deal, twee antwoorden (35 s)
 
-**Beeld:** Emma en Lucas naast elkaar (telefoonkaders). Anders: log eerst in als Emma, knip, en
-log dan in als Lucas.
-**Kate:** Emma krijgt "Proficiat met je eerste loon!". Lucas krijgt geen reclame, maar een
-waarschuwing over zijn huur.
+**Beeld:** Emma links, Lucas rechts. Is "naast elkaar" niet klaar, neem dan Emma op, knip, en neem
+daarna Lucas op.
+
+**Emma** (21, eerste loon), home "Voor jou":
+- de kaart "Er is een deal die bij jou past": cashback in de supermarkt, met een *Bevestig*-knop
+- swipe naar "Proficiat met je eerste loon!" en open *Waarom zie ik dit?*. Kate toont de
+  storting van haar nieuwe werkgever, met het echte bedrag en de echte datum.
+
+**Lucas** (26, interim, € 212 op zijn rekening, huur € 720 op de 1e), home "Voor jou":
+- één kaart, **"Let op je saldo"**, als alert via **push**, met urgentie 91
+- géén deal, hoewel hij net als Emma al zijn boodschappen in één supermarkt doet. Kate hield
+  die deal bewust in, met als reden: *"Je saldo staat krap. Voorstellen die je geld kosten houden
+  we daarom even voor ons; eerst je rekening."*
+
 **Voice-over:**
-> "KBC's Kate herkent vandaag meer dan 140 situaties. Die zijn allemaal met de hand geschreven.
-> Twee klanten, dezelfde app, en toch een totaal andere Kate. Niemand heeft deze situaties
-> geschreven. Kate stelt ze samen uit signalen in hun eigen transacties."
+> "KBC's Kate herkent vandaag meer dan honderdveertig situaties, allemaal met de hand geschreven.
+> Kate 2.0 stelt ze samen uit signalen in je eigen transacties. Emma en Lucas doen allebei hun
+> boodschappen in één supermarkt. Emma krijgt de deal. Lucas niet: zijn huur staat op het spel,
+> dus Kate waarschuwt hem en houdt de reclame bewust in. Een voorstel dat geld kost, wacht tot je
+> buffer in orde is. Een voorstel dat je geld bespaart, wacht nooit."
 
-## 2 · Kate houdt zich bewust in (25 s)
+## 2 · Tijdmachine: het loon blijft uit (25 s)
 
-**Persona:** `lucas`, met € 212 op zijn zichtrekening en € 720 huur op de 1e.
-**Klik:** open de kaart en daarna *Waarom zie ik dit?*
-**Kate:** `cashflow_risk` via **push**. De reden gebruikt zijn eigen bedragen. Onder "Bewust niet
-gezegd" staat zijn supermarkt-deal met als reden `cashflow_first`: *"Je saldo staat krap.
-Voorstellen die je geld kosten houden we daarom even voor ons."*
+**Persona:** `jan`, admin. Zijn feed begint op "Ga je verhuizen?" (feed, urgentie 57).
+**Klik:** tijdmachine → scenario `salary_missing` → **+40 dagen**. Zolang de knop er niet is, gebruik
+je `POST /api/v1/admin/time-machine {"days": 40, "scenario": "salary_missing", "username": "jan"}`
+(Swagger in dev) en ververs je home.
+**Scherm:** bovenaan staat nu een **alert**, `income_missing`, met **urgentie 98**, en Kate kiest
+**sms** in plaats van een kaartje. *Waarom zie ik dit?* toont: *"Acme Logistics BV betaalde je
+elke maand, maar de storting is nu … dagen te laat."*
+
 **Voice-over:**
-> "Wie veel herkent, kan ook veel spammen. Daarom beslist Kate niet alleen wát ze zegt, maar ook
-> wanneer ze moet zwijgen. Een aanbod dat geld kost, houdt ze in zolang je buffer krap is. Een
-> voorstel dat je geld bespaart, houdt ze nooit in."
+> "We spoelen veertig dagen vooruit. Jans loon komt niet. Kate wacht niet tot hij de app opent,
+> maar kiest het kanaal dat past bij de ernst: een sms. Hoogstens één onderbreking per week, dus
+> Jan wordt niet overspoeld."
 
-*Plan B:* als de stiltes nog niet in de UI staan, toon dan de persona-trace van Lucas op het
-jury-dashboard (scène 7).
+## 3 · Kate automatiseert wat je al doet (25 s)
 
-## 3 · Tijdmachine: het loon blijft uit (30 s)
+**Persona:** `sofie` (29, Antwerpen, pendelt met de auto). Home toont drie kaarten:
+1. **"Wil je dit automatisch laten doen?"**, want ze zette de laatste maanden zelf € 250 opzij.
+   De actie luidt: *"Elke maand op de 28e € 250,00 naar je spaarrekening"*. Dat zijn haar eigen
+   bedrag en haar eigen dag.
+2. **"Betaal je voor iets dat je niet gebruikt?"**: ze betaalt € 25 per maand voor het Luxepakket
+   en reist nooit.
+3. **"Er is een deal die bij jou past"**: cashback voor tanken, want ze tankt elke week bij
+   hetzelfde station.
 
-**Persona:** `jan` (admin).
-**Klik:** tijdmachine → `salary_missing` → +40 dagen. Via de API is dat
-`POST /api/v1/admin/time-machine {"days": 40, "scenario": "salary_missing", "username": "jan"}`.
-**Kate:** `income_missing` springt bovenaan, als `alert` met **urgentie 98**, en gaat van feed naar
-**sms** (nagekeken op de seed). Toon de urgentiemeter.
-**Voice-over:**
-> "We spoelen veertig dagen vooruit. Jans loon blijft uit. Kate stuurt geen kaartje in de app
-> maar escaleert naar het kanaal dat past bij de ernst. Dat gebeurt hoogstens één keer per week,
-> zodat hij niet overspoeld wordt."
+**Klik:** op kaart 1 → **Bevestig**. Kate antwoordt: *"Vanaf nu gaat elke maand op de 28e € 250,00
+naar je sparen."* Toon daarna kort Profiel → *Wat weet en mag Kate?* → het activiteitenlog.
 
-## 4 · Een gewoonte automatiseren (20 s)
-
-**Persona:** `sofie`.
-**Kate:** *"Je zette de laatste maanden zelf € 250 op je spaarrekening."* Ze stelt een
-doorlopende opdracht voor met **Sofie's eigen bedrag en dag**, niet met een bedrag dat de bank
-kiest.
-**Klik:** **Bevestig** → klaar. Toon daarna *Wat heeft Kate voor mij gedaan?*
 **Voice-over:**
 > "Sofie spaart al, maar ze doet het elke maand met de hand. Kate zet dat om in een vaste
-> opdracht, met haar eigen cijfers. Eén tik, en de klant blijft zelf beslissen."
+> opdracht, met háár bedrag en háár dag. En ja: Kate stelt ook voor om minder te betalen. Een
+> bank die zichzelf geld kost, dat is vertrouwen."
 
-## 5 · Just say it (15 s)
+## 4 · Just say it (15 s)
 
 **Persona:** `emma`.
-**Klik:** open Kate en typ of zeg *"Stuur Lucas 25 euro voor de pizza"*.
-**Kate:** het gewone overschrijvingsscherm opent, al ingevuld. Emma bevestigt zelf.
+**Klik:** open Kate en zeg of typ *"Stuur Lucas 25 euro voor de pizza"*.
+**Scherm:** Kate zegt *"Ik heb een overschrijving van € 25,00 naar Lucas klaargezet. Controleer
+ze en bevestig zelf."* Het gewone overschrijvingsscherm opent, al ingevuld, en Emma drukt op
+**Bevestigen**.
+
 **Voice-over:**
-> "Eén zin in plaats van vijf schermen. Kate vult alles in, maar betaalt nooit zelf aan iemand
-> anders. De klant bevestigt op het gewone, gevalideerde scherm."
+> "Eén zin in plaats van vijf schermen. Kate vult alles in, maar betaalt nooit zelf iemand
+> anders. Jij bevestigt, op het gewone, beveiligde scherm."
 
-## 6 · Erfenis: begeleiden in plaats van verkopen (30 s)
+## 5 · Erfenis: begeleiden in plaats van verkopen (30 s)
 
-**Persona:** `els`. Haar mama overleed onlangs; de historiek toont de uitvaart, de notaris en de
-uitkering van de nalatenschap.
-**Klik:** zeg tegen Kate *"Mijn mama is overleden, wat moet ik met de erfenis doen?"*
-(gesproken, met de stem).
-**Kate:** schakelt naar **begeleidingsmodus**. Ze geeft een stappenplan zonder marketing en
-biedt aan om een adviseur in te schakelen, met een samenvatting zodat Els haar verhaal niet
-opnieuw hoeft te vertellen. Toon ook dat de feed van Els **leeg** is: geen beleggingsreclame na
-een overlijden.
+**Persona:** `els` (54, Hasselt). Toon eerst kort haar rekening: "Uitvaart mama", "Provisie
+notaris", "Nalatenschap mama - uitkering". Toon dan home: **geen enkele kaart**. Na een
+overlijden verkoopt Kate niets.
+**Klik:** zeg tegen Kate (met de stem) *"Mijn mama is overleden, wat moet ik met de erfenis doen?"*
+**Scherm:** Kate gaat in **begeleidingsmodus**: *"Wat verdrietig, gecondoleerd. Ik help je stap
+voor stap, zonder haast: 1) de overlijdensakte, 2) een attest of akte van erfopvolging, 3) daarna
+kan een adviseur de rekeningen met je overlopen. Zal ik een gesprek met een adviseur klaarzetten,
+zodat je je verhaal niet opnieuw hoeft te doen?"* Daaronder staat het blok **"Menselijke adviseur"**, met
+de samenvatting die de adviseur meekrijgt.
+
 **Voice-over:**
-> "Er is een moment waarop een bank níét moet verkopen. Kate herkent het, begeleidt Els, en
-> geeft haar door aan een mens, met de volledige context."
+> "Er zijn momenten waarop een bank níét moet verkopen. Na een erfenis zou elk systeem
+> beleggingen voorstellen. Kate niet. Ze begeleidt Els, en geeft haar door aan een mens die alles
+> al weet."
 
-## 7 · Zo ziet dit eruit voor 2,3 miljoen klanten (25 s)
+## 6 · Zo ziet dit eruit voor 2,3 miljoen klanten (25 s)
 
-**Beeld:** `/jury`, het jury-dashboard over 10.000 synthetische klanten.
-**Toon:** de KPI **"Kregen bewust niets": 45,3 %**, de verdeling van de kanalen en de meting van
-**0,73 ms per klant**. Dat is ± 28 CPU-minuten voor alle KBC-klanten, zonder AI-model.
+**Beeld:** `/jury`, het jury-dashboard (#30).
+**Toon:** de KPI **"Kregen bewust niets"**, de verdeling van de kanalen, en de meting **"per klant
+± 0,7 ms"**. Klik daarna één persona-trace open: signalen → moment → actie → reden.
+
 **Voice-over:**
-> "Dit is dezelfde motor, gedraaid over tienduizend klanten. Bijna de helft kreeg bewust niets,
-> en dat is precies de bedoeling. Voor alle klanten van KBC is het minder dan een half uur
-> rekenwerk, zonder taalmodel. Het dure AI-deel draait alleen wanneer iemand met Kate praat."
+> "Dit is dezelfde motor, over tienduizend synthetische klanten. Bijna de helft kreeg bewust
+> niets, en dat is precies de bedoeling. Voor alle klanten van KBC is dat minder dan een half uur
+> rekenwerk, zonder taalmodel. De AI draait alleen wanneer iemand met Kate praat."
 
-*(Controleer de cijfers na de merge van #30.)*
+*(Controleer de percentages en de milliseconden op het dashboard zelf, na de merge van #30.)*
 
-## Slot · Vertrouwen en veiligheid (10 s)
+## 7 · Slot: jij beslist (15 s)
 
-**Beeld:** het scherm *"Wat weet en mag Kate?"*. Zet een schakelaar uit en de feed verandert.
-Toon daarna de Aikido-screenshot "na".
+**Persona:** `emma` → Profiel → **"Wat weet en mag Kate?"**
+**Klik:** zet de gegevens over **uitgaven** uit en ga terug naar home. De supermarkt-deal is weg.
+Toon kort de ladder per actie: *Uit / Alleen tippen / Klaarzetten / Automatisch*.
 **Voice-over:**
-> "Elke suggestie zegt waarom. Jij kiest wat Kate mag weten en wat ze mag doen. Kate 2.0: de
-> juiste boodschap, op het juiste moment, via het juiste kanaal, of bewust helemaal niets."
+> "Elke suggestie zegt waarom. Jij kiest wat Kate mag weten, en wat ze mag doen. Kate 2.0: de
+> juiste boodschap, op het juiste moment, via het juiste kanaal. Of bewust helemaal niets."
+
+Eindbeeld: de Aikido-screenshot "na", het logo van de repo en de URL.
 
 ---
 
-## Plan B (als iets niet af is bij de opname)
+## Nog te bouwen voor de demo
 
-| Ontbreekt | Vervang door |
+Dit mist nog om het script zonder plan B op te nemen. Het staat in volgorde van belang, en de
+eigenaar komt uit de tabel in `docs/plan.md`.
+
+| Wat | Waarom nodig | Eigenaar |
+|---|---|---|
+| **"Bewust niet gezegd"** zichtbaar maken (`silenced` uit `GET /kate/feed`) | Kern van scène 1: nu staat de stilte alleen in de API | David (UI) |
+| **Kanaal- en urgentie-badge** op de kaart (push/sms/call) | Scène 1 en 2: laat zien dat Kate van kanaal wisselt | David (UI) |
+| **Tijdmachine-knop** (alleen voor admin) | Scène 2 zonder Swagger | David (UI) |
+| **Twee telefoons naast elkaar** | Scène 1 in één beeld | David (UI) |
+| Luxepakket in `Holdings` van Sofie, zodat kaart 2 een *Bevestig*-knop krijgt | Scène 3: nu heeft die kaart nog geen knop | David (Skills) |
+| `"u_lucas": "male"` in `kate/voices.py` | Lucas krijgt nu nog de vrouwenstem | Sander |
+| Jury-dashboard mergen | Scène 6 | Sander (#30) |
+| Merge van #29 en #48 | Sofie, Lucas en Els bestaan pas na de merge | review |
+
+## Plan B
+
+| Ontbreekt bij opname | Vervang door |
 |---|---|
-| Twee telefoons naast elkaar | Na elkaar inloggen, met een harde knip |
-| Stiltes niet zichtbaar in de UI | Persona-trace van Lucas op `/jury` |
-| Tijdmachine-knop | Swagger (`/api/docs`, alleen in dev) of een `curl`, gevolgd door een refresh van home (#37) |
-| *Bevestig*-knop op kaart | Scène 4 schrappen of vervangen door `python scripts/skills_tour.py --persona sofie` (#38) in een terminal |
+| Twee telefoons naast elkaar | Na elkaar opnemen, met een harde knip |
+| Stilte niet zichtbaar in de UI | De persona-trace van Lucas op `/jury`, of een tekst-overlay in de montage met de echte reden |
+| Tijdmachine-knop | Swagger (`/api/docs`, alleen in dev), dan home verversen |
 | Jury-dashboard | De benchmarkcijfers als slide |
-| API-keys werken niet | Demomodus: browserstem en vaste antwoorden. Scène 6 werkt dan nog, maar klinkt minder goed |
+| Keys werken niet | Demomodus: dezelfde teksten, met de stem van de browser |

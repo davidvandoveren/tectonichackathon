@@ -169,8 +169,11 @@ def tour(client: TestClient) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--persona", default="emma", choices=["emma", "jan", "marie"])
+    parser.add_argument("--persona", default="emma", help="any demo persona, e.g. sofie or bram")
     args = parser.parse_args()
+    # Windows consoles default to cp1252; the tour prints € and arrows.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     settings = Settings(
         app_env="test",
         demo_password=os.environ["DEMO_PASSWORD"],  # type: ignore[arg-type]
@@ -181,7 +184,9 @@ def main() -> None:
             "/api/v1/auth/login",
             json={"username": args.persona, "password": os.environ["DEMO_PASSWORD"]},
         )
-        login.raise_for_status()
+        if login.status_code != 200:
+            names = [u["username"] for u in client.get("/api/v1/auth/demo-users").json()]
+            sys.exit(f"Onbekende persona '{args.persona}'. Kies uit: {', '.join(names)}")
         print(f"Ingelogd als {args.persona}")
         tour(client)
 

@@ -1,3 +1,5 @@
+import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -14,16 +16,21 @@ from app.domain.bank import Bank
 from app.domain.seed import seed_bank
 from app.family.circle import FamilyCircle
 from app.family.scenario import seed_family
+from app.invest.service import InvestService
 from app.kate.voices import VoicePreferences
 from app.moments.state import KateState
+from app.notifications.dispatcher import Dispatcher
+from app.notifications.store import NotificationStore
 from app.routers import (
     admin,
     auth,
     banking,
     dashboard,
     family,
+    invest,
     kate,
     kate_feed,
+    notifications,
     skills,
     subscriptions,
 )
@@ -67,10 +74,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         app.state.kate_limiter = RequestLimiter(settings.kate_max_requests_per_minute, 60)
         app.state.kate_voice_preferences = VoicePreferences()
+        app.state.invest = InvestService(bank)
+        app.state.notifications = NotificationStore()
+        app.state.dispatcher = Dispatcher(
+            bank, app.state.kate, app.state.notifications, app.state.family, app.state.invest
+        )
         logger.info(
             "Seeded %d synthetic customers (env=%s)", len(bank.list_users()), settings.app_env
         )
+        sweeper = None
+        if settings.kate_dispatch_interval_seconds > 0 and settings.app_env != "test":
+            sweeper = asyncio.create_task(
+                _sweep_forever(app.state.dispatcher, settings.kate_dispatch_interval_seconds)
+            )
         yield
+        if sweeper is not None:
+            sweeper.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await sweeper
 
     app = FastAPI(
         title="KBC Mobile PoC API",
@@ -114,10 +135,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(subscriptions.router, prefix="/api/v1")
     app.include_router(skills.router, prefix="/api/v1")
     app.include_router(family.router, prefix="/api/v1")
+    app.include_router(notifications.router, prefix="/api/v1")
+    app.include_router(invest.router, prefix="/api/v1")
 
     if settings.static_dir and (settings.static_dir / "index.html").is_file():
         _mount_frontend(app, settings.static_dir.resolve())
     return app
+
+
+async def _sweep_forever(dispatcher: Dispatcher, interval: int) -> None:
+    """Kate's heartbeat: every `interval` seconds she checks every customer and sends what is due.
+
+    Runs in a worker thread so a sweep never blocks request handling.
+    """
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            sent = await asyncio.to_thread(dispatcher.sweep)
+            if sent:
+                logger.info("Kate sent %d notification(s)", sent)
+        except Exception:  # a bad sweep must never stop the next one
+            logger.exception("Kate's notification sweep failed")
 
 
 def _mount_frontend(app: FastAPI, static_dir: Path) -> None:
@@ -127,9 +165,10 @@ def _mount_frontend(app: FastAPI, static_dir: Path) -> None:
         app.mount("/assets", StaticFiles(directory=assets), name="assets")
     index = static_dir / "index.html"
 
-    @app.get("/{path:path}", include_in_schema=False)
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     def spa(path: str) -> FileResponse:
-        if path.startswith("api/"):
+        # No dotfiles (.env, .git/, .htaccess): answering them with index.html reads as a leak.
+        if path.startswith("api/") or any(part.startswith(".") for part in path.split("/")):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
         candidate = (static_dir / path).resolve()
         if path and candidate.is_file() and candidate.is_relative_to(static_dir):

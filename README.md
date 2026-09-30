@@ -2,6 +2,8 @@
 
 > Tectonic Hackathon, 30 September 2026 · Case partner: **KBC** · Status: 🚧 work in progress
 
+**Alle features en hoe je elk ervan checkt (team en jury): [docs/features.md](docs/features.md)**
+
 ## The challenge
 
 KBC is one of the largest banks in Belgium (banking, investment, insurance) with **2,300,000+ customers**.

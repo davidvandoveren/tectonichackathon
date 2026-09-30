@@ -14,7 +14,10 @@ import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
 import { KateConsentPage } from "./skills/KateConsentPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
 import { FamilyPage } from "./family/FamilyPage";
+import { DualPhoneDemo } from "./demo/DualPhoneDemo";
 import { DemoPage } from "./moments/DemoPage";
+import { NotificationsPage } from "./notifications/NotificationsPage";
+import { InvestPage } from "./invest/InvestPage";
 
 export function App() {
   return (
@@ -22,6 +25,7 @@ export function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/demo" element={<DualPhoneDemo />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route
             element={
@@ -38,6 +42,8 @@ export function App() {
             <Route path="/kate" element={<KateConsentPage />} />
             <Route path="/family" element={<FamilyPage />} />
             <Route path="/demo" element={<DemoPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/invest" element={<InvestPage />} />
           </Route>
           <Route
             path="/jury"

@@ -1,9 +1,10 @@
 /**
  * Small typed fetch wrapper for the `/api/v1` backend.
  * - Session is an HttpOnly cookie; we never read or store a token.
- * - Every state-changing request sends `Content-Type: application/json` and a JSON body.
+ * - Every state-changing request sends `Content-Type: application/json`.
  * - Any 401 response notifies subscribers so the app can route to /login.
  */
+import { sessionSlot } from "../lib/sessionSlot";
 
 const API_BASE = "/api/v1";
 
@@ -57,6 +58,9 @@ function isErrorBody(value: unknown): value is { detail: string } {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, signal } = options;
   const headers: Record<string, string> = { Accept: "application/json" };
+  if (sessionSlot) {
+    headers["X-Session-Slot"] = sessionSlot;
+  }
   const init: RequestInit = {
     method,
     credentials: "same-origin",
@@ -64,9 +68,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     signal,
   };
 
+  // Every state-changing request is JSON, even without a body (e.g. logout): the backend's CSRF
+  // guard rejects anything else, and some proxies require a Content-Length on POST.
   if (method !== "GET") {
-    // Every state-changing call is JSON, even without a payload: the backend's CSRF guard answers
-    // 415 to a POST without `Content-Type: application/json` (that broke logging out).
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(body ?? {});
   }

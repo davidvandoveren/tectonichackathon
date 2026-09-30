@@ -1,0 +1,163 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) 0 var(--space-6);
+}
+
+.greeting {
+  margin: 0;
+  padding: 0 var(--space-4);
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
+}
+
+/* Swipeable account cards with scroll snapping, like the KBC Mobile start screen. */
+.cards {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 2px var(--space-4) var(--space-2);
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-4);
+}
+
+.cardItem {
+  flex: 0 0 82%;
+  scroll-snap-align: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  min-height: 140px;
+  box-sizing: border-box;
+  padding: var(--space-4);
+  border-radius: 16px;
+  background: var(--kbc-surface);
+  box-shadow: var(--shadow-tile);
+  color: var(--kbc-navy);
+  text-decoration: none;
+}
+
+.primary {
+  background: linear-gradient(140deg, #0a3a6e 0%, var(--kbc-navy) 60%);
+  color: #fff;
+}
+
+.cardType {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.cardName {
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.cardIban {
+  font-size: 0.75rem;
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+.amount {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  font-size: 1.625rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+.amount small {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-default);
+}
+
+.negative {
+  color: var(--kbc-red);
+}
+
+.primary .negative {
+  color: #ffb4b4;
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+}
+
+.shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.6875rem;
+  color: var(--kbc-navy);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.shortcutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--kbc-surface);
+  box-shadow: var(--shadow-tile);
+  color: var(--kbc-blue);
+}
+
+.kateIcon {
+  background: linear-gradient(135deg, var(--kbc-blue), var(--kbc-navy));
+  color: #fff;
+}
+
+.card:focus-visible,
+.shortcut:focus-visible {
+  outline: 2px solid var(--kbc-focus);
+  outline-offset: 3px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
+}
+
+/* Kate's cards: one wide, swipeable card at a time on a phone (the carousel itself stays shared). */
+.section ul > li {
+  flex: 0 0 86%;
+  scroll-snap-align: start;
+}
+
+.section ul > li > * {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}

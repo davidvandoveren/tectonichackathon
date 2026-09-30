@@ -74,3 +74,20 @@ def test_demo_login_when_enabled(settings: Settings) -> None:
         assert client.get("/api/v1/me").json()["username"] == "marie"
         # Still owner-scoped: one-click login does not widen access.
         assert client.get("/api/v1/accounts/a_emma_1").status_code == 404
+
+
+def test_session_slots_are_independent(settings: Settings) -> None:
+    settings.passwordless_login = True
+    with TestClient(create_app(settings)) as client:
+        for slot, user in (("a", "emma"), ("b", "jan")):
+            response = client.post(
+                "/api/v1/auth/demo-login",
+                json={"username": user},
+                headers={"X-Session-Slot": slot},
+            )
+            assert response.status_code == 200
+        me_a = client.get("/api/v1/me", headers={"X-Session-Slot": "a"}).json()
+        assert me_a["username"] == "emma"
+        assert client.get("/api/v1/me", headers={"X-Session-Slot": "b"}).json()["username"] == "jan"
+        # Unknown slots fall back to the normal cookie, which is not set here.
+        assert client.get("/api/v1/me", headers={"X-Session-Slot": "zzz"}).status_code == 401

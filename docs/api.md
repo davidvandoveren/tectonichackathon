@@ -77,11 +77,15 @@ All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_R
 
 `GET /api/v1/kate/status` → `{"llm": "mock" | "gemini", "voice": true, "speech_recognition": true}`
 
-`POST /api/v1/kate/chat` body `{"message": "Stuur Lucas 25 euro voor de pizza", "history": [{"role": "kate" | "user", "text": "…"}]}` (message ≤ 1000 chars, history ≤ 10 turns) →
+`POST /api/v1/kate/chat` body `{"message": "Stuur Lucas 25 euro voor de pizza", "history": [{"role": "kate" | "user", "text": "…"}]}` → Kate reads the first 1000 chars of `message`, the last 10 history turns and the first 1200 chars of each turn. Anything longer is trimmed, not refused (`truncated: true` says the question was cut). Only absurd input is refused with `422`: message > 8000 chars, > 100 turns, or a turn > 8000 chars. A blank message is also refused. →
 ```json
 {"reply": "…", "mode": "normal" | "guidance",
- "action": {"type": "none" | "transfer" | "advisor_handoff", "to_name": "Lucas", "amount": "25.00", "description": "Pizza", "summary": null}}
+ "action": {"type": "none" | "transfer" | "advisor_handoff", "to_name": "Lucas", "amount": "25.00", "description": "Pizza", "summary": null},
+ "truncated": false}
 ```
+Kate says she is an AI in her first reply only (a conversation whose history has no `kate` turn). `guidance` starts with empathy and a question (action `none`); the `advisor_handoff` follows once the customer accepts help.
+**One proposal system:** every `transfer` / `advisor_handoff` from the chat is also a Kate Skills proposal (`payments.transfer` / `advisor.book_call`, `source: "chat"`), returned as `action.proposal_id` + `action.proposal_status`. `pending` → the card shows *Bevestigen* (`POST /api/v1/proposals/{id}/approve`) / *Nee, dank je* (`…/decline`); `suggested` → the customer finishes it themselves; action switched `off` → no card and Kate says so. It shows up in `GET /api/v1/activity`.
+
 A `transfer` action is only a **proposal**: the UI opens `/transfer?to_name=…&amount=…&description=…` and the customer confirms on the normal, server-validated transfer screen. `guidance` mode (bereavement, inheritance, …) means: no marketing, step plan, `advisor_handoff` with a summary for the advisor. Kate only ever sees the logged-in customer's own data (no IBANs; sensitive spending shown as "Overige uitgave"); transaction texts are passed to the model as data, never as instructions.
 
 `POST /api/v1/kate/speech` body `{"text": "…"}` → `audio/mpeg` in the customer's chosen voice (ElevenLabs).
@@ -274,3 +278,29 @@ Every endpoint answers **`404` for "unknown" and "not yours" alike** (another cu
 ```
 UI: `/jury` (full width, outside the phone frame).
 
+
+### Kate's notifications – Kate sends by herself (`/kate/notifications`)
+The moments engine decides *what, when and through which channel*; the **dispatcher** (`backend/app/notifications/`) actually sends. Every `KATE_DISPATCH_INTERVAL_SECONDS` (default 30, never in tests) it runs over every customer on the app clock (so the time machine works too), puts what Kate decided into that customer's inbox and spends the engine's interruption quota for push/sms/call. It also collects the family circle's suggestions, the investment plan's steps and a gentle investing nudge (only with a healthy buffer, ≥ € 5.000 above it, `balances` consent on, never for minors). The same message is not re-sent within its cool-down.
+
+`GET /api/v1/kate/notifications` → (also lets Kate catch up for this customer first)
+```json
+{"unread": 3, "items": [{"id": "nt_3f2a9c1b7d4e", "source": "moment" | "family" | "invest", "title": "…", "body": "…",
+  "reason": "Waarom kreeg ik dit?", "channel": "feed" | "push" | "sms" | "call", "cta_label": "…", "cta_target": "/invest",
+  "sent_on": "2026-09-30", "created_at": "2026-09-30T20:10:00", "read": false}]}
+```
+`POST /api/v1/kate/notifications/{id}/read` `{}` → the notification (`404` if not yours) · `POST /api/v1/kate/notifications/read-all` `{}` → `204`.
+
+### Beleggen met Kate (`/invest`)
+A guided route from savings to ETFs. **Kate explains and points a healthy direction; the customer chooses.** The ETFs are fictitious ("Demo …") on real indices; prices are simulated.
+1. **Health check** from the customer's own data: buffer = 3 months of own expenses (min. € 2.000) always stays on the savings account; `investable` = main savings account minus buffer. `status`: `ready` | `caution` (spending > income, large card debt) | `build_buffer`.
+2. **Answers** (`goal`, `horizon`, `knowledge`, `drop_reaction`) → **direction**: `defensive` 30/70, `neutral` 60/40, `dynamic` 90/10 shares/bonds; capped by horizon (< 3 years → defensive + `suitable: false`) and purchase goals.
+3. **Catalogue** with a `fit` per ETF (`fits` | `addition` | `caution` | `not_for_you`). Complex (leveraged) products are not selectable without investing knowledge.
+4. **Mix check**: warnings (no broad base, too much in one sector/region, far from the direction, complex). Warnings do not block, but a plan then needs `accept_risks: true`.
+5. **Plan**: total ≤ `investable`, 1–36 monthly steps, first step right away. Kate executes each step herself (own savings → own Bolero account via the normal transfer, beurstaks 0,12%), reports it in the inbox, and **pauses instead of touching the buffer**.
+
+`GET /api/v1/invest` → `{health, answers, direction, catalog[], plan, portfolio: {invested, value, holdings[], drop_20_example}, tob_percent, simulated: true}` (runs due plan steps first).
+`POST /api/v1/invest/answers` body = answers → overview · `POST /api/v1/invest/check` `{"weights": {"etf_world": 60, "etf_aggbond": 40}}` → `{shares_percent, yearly_cost_percent, warnings[], blocked[], needs_acknowledgement}` (changes nothing).
+`POST /api/v1/invest/plan` `{"weights": {…}, "total": "6000.00", "months": 12, "accept_risks": false}` → `201` overview; `422` with the reason when not allowed (no answers yet, blocked mix, unacknowledged warnings, more than `investable`, step < € 50, plan already running).
+`POST /api/v1/invest/plan/pause|resume|stop` `{}` → overview (`409` if there is no such plan). Stopping sells nothing; resuming carries on from today.
+
+Kate's chat may talk freely about investing (explain, give examples, say what is popular) but never recommends a concrete real product; for "which ETFs fit me" she answers with action `{"type": "invest_guide"}`, which opens this route.

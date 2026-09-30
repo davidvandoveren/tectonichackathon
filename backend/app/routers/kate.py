@@ -12,8 +12,10 @@ from app.domain.models import User
 from app.kate import assistant
 from app.kate.context import build_context
 from app.kate.llm import ChatModel, ChatTurn, GeminiChat, KateUnavailableError, MockChat
-from app.kate.voice import ElevenLabsVoice
+from app.kate.proposals import propose_from_chat
+from app.kate.voice import ElevenLabsVoice, voice_ids_from
 from app.kate.voices import VoiceKind, VoicePreferences, default_voice
+from app.routers.skills import SkillsDep
 from app.schemas import ApiModel
 from app.security.rate_limit import RequestLimiter
 
@@ -43,17 +45,18 @@ def _mock_reason(settings: SettingsDep) -> str | None:
 
 
 def get_voice(settings: SettingsDep) -> ElevenLabsVoice | None:
-    if not settings.elevenlabs_api_key:
+    if (
+        not settings.elevenlabs_api_key
+        or not settings.elevenlabs_api_key.get_secret_value().strip()
+    ):
         return None
-    voice_ids: dict[VoiceKind, str] = {}
-    female = settings.elevenlabs_voice_id_female or settings.elevenlabs_voice_id
-    if female:
-        voice_ids["female"] = female
-    if settings.elevenlabs_voice_id_male:
-        voice_ids["male"] = settings.elevenlabs_voice_id_male
     return ElevenLabsVoice(
         settings.elevenlabs_api_key.get_secret_value(),
-        voice_ids,
+        voice_ids_from(
+            settings.elevenlabs_voice_id_female,
+            settings.elevenlabs_voice_id_male,
+            settings.elevenlabs_voice_id,
+        ),
         settings.elevenlabs_tts_model,
         settings.elevenlabs_stt_model,
     )
@@ -82,6 +85,8 @@ LimitedUser = Annotated[User, Depends(rate_limited_user)]
 # so a long earlier answer can never make the next question fail.
 MAX_TURN_TEXT = assistant.MAX_REPLY
 MAX_HISTORY = 10
+MAX_MESSAGE = 1000  # what Kate reads of one question
+MAX_MESSAGE_CAP = 8000  # beyond this the request is refused as abuse
 
 
 class ChatTurnIn(ApiModel):
@@ -95,8 +100,25 @@ class ChatTurnIn(ApiModel):
 
 
 class ChatIn(ApiModel):
-    message: str = Field(min_length=1, max_length=1000)
+    message: str = Field(max_length=MAX_MESSAGE_CAP)
     history: list[ChatTurnIn] = Field(default_factory=list, max_length=100)
+
+    @field_validator("message")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("String should have at least 1 character")
+        return value
+
+    @property
+    def truncated(self) -> bool:
+        return len(self.message) > MAX_MESSAGE
+
+    @property
+    def question(self) -> str:
+        """What Kate reads: a too-long question is shortened, never refused."""
+        return self.message[:MAX_MESSAGE]
 
     @field_validator("history")
     @classmethod
@@ -105,17 +127,22 @@ class ChatIn(ApiModel):
 
 
 class ActionOut(ApiModel):
-    type: Literal["none", "transfer", "advisor_handoff"]
+    type: Literal["none", "transfer", "advisor_handoff", "invest_guide"]
     to_name: str | None = None
     amount: str | None = None
     description: str | None = None
     summary: str | None = None
+    # The Kate Skills proposal behind this suggestion (confirm/decline via /proposals/{id}/…).
+    proposal_id: str | None = None
+    proposal_status: str | None = None
 
 
 class ChatOut(ApiModel):
     reply: str
     mode: Literal["normal", "guidance"]
     action: ActionOut
+    # True when the question was longer than MAX_MESSAGE and Kate only read the start of it.
+    truncated: bool = False
 
 
 class StatusOut(ApiModel):
@@ -124,6 +151,8 @@ class StatusOut(ApiModel):
     speech_recognition: bool
     # Why Kate runs on canned demo replies (shown to the demo team), or null when Gemini is on.
     mock_reason: str | None = None
+    # Why Kate reads aloud with the browser's voice instead of ElevenLabs, or null.
+    voice_reason: str | None = None
 
 
 class SpeechIn(ApiModel):
@@ -167,6 +196,9 @@ def kate_status(
         voice=voice is not None and voice.can_speak,
         speech_recognition=voice is not None,
         mock_reason=None if is_gemini else _mock_reason(settings),
+        voice_reason=None
+        if voice is not None
+        else "ELEVENLABS_API_KEY ontbreekt in .env (of de server werd niet herstart)",
     )
 
 
@@ -178,17 +210,24 @@ def kate_chat(
     today: TodayDep,
     model: ChatModelDep,
     state: KateStateDep,
+    skills: SkillsDep,
 ) -> ChatOut:
     # Only this customer's own data, and only the kinds they allowed (PUT /kate/consent).
     context = build_context(bank, user, today, state.consent_for(user.id))
     history = [ChatTurn(role=t.role, text=t.text) for t in body.history]
     try:
-        result = assistant.chat(model, context, history, body.message)
+        result = assistant.chat(model, context, history, body.question)
     except KateUnavailableError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
     action = result.action
+    reply = result.reply
+    proposal = propose_from_chat(skills, user.id, action, body.message, today)
+    if proposal is not None and not proposal.allowed:
+        # The customer switched this action off for Kate: no card, and she says so.
+        reply = f"{reply} (Dit mag ik niet voor je klaarzetten, zo koos je het in 'Wat mag Kate?'.)"
+        action = assistant.NoAction(type="none")
     return ChatOut(
-        reply=result.reply,
+        reply=reply[: assistant.MAX_REPLY],
         mode=result.mode,
         action=ActionOut(
             type=action.type,
@@ -196,7 +235,10 @@ def kate_chat(
             amount=f"{action.amount:.2f}" if isinstance(action, assistant.TransferAction) else None,
             description=getattr(action, "description", None),
             summary=getattr(action, "summary", None),
+            proposal_id=proposal.proposal_id if proposal else None,
+            proposal_status=proposal.status if proposal else None,
         ),
+        truncated=body.truncated,
     )
 
 
@@ -226,7 +268,8 @@ def kate_speech(
     try:
         audio = voice.speak(body.text, prefs.voice_for(user.id))
     except KateUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
+        # The reason is our own text (see kate/voice.py `explain`), never the provider's or a key.
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Kate's stem: {exc}") from exc
     return Response(content=audio, media_type="audio/mpeg")
 
 
@@ -245,5 +288,7 @@ def kate_transcribe(body: TranscribeIn, _: LimitedUser, voice: VoiceDep) -> Tran
     try:
         text = voice.transcribe(audio, body.mime_type)
     except KateUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, f"Spraakherkenning: {exc}"
+        ) from exc
     return TranscribeOut(text=text.strip()[:1000])

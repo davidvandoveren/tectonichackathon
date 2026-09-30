@@ -1,28 +1,41 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ViewModeToggle } from "./ViewModeToggle";
 import styles from "./PhoneFrame.module.css";
 
-function useClock(): string {
-  const format = () => new Date().toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
-  const [time, setTime] = useState(format);
-  useEffect(() => {
-    const timer = window.setInterval(() => setTime(format()), 15_000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return time;
-}
+/** Real iPhone screen in CSS pixels plus the bezel around it. */
+const DEVICE_WIDTH = 390 + 2 * 12;
+const DEVICE_HEIGHT = 844 + 2 * 12;
+const MARGIN = 48;
+/** Never show the phone larger than this, so it reads as a phone on big monitors too. */
+const MAX_SCALE = 0.78;
 
 /**
- * Renders the mobile shell inside a phone (iPhone proportions, 390x844) with a status bar, Dynamic
- * Island, side buttons and home indicator. Used when "mobile" is forced on a wide screen (demo on a
- * laptop). The status bar is chrome: the app lives in the area below it and never scrolls as a
- * whole, so its top bar and tab bar stay where a real app keeps them.
+ * Renders the mobile shell on a true 390x844 iPhone screen. The whole device is scaled down as
+ * one piece when the browser window is smaller, so text, buttons and spacing keep exactly the
+ * proportions of a real phone. Used when "Mobiel" is forced on a wide screen (demo machine).
  */
 export function PhoneFrame({ children }: { children: ReactNode }) {
+  const deviceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fit = () => {
+      const scale = Math.min(
+        MAX_SCALE,
+        (window.innerHeight - MARGIN) / DEVICE_HEIGHT,
+        (window.innerWidth - MARGIN) / DEVICE_WIDTH,
+      );
+      deviceRef.current?.style.setProperty("--phone-scale", String(Math.max(scale, 0.4)));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
   const time = useClock();
+
   return (
     <div className={styles.surround}>
-      <div className={styles.device}>
+      <div ref={deviceRef} className={styles.device}>
         <span className={`${styles.sideButton} ${styles.action}`} aria-hidden="true" />
         <span className={`${styles.sideButton} ${styles.volumeUp}`} aria-hidden="true" />
         <span className={`${styles.sideButton} ${styles.volumeDown}`} aria-hidden="true" />
@@ -30,7 +43,6 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
         <div className={styles.screen}>
           <div className={styles.statusBar} aria-hidden="true">
             <span className={styles.time}>{time}</span>
-            <span className={styles.island} />
             <span className={styles.indicators}>
               <SignalIcon />
               <WifiIcon />
@@ -44,6 +56,17 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
       <ViewModeToggle variant="floating" />
     </div>
   );
+}
+
+/** The phone's clock in the status bar, like a real iPhone (updates every 15 s). */
+function useClock(): string {
+  const format = () => new Date().toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+  const [time, setTime] = useState(format);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTime(format()), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return time;
 }
 
 function SignalIcon() {

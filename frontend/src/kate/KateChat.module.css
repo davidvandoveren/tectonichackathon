@@ -274,8 +274,15 @@
 
 .userRow {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
   animation: fadeIn 0.2s ease-out;
+}
+
+.shortenedNote {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
 }
 
 .kateRow {
@@ -679,6 +686,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.counterOver {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
 .crashNotice {
   position: fixed;
   right: var(--space-4);
@@ -707,4 +719,41 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+.actionButtons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.actionButtons .actionButton {
+  flex: 1;
+}
+
+.actionSecondary {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-navy-800);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.actionSecondary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.actionDone {
+  margin: 0;
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.actionError {
+  color: var(--color-danger);
+  font-size: 0.85rem;
 }

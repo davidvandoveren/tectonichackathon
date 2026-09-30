@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     elevenlabs_stt_model: str = "scribe_v1"
     # Per customer, per minute, across all Kate endpoints (LLM/voice calls cost money).
     kate_max_requests_per_minute: int = 20
+    # Kate's dispatcher sends notifications by itself every N seconds (0 = only when a customer
+    # opens the inbox). Never runs in the test environment.
+    kate_dispatch_interval_seconds: int = 30
 
     @field_validator("demo_password")
     @classmethod

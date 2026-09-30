@@ -14,13 +14,14 @@ import { PageErrorBoundary } from "./PageErrorBoundary";
  *
  * This component is the single place global overlays are mounted (like
  * `<KateChat />`), alongside the shell, so they render above the routed page
- * regardless of layout. Kate opens from a button in the shell's header (desktop
- * and mobile), never from a launcher floating over the content.
+ * regardless of layout. On desktop Kate opens from the header button instead
+ * of her own floating launcher.
  */
 export function AppLayout() {
   const { resolved, preference, isWideViewport } = useViewMode();
   const { pathname } = useLocation();
-  // One boundary per screen: a crash stays inside that screen and clears when you navigate away.
+  // One boundary per screen: a crash stays inside that screen (the shell and Kate keep working)
+  // and clears when you navigate away.
   const page = (
     <PageErrorBoundary key={pathname}>
       <Outlet />
@@ -30,16 +31,17 @@ export function AppLayout() {
   let shell: ReactNode;
   if (resolved === "desktop") {
     shell = (
-      <DesktopShell>{page}</DesktopShell>
+      <DesktopShell>
+        {page}
+      </DesktopShell>
     );
   } else {
     const framed = preference === "mobile" && isWideViewport;
-    // Kate opens from the Kate button in the mobile top bar, so no floating launcher over content.
     const mobileShell = (
-      <>
-        <MobileShell>{page}</MobileShell>
+      <MobileShell>
+        {page}
         <KateChat hideLauncher />
-      </>
+      </MobileShell>
     );
     return framed ? <PhoneFrame>{mobileShell}</PhoneFrame> : mobileShell;
   }

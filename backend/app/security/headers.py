@@ -12,12 +12,12 @@ _CSP = "; ".join(
         "media-src 'self' blob:",  # Kate's voice is played from an in-memory blob
         "connect-src 'self'",
         "object-src 'none'",
-        "frame-src 'none'",
+        "frame-src 'self'",  # only our own /demo page, which embeds the app twice
         "worker-src 'self'",
         "manifest-src 'self'",
         "base-uri 'self'",
         "form-action 'self'",
-        "frame-ancestors 'none'",
+        "frame-ancestors 'self'",  # own /demo page embeds two phones; nobody else
     ]
 )
 
@@ -25,7 +25,7 @@ SECURITY_HEADERS = {
     "Content-Security-Policy": _CSP,
     "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
     "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
+    "X-Frame-Options": "SAMEORIGIN",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": "camera=(), microphone=(self), geolocation=(), payment=()",
     "Cross-Origin-Opener-Policy": "same-origin",

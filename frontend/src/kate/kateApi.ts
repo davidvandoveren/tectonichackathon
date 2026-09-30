@@ -5,20 +5,47 @@ export interface KateStatus {
   voice: boolean;
   speech_recognition: boolean;
   mock_reason?: string | null;
+  voice_reason?: string | null;
 }
 
 export interface KateAction {
-  type: "none" | "transfer" | "advisor_handoff";
+  type: "none" | "transfer" | "advisor_handoff" | "invest_guide";
   to_name: string | null;
   amount: string | null;
   description: string | null;
   summary: string | null;
+  /** The Kate Skills proposal behind this suggestion; confirm/decline goes through Skills. */
+  proposal_id?: string | null;
+  proposal_status?: string | null;
+}
+
+export interface ProposalOutcome {
+  kind: "done" | "navigate" | "advisor_handoff";
+  message: string;
+  navigate_to: string | null;
+  handoff_summary: string | null;
+}
+
+interface ProposalResult {
+  id: string;
+  status: string;
+  outcome: ProposalOutcome | null;
+}
+
+export function confirmProposal(id: string): Promise<ProposalResult> {
+  return apiClient.post<ProposalResult>(`/proposals/${encodeURIComponent(id)}/approve`, {});
+}
+
+export function declineProposal(id: string): Promise<ProposalResult> {
+  return apiClient.post<ProposalResult>(`/proposals/${encodeURIComponent(id)}/decline`, {});
 }
 
 export interface KateChatResponse {
   reply: string;
   mode: "normal" | "guidance";
   action: KateAction;
+  /** The question was longer than MAX_MESSAGE; Kate read only the start. */
+  truncated?: boolean;
 }
 
 export interface ChatTurn {
@@ -26,6 +53,8 @@ export interface ChatTurn {
   text: string;
 }
 
+/** Same limits as the API (backend/app/routers/kate.py); anything longer is cut, never refused. */
+export const MAX_MESSAGE = 1000;
 export const MAX_HISTORY = 10;
 export const MAX_TURN_TEXT = 1200;
 
@@ -60,7 +89,7 @@ export function getKateStatus(signal?: AbortSignal): Promise<KateStatus> {
 
 export function sendKateMessage(message: string, history: ChatTurn[]): Promise<KateChatResponse> {
   return apiClient.post<KateChatResponse>("/kate/chat", {
-    message,
+    message: message.slice(0, MAX_MESSAGE),
     history: history.slice(-MAX_HISTORY).map((turn) => ({ ...turn, text: turn.text.slice(0, MAX_TURN_TEXT) })),
   });
 }
@@ -82,7 +111,16 @@ export async function fetchSpeech(text: string): Promise<Blob> {
     body: JSON.stringify({ text }),
   });
   if (!response.ok) {
-    throw new ApiError(response.status, "Kate's stem is niet beschikbaar.");
+    let detail = "Kate's stem is niet beschikbaar.";
+    try {
+      const body: unknown = await response.json();
+      if (body && typeof body === "object" && "detail" in body && typeof body.detail === "string") {
+        detail = body.detail;
+      }
+    } catch {
+      // not JSON: keep the generic message
+    }
+    throw new ApiError(response.status, detail);
   }
   return response.blob();
 }

@@ -1,15 +1,19 @@
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ApiError } from "../api/client";
+import { isSafeInternalPath } from "../lib/cta";
 import { AuthContext } from "../auth/AuthContext";
 import {
   fetchSpeech,
   getKateStatus,
   getKateVoice,
+  MAX_MESSAGE,
   setKateVoice,
   sendKateMessage,
   transcribe,
   transferLink,
+  confirmProposal,
+  declineProposal,
   type ChatTurn,
   type KateAction,
   type KateStatus,
@@ -44,6 +48,8 @@ interface Message extends ChatTurn {
   id: number;
   action?: KateAction;
   guidance?: boolean;
+  /** A user question that was longer than MAX_MESSAGE: Kate only read the start. */
+  shortened?: boolean;
 }
 
 /** Shown on screen and sent as Kate's first turn: she has already said she is an AI. */
@@ -57,8 +63,7 @@ const SUGGESTIONS = [
   "Mijn moeder is overleden, wat moet ik doen?",
 ];
 
-/** Same limit as the API; longer questions are cut here instead of failing. */
-const MAX_MESSAGE = 1000;
+const SHORTENED_NOTE = `Je vraag was lang: Kate las de eerste ${MAX_MESSAGE} tekens.`;
 
 type MicState = "idle" | "listening" | "transcribing";
 type StopHandle = Recording | { stop: () => void };
@@ -101,6 +106,7 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
   const recording = useRef<StopHandle | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const nextId = useRef(1);
+  const inFlight = useRef(false);
   const listEnd = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -170,20 +176,30 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
         return;
       } catch (err) {
         console.warn("ElevenLabs-stem niet beschikbaar, browserstem wordt gebruikt:", err);
-        setVoiceNotice("Kate's stem (ElevenLabs) werkt nu niet; ik lees voor met de stem van je browser.");
+        const why = err instanceof ApiError ? ` Oorzaak: ${err.detail}` : "";
+        setVoiceNotice(`Kate's stem (ElevenLabs) werkt nu niet; ik lees voor met de stem van je browser.${why}`);
       }
+    } else if (status?.voice_reason) {
+      setVoiceNotice(`Voorlezen met de stem van je browser. ElevenLabs staat uit: ${status.voice_reason}.`);
     }
     speakWithBrowser(text, () => setSpeakingId((current) => (current === id ? null : current)), voice);
   }
 
   async function send(text: string) {
-    const message = text.trim().slice(0, MAX_MESSAGE);
-    if (!message || busy) return;
+    const trimmed = text.trim();
+    // A ref, not the `busy` state: two submits in the same tick (double tap, Enter + click, voice
+    // finishing while typing) both see a stale `busy === false` and would send twice.
+    if (!trimmed || inFlight.current) return;
+    inFlight.current = true;
+    // Too long (pasted text, a long voice transcript): cut and say so, never refuse or fail.
+    const shortened = trimmed.length > MAX_MESSAGE;
+    const message = trimmed.slice(0, MAX_MESSAGE);
+    const userId = nextId.current++;
     const history: ChatTurn[] = [
       { role: "kate", text: GREETING },
       ...messages.map(({ role, text: t }) => ({ role, text: t })),
     ];
-    setMessages((current) => [...current, { id: nextId.current++, role: "user", text: message }]);
+    setMessages((current) => [...current, { id: userId, role: "user", text: message, shortened }]);
     setInput("");
     setError(null);
     setBusy(true);
@@ -191,13 +207,14 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
       const response = await sendKateMessage(message, history);
       const id = nextId.current++;
       setMessages((current) => [
-        ...current,
+        ...current.map((m) => (m.id === userId && response.truncated ? { ...m, shortened: true } : m)),
         { id, role: "kate", text: response.reply, action: response.action, guidance: response.mode === "guidance" },
       ]);
       if (speakReplies) void speak(id, response.reply);
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Kate is even niet bereikbaar.");
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
@@ -354,6 +371,7 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
           message.role === "user" ? (
             <div key={message.id} className={styles.userRow}>
               <p className={`${styles.bubble} ${styles.user}`}>{message.text}</p>
+              {message.shortened && <p className={styles.shortenedNote}>{SHORTENED_NOTE}</p>}
             </div>
           ) : (
             <div key={message.id} className={styles.kateRow}>
@@ -420,14 +438,20 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder={mic === "transcribing" ? "Even omzetten naar tekst…" : "Vraag het aan Kate"}
-              maxLength={MAX_MESSAGE}
               aria-label="Bericht aan Kate"
               aria-describedby={input.length > MAX_MESSAGE - 200 ? "kate-count" : undefined}
+              aria-invalid={input.length > MAX_MESSAGE || undefined}
               disabled={mic === "transcribing"}
             />
+            {/* No maxLength: a paste would be cut silently. The counter warns, send shortens. */}
             {input.length > MAX_MESSAGE - 200 && (
-              <span id="kate-count" className={styles.counter} aria-live="polite">
+              <span
+                id="kate-count"
+                className={`${styles.counter} ${input.length > MAX_MESSAGE ? styles.counterOver : ""}`}
+                aria-live="polite"
+              >
                 {input.length}/{MAX_MESSAGE}
+                {input.length > MAX_MESSAGE ? " · te lang, Kate leest het begin" : ""}
               </span>
             )}
             {input.trim() ? (
@@ -455,8 +479,55 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
   );
 }
 
+type CardState = { kind: "open" } | { kind: "busy" } | { kind: "declined" } | { kind: "done"; message: string };
+
 function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: () => void }) {
-  const [requested, setRequested] = useState(false);
+  const navigate = useNavigate();
+  const [state, setState] = useState<CardState>({ kind: "open" });
+  const [error, setError] = useState<string | null>(null);
+  // Only a "pending" Skills proposal can be confirmed with one tap; "suggested" means the
+  // customer allowed Kate to suggest, not to prepare, so they finish it themselves.
+  const canConfirm = !!action.proposal_id && action.proposal_status === "pending";
+
+  async function confirm() {
+    if (!action.proposal_id) return;
+    setState({ kind: "busy" });
+    setError(null);
+    try {
+      const result = await confirmProposal(action.proposal_id);
+      const outcome = result.outcome;
+      if (outcome?.kind === "navigate" && outcome.navigate_to && isSafeInternalPath(outcome.navigate_to)) {
+        onNavigate();
+        navigate(outcome.navigate_to);
+        return;
+      }
+      setState({ kind: "done", message: outcome?.message ?? "Klaargezet." });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.detail : "Dat lukte even niet. Probeer het opnieuw.");
+      setState({ kind: "open" });
+    }
+  }
+
+  async function decline() {
+    if (action.proposal_id) {
+      try {
+        await declineProposal(action.proposal_id);
+      } catch {
+        // Declining is best effort: the proposal simply expires otherwise.
+      }
+    }
+    setState({ kind: "declined" });
+  }
+
+  const busy = state.kind === "busy";
+  const footer =
+    state.kind === "declined" ? (
+      <p className={styles.actionNote}>Oké, ik zet dit niet door.</p>
+    ) : state.kind === "done" ? (
+      <p className={styles.actionDone} role="status">
+        ✓ {state.message}
+      </p>
+    ) : null;
 
   if (action.type === "transfer") {
     return (
@@ -475,10 +546,43 @@ function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: ()
             </>
           )}
         </dl>
-        <Link to={transferLink(action)} className={styles.actionButton} onClick={onNavigate}>
-          Controleer en bevestig
+        {footer ??
+          (canConfirm ? (
+            <div className={styles.actionButtons}>
+              <button type="button" className={styles.actionButton} onClick={() => void confirm()} disabled={busy}>
+                Bevestigen
+              </button>
+              <button type="button" className={styles.actionSecondary} onClick={() => void decline()} disabled={busy}>
+                Nee, dank je
+              </button>
+            </div>
+          ) : (
+            <Link to={transferLink(action)} className={styles.actionButton} onClick={onNavigate}>
+              Controleer en bevestig
+            </Link>
+          ))}
+        {error && (
+          <p className={styles.actionError} role="alert">
+            {error}
+          </p>
+        )}
+        <p className={styles.actionNote}>Kate betaalt nooit zelf. Je bevestigt op het gewone overschrijvingsscherm.</p>
+      </div>
+    );
+  }
+
+  if (action.type === "invest_guide") {
+    return (
+      <div className={styles.actionCard}>
+        <p className={styles.actionEyebrow}>Beleggen met Kate · jij kiest</p>
+        <p className={styles.actionTitle}>Welke ETF's passen bij jou?</p>
+        <p className={styles.actionNote}>
+          In 5 stappen: je buffer, een paar vragen, een richting, je eigen keuze en een stappenplan. Kate legt uit,
+          jij beslist.
+        </p>
+        <Link to="/invest" className={styles.actionButton} onClick={onNavigate}>
+          Start het stappenplan
         </Link>
-        <p className={styles.actionNote}>Kate voert niets zelf uit. Jij bevestigt.</p>
       </div>
     );
   }
@@ -490,9 +594,26 @@ function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: ()
         <p className={styles.actionTitle}>Gesprek voorbereid</p>
         <p className={styles.actionNote}>Dit krijgt je adviseur mee, zodat je je verhaal niet opnieuw hoeft te doen:</p>
         <blockquote className={styles.summary}>{action.summary}</blockquote>
-        <button type="button" className={styles.actionButton} onClick={() => setRequested(true)} disabled={requested}>
-          {requested ? "Aangevraagd ✓ (demo)" : "Plan een gesprek"}
-        </button>
+        {footer ??
+          (canConfirm ? (
+            <div className={styles.actionButtons}>
+              <button type="button" className={styles.actionButton} onClick={() => void confirm()} disabled={busy}>
+                Plan een gesprek
+              </button>
+              <button type="button" className={styles.actionSecondary} onClick={() => void decline()} disabled={busy}>
+                Nu niet
+              </button>
+            </div>
+          ) : (
+            <p className={styles.actionNote}>
+              Wil je dat Kate dit voor je klaarzet? Pas het aan in <Link to="/kate" onClick={onNavigate}>Wat weet en mag Kate?</Link>
+            </p>
+          ))}
+        {error && (
+          <p className={styles.actionError} role="alert">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

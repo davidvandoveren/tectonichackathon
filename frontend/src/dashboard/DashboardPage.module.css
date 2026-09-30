@@ -1,0 +1,422 @@
+/* Jury dashboard. Wide layout (outside the phone frame). Categorical slots validated with the
+   dataviz validator against #ffffff: #2a78d6, #eb6834, #1baf7a (aqua < 3:1, so every part also
+   carries a visible label + number). */
+
+.page {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --bar: #2a78d6;
+  --track: #eef2f6;
+
+  /* Full-bleed: break out of the app's phone-width #root without touching global styles. */
+  box-sizing: border-box;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  min-height: 100vh;
+  padding: var(--space-5) var(--space-4) var(--space-8);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.header,
+.tiles,
+.grid,
+.card,
+.personaGrid,
+.sectionTitle,
+.loading,
+.error {
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: var(--space-1) 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: var(--color-navy-900);
+}
+
+.subtitle,
+.caption {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.caption {
+  margin-bottom: var(--space-4);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.segment {
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-navy-800);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmentOn {
+  border-color: var(--color-navy-800);
+  background: var(--color-navy-800);
+  color: var(--color-text-on-navy);
+}
+
+.back {
+  margin-left: var(--space-2);
+  color: var(--color-accent-dark);
+  font-weight: 600;
+}
+
+.segment:focus-visible,
+.back:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.loading,
+.error {
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* --- KPI row ---------------------------------------------------------------------------------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.tile {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.tileHero {
+  background: linear-gradient(135deg, var(--color-navy-900), var(--color-navy-700));
+  color: var(--color-text-on-navy);
+}
+
+.tileLabel {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.tileValue {
+  margin: var(--space-1) 0;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.tileNote {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* --- cards ------------------------------------------------------------------------------------ */
+.card {
+  margin-bottom: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.grid .card,
+.personaGrid .card {
+  margin-bottom: 0;
+}
+
+.cardTitle {
+  margin: 0 0 var(--space-1);
+  font-size: 1.1rem;
+  color: var(--color-navy-900);
+}
+
+.muted {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* --- 100% split ------------------------------------------------------------------------------- */
+.stack {
+  display: flex;
+  gap: 2px; /* surface gap between fills */
+  height: 28px;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.segmentBar {
+  min-width: 4px;
+}
+
+.segmentBar:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.segmentBar:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.s1 {
+  background: var(--series-1);
+}
+.s2 {
+  background: var(--series-2);
+}
+.s3 {
+  background: var(--series-3);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legend .muted {
+  margin: 0;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* --- bar lists -------------------------------------------------------------------------------- */
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) 2fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 2px 0;
+  font-size: 0.85rem;
+}
+
+.barRow:hover .bar {
+  filter: brightness(0.9);
+}
+
+.barLabel {
+  color: var(--color-text);
+}
+
+.barTrack {
+  height: 12px;
+  border-radius: 4px;
+  background: var(--track);
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--bar);
+}
+
+.barValue {
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* --- scale ------------------------------------------------------------------------------------ */
+.scale {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.scale div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.scale dt {
+  color: var(--color-text-muted);
+}
+
+.scale dd {
+  margin: 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- table ------------------------------------------------------------------------------------ */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.table thead th {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- personas --------------------------------------------------------------------------------- */
+.sectionTitle {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+  font-size: 1.2rem;
+  color: var(--color-navy-900);
+}
+
+.personaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.personaName {
+  margin: 0;
+  color: var(--color-navy-900);
+}
+
+.flow {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.flow > li {
+  position: relative;
+  padding: 0 0 var(--space-3) var(--space-4);
+  border-left: 2px solid var(--color-border);
+}
+
+.flow > li:last-child {
+  border-left-color: transparent;
+}
+
+.flow p,
+.flow ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+}
+
+.flow p {
+  padding-left: 0;
+}
+
+.step {
+  display: inline-block;
+  color: var(--color-navy-800);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.step::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.reason {
+  display: block;
+  color: var(--color-text-muted);
+}

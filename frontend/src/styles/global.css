@@ -11,19 +11,16 @@ body {
 
 body {
   margin: 0;
-  background: var(--color-navy-900);
-  color: var(--color-text);
+  background: var(--kbc-bg-muted);
+  color: var(--kbc-navy);
   font-family: var(--font-sans);
+  font-weight: var(--font-weight-default);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 #root {
   min-height: 100vh;
-  max-width: var(--max-width-app);
-  margin: 0 auto;
-  background: var(--color-bg);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
 }
@@ -57,7 +54,7 @@ ol {
 
 /* Visible focus styles everywhere, for keyboard and switch-device users */
 :focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: 3px solid var(--kbc-focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }

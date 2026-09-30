@@ -1,0 +1,37 @@
+.surround {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--kbc-bg-muted);
+}
+
+.device {
+  width: var(--phone-width);
+  height: var(--phone-height);
+  max-height: calc(100vh - var(--space-8));
+  border-radius: 40px;
+  padding: 12px;
+  background: #0a1a2e;
+  box-shadow:
+    0 24px 60px rgba(13, 42, 80, 0.35),
+    0 2px 8px rgba(13, 42, 80, 0.2);
+}
+
+.screen {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 28px;
+  background: var(--kbc-surface);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  /* Establishes a containing block for position:fixed descendants (the tab
+     bar, floating toggle), so they pin to this simulated screen instead of
+     the real browser viewport. */
+  transform: translateZ(0);
+}

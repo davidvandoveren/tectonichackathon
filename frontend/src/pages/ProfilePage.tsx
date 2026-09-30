@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
 import { PageHeader } from "../components/PageHeader";
+import { ViewModeToggle } from "../layout/ViewModeToggle";
 import styles from "./ProfilePage.module.css";
 
 export function ProfilePage() {
@@ -37,9 +38,27 @@ export function ProfilePage() {
             </div>
           </dl>
         </div>
+
+        {/*
+          Room for a settings-style menu list of links (e.g. "Mijn
+          abonnementen"): use <MenuLink> from src/components/MenuLink.tsx,
+          one per <li>, inside a <ul>.
+        */}
+
         <Button type="button" variant="secondary" onClick={handleLogout}>
           Afmelden
         </Button>
+
+        <section className={styles.viewModeSection} aria-labelledby="view-mode-heading">
+          <h2 id="view-mode-heading" className={styles.viewModeHeading}>
+            Weergave
+          </h2>
+          <p className={styles.viewModeHint}>
+            Kies hoe de app getoond wordt: automatisch op basis van je scherm, of altijd Mobiel/Desktop
+            (handig voor demo's).
+          </p>
+          <ViewModeToggle />
+        </section>
       </div>
     </div>
   );

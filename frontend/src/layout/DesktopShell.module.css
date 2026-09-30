@@ -1,0 +1,238 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--kbc-bg);
+}
+
+.sidebar {
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  background: var(--kbc-surface);
+  border-right: 1px solid var(--kbc-line);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.wordmarkLink {
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.navItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: var(--space-2) 2px;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-default);
+  color: var(--kbc-slate);
+  text-decoration: none;
+  text-align: center;
+}
+
+.navItem[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.navIcon {
+  width: 22px;
+  height: 22px;
+}
+
+.navItemActive {
+  color: var(--kbc-blue);
+  font-weight: var(--font-weight-bold);
+}
+
+.navItemActive::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--kbc-blue);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--kbc-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--header-height);
+  flex-shrink: 0;
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--kbc-line);
+  flex-wrap: wrap;
+}
+
+.headerTitle {
+  font-size: 1rem;
+  font-weight: var(--font-weight-default);
+  color: var(--kbc-navy);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.headerIconButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: var(--touch-target);
+  padding: 4px;
+  border: none;
+  background: none;
+  color: var(--kbc-slate);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-default);
+  cursor: not-allowed;
+}
+
+.headerIconWrap {
+  position: relative;
+  display: inline-flex;
+  color: var(--kbc-blue);
+}
+
+.dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--kbc-red);
+  border: 1.5px solid var(--kbc-surface);
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userMenuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--kbc-navy);
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.userMenuButton:hover {
+  background: var(--kbc-bg-muted);
+}
+
+.chevron {
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.userMenuDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--kbc-surface);
+  border: 1px solid var(--kbc-line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-tile);
+  z-index: 30;
+}
+
+.userMenuItem {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--kbc-navy);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-default);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.userMenuItem:hover {
+  background: var(--kbc-bg-muted);
+}
+
+.subnav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: var(--subnav-height);
+  flex-shrink: 0;
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--kbc-line);
+  overflow-x: auto;
+}
+
+.subnavItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-default);
+  color: var(--kbc-slate);
+  white-space: nowrap;
+  cursor: not-allowed;
+}
+
+.subnavItem svg {
+  width: 16px;
+  height: 16px;
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max-width);
+  padding: var(--space-6) var(--space-6) var(--space-8) var(--content-inset);
+}

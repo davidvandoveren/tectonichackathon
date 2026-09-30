@@ -9,6 +9,7 @@ import { TextField } from "../components/TextField";
 import { Skeleton } from "../components/Skeleton";
 import { ErrorState } from "../components/ErrorState";
 import { Wordmark } from "../components/Wordmark";
+import { ViewModeToggle } from "../layout/ViewModeToggle";
 import styles from "./LoginPage.module.css";
 
 interface LocationState {
@@ -82,7 +83,7 @@ export function LoginPage() {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
-        <Wordmark />
+        <Wordmark tone="light" />
       </div>
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <h1 className={styles.heading}>Aanmelden</h1>
@@ -151,6 +152,7 @@ export function LoginPage() {
         )}
       </form>
       <p className={styles.footer}>Demo – synthetische data, geen echte bank</p>
+      <ViewModeToggle variant="floating" />
     </div>
   );
 }

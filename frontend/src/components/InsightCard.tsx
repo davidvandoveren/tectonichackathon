@@ -21,7 +21,7 @@ export function InsightCard({ insight }: InsightCardProps) {
 
   return (
     <article className={styles.card}>
-      <p className={styles.kind}>Voor jou</p>
+      <p className={styles.kind}>Kate</p>
       <h3 className={styles.title}>{insight.title}</h3>
       <p className={styles.body}>{insight.body}</p>
 

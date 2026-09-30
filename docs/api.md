@@ -59,9 +59,16 @@ Rules: amount `> 0`, max 2 decimals, ≤ 10000.00, ≤ available balance; IBAN m
 ### Insights ("Voor jou") – the personalization hook
 `GET /api/v1/insights` →
 ```json
-[{"id": "i_…", "kind": "moment", "title": "Eerste loon ontvangen?", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever."}]
+[{"id": "i_first_salary_u_emma", "kind": "moment", "title": "Proficiat met je eerste loon!", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever.",
+  "moment": "first_salary", "urgency": 39, "channel": "feed", "confidence": 0.82}]
 ```
-`reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present. Today these come from simple rules in `backend/app/services/insights.py`; this is where the PoC's personalization engine plugs in.
+`reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present.
+
+Fed by the moments engine (see [Kate feed](#kate-feed-the-moments-engine)): home shows exactly the items of `GET /kate/feed`, in the same order (highest urgency first), and obeys the same consent switches, dismissals and time machine. What Kate deliberately keeps quiet about is only in the feed's `silenced`.
+
+- `kind`: `alert` (a risk, e.g. a missing salary), `guidance` (needs an advisor), otherwise `moment`.
+- `moment` is the moment type: pass it to `POST /kate/feed/{moment}/dismiss` for "Niet meer tonen".
+- `urgency` (0–100), `channel` and `confidence` (0–1) are **optional additions**; the original fields keep their meaning, so older clients keep working.
 
 ### Kate (chat, voice, speech recognition)
 All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_REQUESTS_PER_MINUTE`, default 20 → `429`). Upstream failures (Gemini/ElevenLabs) → `503`. Without keys Kate runs in **demo mode** (`llm: "mock"`, canned answers) and the UI falls back to the browser's own speech recognition and voice.

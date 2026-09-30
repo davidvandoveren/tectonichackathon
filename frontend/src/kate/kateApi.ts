@@ -13,6 +13,30 @@ export interface KateAction {
   amount: string | null;
   description: string | null;
   summary: string | null;
+  /** The Kate Skills proposal behind this suggestion; confirm/decline goes through Skills. */
+  proposal_id?: string | null;
+  proposal_status?: string | null;
+}
+
+export interface ProposalOutcome {
+  kind: "done" | "navigate" | "advisor_handoff";
+  message: string;
+  navigate_to: string | null;
+  handoff_summary: string | null;
+}
+
+interface ProposalResult {
+  id: string;
+  status: string;
+  outcome: ProposalOutcome | null;
+}
+
+export function confirmProposal(id: string): Promise<ProposalResult> {
+  return apiClient.post<ProposalResult>(`/proposals/${encodeURIComponent(id)}/approve`, {});
+}
+
+export function declineProposal(id: string): Promise<ProposalResult> {
+  return apiClient.post<ProposalResult>(`/proposals/${encodeURIComponent(id)}/decline`, {});
 }
 
 export interface KateChatResponse {

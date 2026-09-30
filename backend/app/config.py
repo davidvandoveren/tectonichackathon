@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     static_dir: Path | None = None
     login_max_failures: int = 5
     login_window_seconds: int = 5 * 60
+    # Usernames allowed to use the demo-only admin endpoints (time machine). Comma separated.
+    # Empty means nobody, so the endpoints answer 404 for everyone until a demo is set up.
+    admin_usernames: str = ""
+
+    @property
+    def admin_username_set(self) -> frozenset[str]:
+        return frozenset(name.strip() for name in self.admin_usernames.split(",") if name.strip())
 
     # --- Kate assistant (chat, voice, speech recognition) --------------------------------------
     # "mock" answers with canned replies so the app works without any API key.

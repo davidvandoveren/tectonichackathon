@@ -31,7 +31,47 @@ Werkende demo boven breedte. We kiezen **één demo-verhaal** dat de twee demosc
 | COULD | **Family circle** (gekoppelde accounts): in de demo als 1 gedeeld potje of enkel als visie-slide | Sterk idee, maar veel autorisatiewerk |
 | WON'T (vandaag) | Echt beleggingsadvies, Financial Twin, echte database | Te veel risico/tijd |
 
-## 3. Taakverdeling (voorstel)
+## 3. Taakverdeling
+
+### 3.0 Werkelijke verdeling (stand 30/09, ±20:30) – dit geldt
+
+De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebouwd is. **Deze tabel is de waarheid**; pas hem aan zodra je iets oppakt.
+
+| Onderdeel | Eigenaar | Code | Status |
+|---|---|---|---|
+| Basis-app: login, rekeningen, overschrijvingen, security, CI, Cloud Run | David | `backend/app/{routers,security,domain}/`, `Dockerfile`, `.github/` | ✅ op `main`, live |
+| UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David · **Claude-sessie UI** (#18) | `frontend/**` (behalve `kate/`, `subscriptions/`) | 🚧 `feature/kbc-touch-ui` |
+| Kate-chat (Gemini/mock), stem (ElevenLabs), erfenis-modus | Sander | `backend/app/kate/`, `routers/kate.py`, `frontend/src/kate/` | ✅ #12 op `main` |
+| Abonnementenbeheer ("Gebruik je dit nog?") | Sander | `backend/app/subscriptions/`, `routers/subscriptions.py`, `frontend/src/subscriptions/` | ✅ #14 op `main` |
+| Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine, data-toestemming (`PUT /kate/consent`) | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | 🔍 PR #15 |
+| Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
+| Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | 🔍 PR #20 |
+| README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
+| Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | **niemand** (bestand van Alexandre) | `backend/app/domain/seed.py` | ⏳ open, **MUST** |
+| Jury-dashboard (10.000 klanten) | **niemand** | – | ⏳ open |
+| Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David (frontend) | `frontend/` | ⏳ na #15/#16 |
+| Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
+| Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |
+
+**David werkt met twee Claude-sessies tegelijk; zo zijn ze afgebakend:**
+
+| Sessie | Werkt aan | Raakt aan | Raakt NIET aan |
+|---|---|---|---|
+| **Claude-sessie UI** (#18) | KBC Touch/Mobile UI, toggle, daarna UI voor #15 en #16 | alleen `frontend/**` (niet `frontend/src/kate/`, `frontend/src/subscriptions/`) | backend |
+| **Claude-sessie Skills** (#19) | Kate Skills-backend (#16) en de koppeling van chat/momenten aan voorstellen | alleen `backend/app/skills/**`, `routers/skills.py`, 2 regels in `main.py`, eigen sectie in `docs/api.md` | `frontend/**`, `kate/`, `moments/`, `subscriptions/` |
+
+Nieuwe taken worden eerst als issue geclaimd (regel 0) voor een van beide sessies ze oppakt.
+
+**Openstaande afstemming (dubbel werk vermijden):**
+- `feature/subscriptions-chun` (Alexandre) bouwt abonnementen een tweede keer; #14 staat al op `main`. Niet mergen; extra's toevoegen aan `backend/app/subscriptions/`.
+- Eén voorstel-systeem: de chat (#12) stuurt zijn `transfer`/`advisor_handoff` via `SkillsService.propose` (#16) zodra #16 op `main` staat.
+- Eén lijst gevoelige categorieën: nu dubbel in `kate/context.py` en `subscriptions/detect.py` → samenvoegen in één gedeelde module.
+- Eén bron voor kaartpakketprijzen: Skills `cards`-pack en `moments/catalog.py`.
+- ✅ Alexandre = Alexandre Chun = "Chun" uit 3.1.
+- **Brein → acties is al gekoppeld:** #16 `draft_for_moment()` zet elk moment uit #15 (ook `income_missing`) om in een vooraf ingevulde Skills-actie. Feed-kaarten kunnen dus een *Bevestigen*-knop krijgen zonder extra backendwerk.
+- **Toestemming = twee lagen, één scherm:** data (`PUT /kate/consent {domain, allowed}`, #15) en acties (`PUT /skills/consent/{action_id}`, #16). Abonnementen (#14) moeten het domein `spending` respecteren (Sander).
+
+### 3.1 Oorspronkelijke verdeling (achterhaald, ter referentie)
 
 Het principe: **elk persoon heeft eigen mappen/bestanden.** Zo krijgen we bijna geen merge-conflicten.
 
@@ -67,15 +107,18 @@ Het principe: **elk persoon heeft eigen mappen/bestanden.** Zo krijgen we bijna 
 
 ## 4. Afspraken om niet in elkaars weg te zitten
 
+**Regel 0 – eerst claimen, dan bouwen.** Voor je aan iets nieuws begint: maak een GitHub-issue `🚧 In progress (<naam>): <onderdeel>` (zoals #13) **en** zet jezelf in tabel 3.0. Staat er al iemand? Dan eerst overleggen. Zo bouwen we niets twee keer.
+
 **Bestandseigenaarschap**
 
 | Bestand / map | Eigenaar | Anderen |
 |---|---|---|
-| `backend/app/kate/*` (behalve `llm.py`), `routers/admin.py`, `domain/seed.py` | Sander | niet aanpassen, vragen |
-| `backend/app/kate/llm.py`, `routers/kate_chat.py` | Chun | niet aanpassen, vragen |
-| `frontend/**` | David | niet aanpassen, vragen |
+| `backend/app/kate/**`, `backend/app/subscriptions/**`, `frontend/src/kate/`, `frontend/src/subscriptions/` | Sander | niet aanpassen, vragen |
+| `backend/app/moments/**`, `routers/admin.py`, `routers/kate_feed.py`, `domain/seed.py`, `services/insights.py` | Alexandre | niet aanpassen, vragen |
+| `backend/app/skills/**`, `routers/skills.py` | David | niet aanpassen, vragen |
+| `frontend/**` (rest) | David | niet aanpassen, vragen |
 | `backend/app/main.py` (routers registreren), `domain/models.py`, `schemas.py` | gedeeld | **alleen toevoegen, niets wijzigen**; meld het in de chat |
-| `backend/app/services/insights.py`, `security/*`, `domain/bank.py` | David (bestaand) | Sander mag *importeren*, niet herschrijven |
+| `security/*`, `domain/bank.py` | David (bestaand) | *importeren* mag, herschrijven niet |
 | `docs/api.md` | gedeeld | eerst contract afspreken, dan bouwen |
 | `README.md` | Chun (eindverantwoordelijke) | anderen sturen tekst door |
 | `docs/ideas.md` | iedereen | – |
@@ -88,6 +131,8 @@ Het principe: **elk persoon heeft eigen mappen/bestanden.** Zo krijgen we bijna 
 5. Voor je een PR opent: dezelfde checks als CI draaien (zie README).
 
 ## 5. Voorstel API-contract (nieuw, af te spreken)
+
+> Achterhaald qua namen/eigenaars: **`docs/api.md` is de bron van waarheid** (Kate: `/kate/chat`, `/kate/speech`, `/kate/transcribe`; abonnementen: `/subscriptions`; feed/tijdmachine: #15; skills/toestemming/voorstellen: #16).
 
 | Endpoint | Wie | Wat |
 |---|---|---|

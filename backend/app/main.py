@@ -13,10 +13,15 @@ from app.config import Settings, get_settings
 from app.domain.bank import Bank
 from app.domain.seed import seed_bank
 from app.kate.voices import VoicePreferences
-from app.routers import auth, banking, kate
+from app.moments.state import KateState
+from app.routers import admin, auth, banking, kate, kate_feed, skills, subscriptions
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
 from app.security.rate_limit import FailureLimiter, RequestLimiter
 from app.security.sessions import SessionStore
+from app.skills.registry import default_registry
+from app.skills.service import SkillsService
+from app.subscriptions.scenario import book_subscriptions
+from app.subscriptions.store import FeedbackStore
 
 logger = logging.getLogger("kbc_poc")
 
@@ -28,7 +33,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         bank = Bank()
         seed_bank(bank, settings.demo_password.get_secret_value(), date.today())
+        book_subscriptions(bank, date.today())
+        app.state.subscription_feedback = FeedbackStore()
         app.state.bank = bank
+        app.state.kate = KateState()
+        app.state.skills = SkillsService(bank, default_registry())
         app.state.sessions = SessionStore(settings.session_ttl_seconds)
         app.state.login_limiter = FailureLimiter(
             settings.login_max_failures, settings.login_window_seconds
@@ -70,6 +79,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(banking.router, prefix="/api/v1")
     app.include_router(kate.router, prefix="/api/v1")
+    app.include_router(kate_feed.router, prefix="/api/v1")
+    app.include_router(admin.router, prefix="/api/v1")
+    app.include_router(subscriptions.router, prefix="/api/v1")
+    app.include_router(skills.router, prefix="/api/v1")
 
     if settings.static_dir and (settings.static_dir / "index.html").is_file():
         _mount_frontend(app, settings.static_dir.resolve())

@@ -5,7 +5,7 @@
 `feature/…`, `fix/…`, `docs/…`, `chore/…`.
 
 ## Pull requests
-- All changes go through a PR; at least **1 approving review** is required before merging.
+- All changes go through a PR (direct pushes to `main` are blocked). No approval is required: every collaborator can merge their own PR once CI is green. A quick review from a teammate is still welcome for bigger changes.
 - Fill in the PR template. Link the issue if there is one.
 - Keep PRs focused and small; draft PRs are welcome for early feedback.
 - Resolve all review conversations before merging. Prefer **squash merge** for a clean history.

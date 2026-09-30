@@ -29,7 +29,7 @@ git add <files>
 git commit -m "Short, clear message"
 git push -u origin feature/short-description
 ```
-Then open a **Pull Request** on GitHub (or `gh pr create --fill`). Another teammate reviews, you merge. `main` is protected: direct pushes are blocked.
+Then open a **Pull Request** on GitHub (or `gh pr create --fill`) and merge it yourself once CI is green (squash merge). `main` is protected: direct pushes are blocked, but no approval is needed.
 
 ## 5. Ground rules
 - **No secrets** in git: no API keys, passwords, tokens, real customer data. Use a local `.env` (already git-ignored) and share keys via a private channel.

@@ -19,6 +19,7 @@ from typing import Literal
 from app.domain.models import AccountType, Category, Transaction
 from app.kate.context import is_sensitive
 from app.moments.ledger import Ledger, euro, median_of, percentile
+from app.skills.packs.cards import PACKAGES
 
 Domain = Literal["income", "spending", "balances", "products"]
 
@@ -426,6 +427,132 @@ def reverse_savings_transfer(led: Ledger) -> Signal | None:
     )
 
 
+# --- card packages (design §5.2) ---------------------------------------------------------------
+
+#: Packages whose benefits are about travel; only these can be "unused" for lack of travel.
+TRAVEL_PACKAGES = ("reis", "luxe")
+#: A package counts as held when its fee was charged within this many days.
+PACKAGE_HELD_DAYS = 40
+TRAVEL_KEYWORDS = (
+    "ryanair",
+    "brussels airlines",
+    "tui",
+    "transavia",
+    "easyjet",
+    "vueling",
+    "klm",
+    "lufthansa",
+    "airbnb",
+    "booking.com",
+    "expedia",
+    "hotel",
+    "hertz",
+    "avis",
+    "sixt",
+    "europcar",
+    "eurostar",
+    "lounge",
+)
+
+
+@dataclass(frozen=True)
+class HeldPackage:
+    id: str
+    name: str
+    monthly: Decimal
+    fees: int
+
+
+def _held_package(led: Ledger) -> HeldPackage | None:
+    """The most expensive KBC card package this customer pays for, read from its fee bookings.
+
+    Names and ids come from the Skills `cards` pack, so there is one product list in the app.
+    """
+    held: HeldPackage | None = None
+    for package_id, package in PACKAGES.items():
+        name = package.name.lower()
+        fees = [
+            t
+            for t in led.outflows(led.transactions)
+            if name in f"{t.counterparty} {t.description}".lower()
+        ]
+        if not any(led.days_ago(t) <= PACKAGE_HELD_DAYS for t in fees):
+            continue
+        monthly = median_of([-t.amount for t in fees])
+        if held is None or monthly > held.monthly:
+            held = HeldPackage(package_id, package.name, monthly, len(fees))
+    return held
+
+
+def _is_travel(transaction: Transaction) -> bool:
+    if transaction.amount >= 0:
+        return False
+    if transaction.currency != "EUR":
+        return True
+    text = f"{transaction.counterparty} {transaction.description}".lower()
+    return any(keyword in text for keyword in TRAVEL_KEYWORDS)
+
+
+def travel_spend(led: Ledger) -> Signal | None:
+    trips = [t for t in led.transactions if _is_travel(t)]
+    if not trips:
+        return None
+    latest = max(trips, key=lambda t: t.booked_at)
+    spent = sum((-t.amount for t in trips), Decimal(0))
+    return Signal(
+        type="travel_spend",
+        domain="spending",
+        strength=clamp(0.4 + 0.2 * len(trips)),
+        observed_at=latest.booked_at,
+        evidence=(
+            f"Je deed {len(trips)} reisuitgave(n) voor samen {euro(spent)}, "
+            f"de laatste bij {latest.counterparty} op {latest.booked_at:%d/%m}."
+        ),
+        meta={"trips": str(len(trips)), "last_merchant": latest.counterparty},
+    )
+
+
+def travel_cover_held(led: Ledger) -> Signal | None:
+    package = _held_package(led)
+    if package is None or package.id not in TRAVEL_PACKAGES:
+        return None
+    return Signal(
+        type="travel_cover_held",
+        domain="products",
+        strength=1.0,
+        observed_at=led.today,
+        evidence=f"Je hebt al het {package.name}, dat je reizen verzekert.",
+        meta={"package": package.id, "package_name": package.name},
+    )
+
+
+def paid_package_unused(led: Ledger) -> Signal | None:
+    package = _held_package(led)
+    if package is None or package.id not in TRAVEL_PACKAGES:
+        return None
+    if any(_is_travel(t) for t in led.transactions):
+        return None
+    since = min(t.booked_at for t in led.transactions)
+    yearly = package.monthly * 12
+    return Signal(
+        type="paid_package_unused",
+        domain="products",
+        strength=clamp(package.fees / 3),
+        observed_at=led.today,
+        evidence=(
+            f"Je betaalt {euro(package.monthly)} per maand voor het {package.name}, maar we "
+            f"zagen sinds {since:%d/%m} geen vluchten, hotels, huurwagens of betalingen in "
+            "het buitenland."
+        ),
+        meta={
+            "package": package.id,
+            "package_name": package.name,
+            "yearly_cost": _money(yearly),
+            "yearly_cost_label": euro(yearly),
+        },
+    )
+
+
 Extractor = Callable[[Ledger], Signal | None]
 
 EXTRACTORS: tuple[Extractor, ...] = (
@@ -440,6 +567,9 @@ EXTRACTORS: tuple[Extractor, ...] = (
     merchant_concentration,
     recurring_self_transfer,
     reverse_savings_transfer,
+    travel_spend,
+    travel_cover_held,
+    paid_package_unused,
 )
 
 _DOMAIN_OF: Mapping[str, Domain] = {
@@ -454,6 +584,9 @@ _DOMAIN_OF: Mapping[str, Domain] = {
     "merchant_concentration": "spending",
     "recurring_self_transfer": "spending",
     "reverse_savings_transfer": "spending",
+    "travel_spend": "spending",
+    "travel_cover_held": "products",
+    "paid_package_unused": "products",
 }
 
 

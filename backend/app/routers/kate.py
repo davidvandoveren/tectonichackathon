@@ -84,6 +84,8 @@ LimitedUser = Annotated[User, Depends(rate_limited_user)]
 # so a long earlier answer can never make the next question fail.
 MAX_TURN_TEXT = assistant.MAX_REPLY
 MAX_HISTORY = 10
+MAX_MESSAGE = 1000  # what Kate reads of one question
+MAX_MESSAGE_CAP = 8000  # beyond this the request is refused as abuse
 
 
 class ChatTurnIn(ApiModel):
@@ -97,8 +99,25 @@ class ChatTurnIn(ApiModel):
 
 
 class ChatIn(ApiModel):
-    message: str = Field(min_length=1, max_length=1000)
+    message: str = Field(max_length=MAX_MESSAGE_CAP)
     history: list[ChatTurnIn] = Field(default_factory=list, max_length=100)
+
+    @field_validator("message")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("String should have at least 1 character")
+        return value
+
+    @property
+    def truncated(self) -> bool:
+        return len(self.message) > MAX_MESSAGE
+
+    @property
+    def question(self) -> str:
+        """What Kate reads: a too-long question is shortened, never refused."""
+        return self.message[:MAX_MESSAGE]
 
     @field_validator("history")
     @classmethod
@@ -121,6 +140,8 @@ class ChatOut(ApiModel):
     reply: str
     mode: Literal["normal", "guidance"]
     action: ActionOut
+    # True when the question was longer than MAX_MESSAGE and Kate only read the start of it.
+    truncated: bool = False
 
 
 class StatusOut(ApiModel):
@@ -189,7 +210,7 @@ def kate_chat(
     context = build_context(bank, user, today, state.consent_for(user.id))
     history = [ChatTurn(role=t.role, text=t.text) for t in body.history]
     try:
-        result = assistant.chat(model, context, history, body.message)
+        result = assistant.chat(model, context, history, body.question)
     except KateUnavailableError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
     action = result.action
@@ -211,6 +232,7 @@ def kate_chat(
             proposal_id=proposal.proposal_id if proposal else None,
             proposal_status=proposal.status if proposal else None,
         ),
+        truncated=body.truncated,
     )
 
 

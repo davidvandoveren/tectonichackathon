@@ -43,6 +43,8 @@ export interface KateChatResponse {
   reply: string;
   mode: "normal" | "guidance";
   action: KateAction;
+  /** The question was longer than MAX_MESSAGE; Kate read only the start. */
+  truncated?: boolean;
 }
 
 export interface ChatTurn {
@@ -50,6 +52,8 @@ export interface ChatTurn {
   text: string;
 }
 
+/** Same limits as the API (backend/app/routers/kate.py); anything longer is cut, never refused. */
+export const MAX_MESSAGE = 1000;
 export const MAX_HISTORY = 10;
 export const MAX_TURN_TEXT = 1200;
 
@@ -84,7 +88,7 @@ export function getKateStatus(signal?: AbortSignal): Promise<KateStatus> {
 
 export function sendKateMessage(message: string, history: ChatTurn[]): Promise<KateChatResponse> {
   return apiClient.post<KateChatResponse>("/kate/chat", {
-    message,
+    message: message.slice(0, MAX_MESSAGE),
     history: history.slice(-MAX_HISTORY).map((turn) => ({ ...turn, text: turn.text.slice(0, MAX_TURN_TEXT) })),
   });
 }

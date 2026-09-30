@@ -77,11 +77,13 @@ All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_R
 
 `GET /api/v1/kate/status` → `{"llm": "mock" | "gemini", "voice": true, "speech_recognition": true}`
 
-`POST /api/v1/kate/chat` body `{"message": "Stuur Lucas 25 euro voor de pizza", "history": [{"role": "kate" | "user", "text": "…"}]}` (message ≤ 1000 chars, history ≤ 10 turns) →
+`POST /api/v1/kate/chat` body `{"message": "Stuur Lucas 25 euro voor de pizza", "history": [{"role": "kate" | "user", "text": "…"}]}` → Kate reads the first 1000 chars of `message`, the last 10 history turns and the first 1200 chars of each turn. Anything longer is trimmed, not refused (`truncated: true` says the question was cut). Only absurd input is refused with `422`: message > 8000 chars, > 100 turns, or a turn > 8000 chars. A blank message is also refused. →
 ```json
 {"reply": "…", "mode": "normal" | "guidance",
- "action": {"type": "none" | "transfer" | "advisor_handoff", "to_name": "Lucas", "amount": "25.00", "description": "Pizza", "summary": null}}
+ "action": {"type": "none" | "transfer" | "advisor_handoff", "to_name": "Lucas", "amount": "25.00", "description": "Pizza", "summary": null},
+ "truncated": false}
 ```
+Kate says she is an AI in her first reply only (a conversation whose history has no `kate` turn). `guidance` starts with empathy and a question (action `none`); the `advisor_handoff` follows once the customer accepts help.
 **One proposal system:** every `transfer` / `advisor_handoff` from the chat is also a Kate Skills proposal (`payments.transfer` / `advisor.book_call`, `source: "chat"`), returned as `action.proposal_id` + `action.proposal_status`. `pending` → the card shows *Bevestigen* (`POST /api/v1/proposals/{id}/approve`) / *Nee, dank je* (`…/decline`); `suggested` → the customer finishes it themselves; action switched `off` → no card and Kate says so. It shows up in `GET /api/v1/activity`.
 
 A `transfer` action is only a **proposal**: the UI opens `/transfer?to_name=…&amount=…&description=…` and the customer confirms on the normal, server-validated transfer screen. `guidance` mode (bereavement, inheritance, …) means: no marketing, step plan, `advisor_handoff` with a summary for the advisor. Kate only ever sees the logged-in customer's own data (no IBANs; sensitive spending shown as "Overige uitgave"); transaction texts are passed to the model as data, never as instructions.

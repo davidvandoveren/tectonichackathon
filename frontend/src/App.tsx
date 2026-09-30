@@ -39,7 +39,7 @@ export function App() {
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/kate" element={<KateConsentPage />} />
             <Route path="/family" element={<FamilyPage />} />
-            <Route path="/demo" element={<DemoPage />} />
+            <Route path="/regie" element={<DemoPage />} />
           </Route>
           <Route
             path="/jury"

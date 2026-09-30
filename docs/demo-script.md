@@ -6,10 +6,10 @@ De rode draad voor de jury: **Kate toont niets op basis van wie iemand is, allee
 
 **Voorbereiding**
 - Gebruik de Cloud Run-versie, of draai lokaal met `PASSWORDLESS_LOGIN=true` (één klik per persona) en `ADMIN_USERNAMES=jan` (voor de tijdmachine).
-- **Admin = een gebruikersnaam in `ADMIN_USERNAMES`.** Een aparte rol bestaat niet. Standaard is die lijst leeg, en dan geven `/demo` (tijdmachine) en `/jury` (dashboard) aan **iedereen** *"Alleen beschikbaar voor de demo-admin"*, ook aan Jan. Zo stel je het in:
+- **Admin = een gebruikersnaam in `ADMIN_USERNAMES`.** Een aparte rol bestaat niet. Standaard is die lijst leeg, en dan geven `/regie` (tijdmachine) en `/jury` (dashboard) aan **iedereen** *"Alleen beschikbaar voor de demo-admin"*, ook aan Jan. Zo stel je het in:
   - **Lokaal:** zet `ADMIN_USERNAMES=jan` en `PASSWORDLESS_LOGIN=true` in `.env`, in de hoofdmap of in `backend/` (zie `.env.example`), en **herstart de backend**. Instellingen worden alleen bij het opstarten gelezen.
   - **Cloud Run:** `ADMIN_USERNAMES=jan PASSWORDLESS_LOGIN=true ./deploy/cloudrun.sh`. Het script zet de variabele alleen door als ze in je shell staat.
-  - Wees daarna voor `/demo` en `/jury` **ingelogd als `jan`**. Met Emma, Bram, Sofie of Els blijft de melding staan.
+  - Wees daarna voor `/regie` en `/jury` **ingelogd als `jan`**. Met Emma, Bram, Sofie of Els blijft de melding staan.
 - Zet de sleutels voor Gemini en ElevenLabs in `.env` en controleer ze met `cd backend && python -m scripts.check_kate_keys` (#33). Voor Cloud Run is #62 nodig. Zonder sleutels werkt alles in demomodus, maar dan hoor je de stem van de browser.
 - Start elke opname met een **verse server**. Alle data zit in het geheugen, en zowel de tijdmachine als de live overschrijving in scène 4b veranderen de toestand.
 - Neem de scènes apart op en monteer ze achteraf. Dan verpest één fout niet de hele opname.
@@ -21,9 +21,9 @@ Nagekeken op `main` met een generale repetitie via de API op 30/09.
 
 | # | Scène | Persona | Duur | Status |
 |---|---|---|---|---|
-| 1 | Zelfde app, andere Kate | Emma ↔ Bram | 20 s | ✅ twee vensters naast elkaar (zie scène) |
+| 1 | Zelfde app, andere Kate | Emma ↔ Bram | 20 s | ✅ twee telefoons op `/demo` (#76) |
 | 2 | Kate houdt zich bewust in | Bram | 25 s | ✅ kaart met urgentiemeter en *Pushbericht*, "Bewust niet gezegd" op home (#60) |
-| 3 | Tijdmachine: het loon blijft uit | Jan | 25 s | ✅ knoppen op `/demo` (#60), sms-melding en urgentie 98 |
+| 3 | Tijdmachine: het loon blijft uit | Jan | 25 s | ✅ knoppen op `/regie` (#60, #78), sms-melding en urgentie 98 |
 | 4 | Een gewoonte automatiseren | Sofie | 20 s | ✅ drie kaarten met *Bevestig* (#46, #48) |
 | 4b | **Bewijs: Sofie verandert haar gedrag, Kate verandert mee** | Sofie | 15 s | ✅ live overschrijving (nagekeken) |
 | 5 | Just say it | Emma | 15 s | ✅ |
@@ -55,7 +55,7 @@ Een jury zal denken: *"Die personas zijn toch gewoon zo ingesteld?"* Zo toon je 
 
 ## 1 · Zelfde app, andere Kate (20 s)
 
-**Beeld:** twee browservensters naast elkaar, allebei in de modus *Mobiel*. Links een gewoon venster waarin je inlogt als **Emma**, rechts een **incognitovenster** waarin je inlogt als **Bram**. De sessie zit in een cookie, dus twee personas lukt alleen in twee aparte vensters.
+**Beeld:** open **`/demo`**: twee iPhones naast elkaar, elk met een eigen sessie (#76). Log links in als **Emma** en rechts als **Bram**. *Plan B:* een gewoon venster (Emma) en een incognitovenster (Bram) naast elkaar, allebei in de modus *Mobiel*.
 **Kate:** Emma krijgt "Proficiat met je eerste loon!". Bram krijgt geen reclame, maar een waarschuwing over zijn huur, met een rode urgentiemeter en het label *Pushbericht*.
 **Voice-over:**
 > "KBC's Kate herkent vandaag meer dan 140 situaties, en die zijn allemaal met de hand geschreven. Hier zie je twee klanten in dezelfde app, met een totaal andere Kate. Niemand heeft dit voor hen geschreven. Kate leidt het af uit wat ze zelf met hun geld doen."
@@ -71,7 +71,7 @@ Een jury zal denken: *"Die personas zijn toch gewoon zo ingesteld?"* Zo toon je 
 ## 3 · Tijdmachine: het loon blijft uit (25 s)
 
 **Persona:** `jan`, de admin.
-**Klik:** ga naar **`/demo`** (niet in het menu) en klik **"+40 dagen · loon blijft uit"**. De app springt terug naar home.
+**Klik:** ga naar **`/regie`** (niet in het menu; `/demo` is de twee-telefoons-weergave van #76) en klik **"+40 dagen · loon blijft uit"**. De app springt terug naar home.
 **Kate:** bovenaan verschijnt een **sms-melding**: *"Je loon is nog niet gestort"*. De kaart heeft urgentie **98**, is rood en draagt het label *Sms*. Onder "Bewust niet gezegd" staat de deal.
 **Sterker (bewijs B):** neem eerst op een verse server **"+40 dagen · loon komt binnen"** op. Dan blijft Kate rustig. Knip daarna naar "loon blijft uit". De klant en de datum zijn dezelfde, alleen het gedrag verschilt.
 **Voice-over:**
@@ -135,7 +135,7 @@ Neem dit op in een **aparte opname op een verse server**, zonder op *Bevestig* t
 |---|---|
 | Twee vensters naast elkaar | Na elkaar inloggen, met een harde knip |
 | Stiltes niet zichtbaar in de UI | Persona-trace van Bram op `/jury` |
-| `/demo` werkt niet (niet ingelogd als admin) | Controleer `ADMIN_USERNAMES=jan`, of gebruik een `curl` naar `POST /api/v1/admin/time-machine` en ververs home |
+| `/regie` werkt niet (niet ingelogd als admin) | Controleer `ADMIN_USERNAMES=jan`, of gebruik een `curl` naar `POST /api/v1/admin/time-machine` en ververs home |
 | *Bevestig*-knop op kaart | Scène 4 inkorten, of vervangen door `python scripts/skills_tour.py --persona sofie` (#38) in een terminal |
 | Live overschrijving (4b) lukt niet | Bewijs D (schakelaar) of B (tijdmachine twee keer) is ook voldoende |
 | Jury-dashboard | De benchmarkcijfers als slide |

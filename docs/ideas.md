@@ -69,6 +69,29 @@ Same direction as above, framed as **the brain behind the next generation of Kat
 | **d. Investing** | Explain strategies, help the customer understand their own situation and risk profile, prepare for an advisor meeting. | Neutral and educational, no "buy X" advice (MiFID, suitability test). Portfolio management is at most a concept with explicit consent + human advisor, and never autonomous trading. |
 | **e. Subscription manager** | Detect recurring payments: price increases, duplicate subscriptions ("two streaming services with the same offer"), forgotten trials that became paid. Saves the customer money with data the bank already has. | The bank doesn't know usage, so never guess it. Ask *"Do you still use this?"* with *yes / no, remind me to cancel*. Don't analyse subscriptions in sensitive categories (health apps, religious/political orgs, trade union, dating). |
 
+### f. Family circle – linked accounts (idea: Sander)
+
+Customers can **link their KBC accounts to the people around them**: fiancé(e), spouse/partner, child, grandchild, godchild, mother, father, step-parents, and so on. This creates an **"organic" environment where everything fits together**. Kate understands the customer as part of a family, not as a loose individual, and helps across the whole circle at the right moments.
+
+**What Kate does with it (examples):**
+- **Parents and children:** at the right moments Kate suggests options for the child: start a savings account at birth, pocket-money account with parental controls at 12, first own card at 16, first job / student job at 18, help with a first home deposit later.
+- **Grandparents / godparents:** "Your godchild turns 18 next month. Want to set up a gift to their savings account?" (only if both sides agreed to the link).
+- **Engaged / married / living together:** share a **joint account** or a shared "pot" (rent, groceries, holiday) next to their own accounts. Kate helps both: splits costs, sets up a savings goal for the wedding or a house, and prepares the talk with an advisor about a joint mortgage or marriage contract.
+- **Life events ripple through the circle:** a birth, a wedding or a death in the family shows up for the linked people with relevant (and respectful) guidance. Example: the inheritance guidance mode (feature c) knows who the heirs in the circle are, but still requires heir verification.
+- **Care for older parents:** an adult child can, with explicit permission, get limited visibility to help a parent (e.g. alert on unusual payments = fraud protection), without taking over control.
+
+**Boundaries (every link has its own, within legal limits):**
+- **Mutual, explicit consent** for every link. Both sides accept, and each can end the link at any time. A link is never inferred from transactions ("these two send each other money, so they're a couple" is **not** allowed).
+- **Granular sharing per link:** seeing nothing / seeing only that the link exists / seeing a shared pot / seeing balances / being able to act. Default = minimum. Linking ≠ seeing everything.
+- **Minors:** parents/legal guardians have legal authority over a minor's account, and that ends automatically at **18**. The child then decides what the parent may still see. Kate addresses children in age-appropriate language and does no marketing to minors.
+- **Joint accounts:** both holders see the same thing. Kate's suggestions about a joint account go to **both**, never "secretly" to one of them. Personal accounts stay private, even for a spouse.
+- **Protection against abuse:** in case of divorce, conflict or financial abuse, one partner can end sharing immediately without the other being able to block it. Kate never nudges one person to give another person access. Watch for elderly people being pressured into giving access.
+- **Death:** a link gives **no** automatic access to a deceased person's products. Heir verification still applies (feature c).
+- **Sensitive data never flows through the circle:** sensitive categories (health, religion, etc.) are never shown to linked people, not even to a parent or spouse.
+- **Security (Aikido):** every endpoint checks server-side that the logged-in customer has an **active, consented link with the right permission level** for the other person's data. This is a classic IDOR/authorization risk, so it's a strong showcase for the security score.
+
+**Demo idea:** a young couple links accounts → they get a shared "Wedding" pot → Kate proposes a savings plan to both → their parent (linked, only "gift" permission) gets the option to contribute. Or: a child turns 18 → the parent's access ends automatically and Kate asks the child what may still be shared.
+
 ### Privacy and ethics rules (GDPR / AI Act)
 
 - ✅ Use the customer's own KBC data to help that customer, transparently.

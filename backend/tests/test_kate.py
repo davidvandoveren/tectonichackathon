@@ -303,3 +303,35 @@ def test_elevenlabs_voice_selection() -> None:
     assert only_male.available() == ["male"]
     both = ElevenLabsVoice("k", {"female": "f-id", "male": "m-id"}, "tts", "stt")
     assert both.available() == ["female", "male"]
+
+
+# --- long messages never break the conversation -------------------------------------------------
+def test_long_history_is_trimmed_not_refused(emma: TestClient) -> None:
+    model = RecordingModel(_answer(reply="AI: ok", action={"type": "none"}))
+    _use_model(emma, model)
+    history = [{"role": "kate" if i % 2 else "user", "text": "x" * 3000} for i in range(30)]
+    response = emma.post("/api/v1/kate/chat", json={"message": "en nu?", "history": history})
+    assert response.status_code == 200
+    assert len(model.turns) == 11  # last 10 turns + the new message
+    assert all(len(t.text) <= 1200 for t in model.turns)
+
+
+def test_absurd_input_is_still_refused(emma: TestClient) -> None:
+    huge = [{"role": "user", "text": "x" * 9000}]
+    assert (
+        emma.post("/api/v1/kate/chat", json={"message": "hoi", "history": huge}).status_code == 422
+    )
+    too_many = [{"role": "user", "text": "x"}] * 101
+    assert (
+        emma.post("/api/v1/kate/chat", json={"message": "hoi", "history": too_many}).status_code
+        == 422
+    )
+
+
+def test_long_answer_with_disclosure_stays_within_limit(emma: TestClient) -> None:
+    _use_model(emma, RecordingModel(_answer(reply="lang " * 400, action={"type": "none"})))
+    reply = emma.post("/api/v1/kate/chat", json={"message": "hoi"}).json()["reply"]
+    assert len(reply) <= 1200 and reply.startswith("Kate hier")
+    # ...so it can be sent back as history and read aloud without a 422.
+    emma.app.dependency_overrides[get_voice] = FakeVoice  # type: ignore[attr-defined]
+    assert emma.post("/api/v1/kate/speech", json={"text": reply + "x" * 500}).status_code == 200

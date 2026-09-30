@@ -36,6 +36,7 @@ import {
   SpeakerOffIcon,
   StopIcon,
 } from "./icons";
+import { KateErrorBoundary } from "./KateErrorBoundary";
 import styles from "./KateChat.module.css";
 import { OPEN_KATE_EVENT } from "./openKate";
 
@@ -56,6 +57,9 @@ const SUGGESTIONS = [
   "Mijn moeder is overleden, wat moet ik doen?",
 ];
 
+/** Same limit as the API; longer questions are cut here instead of failing. */
+const MAX_MESSAGE = 1000;
+
 type MicState = "idle" | "listening" | "transcribing";
 type StopHandle = Recording | { stop: () => void };
 
@@ -65,7 +69,16 @@ interface KateChatProps {
 }
 
 /** Kate: chat + voice. Icon top right (or `openKate()`), opens a full-screen conversation. */
-export function KateChat({ hideLauncher = false }: KateChatProps) {
+/** Kate, wrapped so that an error inside the chat never takes the rest of the app down. */
+export function KateChat(props: KateChatProps) {
+  return (
+    <KateErrorBoundary>
+      <KateChatInner {...props} />
+    </KateErrorBoundary>
+  );
+}
+
+function KateChatInner({ hideLauncher = false }: KateChatProps) {
   const auth = useContext(AuthContext);
   const firstName = auth?.user?.first_name;
   const [open, setOpen] = useState(false);
@@ -164,7 +177,7 @@ export function KateChat({ hideLauncher = false }: KateChatProps) {
   }
 
   async function send(text: string) {
-    const message = text.trim();
+    const message = text.trim().slice(0, MAX_MESSAGE);
     if (!message || busy) return;
     const history: ChatTurn[] = [
       { role: "kate", text: GREETING },
@@ -407,10 +420,16 @@ export function KateChat({ hideLauncher = false }: KateChatProps) {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder={mic === "transcribing" ? "Even omzetten naar tekst…" : "Vraag het aan Kate"}
-              maxLength={1000}
+              maxLength={MAX_MESSAGE}
               aria-label="Bericht aan Kate"
+              aria-describedby={input.length > MAX_MESSAGE - 200 ? "kate-count" : undefined}
               disabled={mic === "transcribing"}
             />
+            {input.length > MAX_MESSAGE - 200 && (
+              <span id="kate-count" className={styles.counter} aria-live="polite">
+                {input.length}/{MAX_MESSAGE}
+              </span>
+            )}
             {input.trim() ? (
               <button type="submit" className={styles.send} disabled={busy} aria-label="Stuur">
                 <SendIcon width={20} height={20} />

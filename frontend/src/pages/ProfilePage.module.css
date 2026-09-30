@@ -73,3 +73,13 @@
   font-size: 0.8125rem;
   color: var(--kbc-slate);
 }
+
+.menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}

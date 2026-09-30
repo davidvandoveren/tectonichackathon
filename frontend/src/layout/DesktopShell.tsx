@@ -15,6 +15,7 @@ import { ChatIcon } from "../components/icons/ChatIcon";
 import { ChevronDownIcon } from "../components/icons/ChevronDownIcon";
 import { DocumentIcon } from "../components/icons/DocumentIcon";
 import { AskKateButton } from "../kate/AskKateButton";
+import { openKate } from "../kate/openKate";
 import { ViewModeToggle } from "./ViewModeToggle";
 import styles from "./DesktopShell.module.css";
 
@@ -116,7 +117,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
         <header className={styles.header}>
           <h1 className={styles.headerTitle}>{contextTitle(location.pathname)}</h1>
           <div className={styles.headerActions}>
-            <AskKateButton />
+            <AskKateButton onClick={openKate} />
 
             <button type="button" className={styles.headerIconButton} aria-disabled="true" title="Binnenkort">
               <span className={styles.headerIconWrap}>

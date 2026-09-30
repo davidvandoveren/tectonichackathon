@@ -6,7 +6,7 @@ import { ViewModeToggle } from "./ViewModeToggle";
 import styles from "./MobileShell.module.css";
 
 /** KBC Mobile-style shell: compact top bar, full-width content, bottom tab bar. */
-export function MobileShell({ children }: { children: ReactNode }) {
+export function MobileShell({ children, showToggle = true }: { children: ReactNode; showToggle?: boolean }) {
   return (
     <div className={styles.shell}>
       <header className={styles.topbar}>
@@ -24,7 +24,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
       </header>
       <main className={styles.content}>{children}</main>
       <TabBar />
-      <ViewModeToggle variant="floating" compact />
+      {showToggle && <ViewModeToggle variant="floating" compact />}
     </div>
   );
 }

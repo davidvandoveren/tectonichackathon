@@ -52,4 +52,24 @@
 
   --phone-width: 390px;
   --phone-height: 844px;
+
+  /* Aliases for the original token names, still used by kate/ and subscriptions/. They map onto
+     the KBC palette above so every screen shares one look. Prefer the --kbc-* names in new code. */
+  --color-navy-900: var(--kbc-navy);
+  --color-navy-800: #163a6b;
+  --color-navy-700: #1f4a85;
+  --color-accent: var(--kbc-blue);
+  --color-accent-dark: var(--kbc-blue-dark);
+  --color-bg: var(--kbc-bg-muted);
+  --color-surface: var(--kbc-surface);
+  --color-text: var(--kbc-navy);
+  --color-text-muted: var(--kbc-slate);
+  --color-text-on-navy: var(--kbc-text-on-navy);
+  --color-success: #2e8540;
+  --color-danger: var(--kbc-red);
+  --color-danger-bg: var(--kbc-red-bg);
+  --color-border: var(--kbc-line);
+  --color-focus: var(--kbc-focus);
+  --shadow-card: var(--shadow-tile);
+  --max-width-app: 480px;
 }

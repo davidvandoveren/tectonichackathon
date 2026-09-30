@@ -34,4 +34,6 @@
      bar, floating toggle), so they pin to this simulated screen instead of
      the real browser viewport. */
   transform: translateZ(0);
+  /* Kate's overlay sizes itself to the app column; inside the frame that is the screen. */
+  --max-width-app: 100vw;
 }

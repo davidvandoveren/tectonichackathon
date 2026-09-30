@@ -9,6 +9,7 @@ import { AccountDetailPage } from "./pages/AccountDetailPage";
 import { TransferPage } from "./pages/TransferPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
 
 export function App() {
   return (
@@ -27,6 +28,7 @@ export function App() {
             <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
             <Route path="/transfer" element={<TransferPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/subscriptions" element={<SubscriptionsPage />} />
           </Route>
           <Route path="/404" element={<NotFoundPage />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ViewModeToggle } from "./ViewModeToggle";
 import styles from "./PhoneFrame.module.css";
 
 /**
@@ -12,6 +13,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
       <div className={styles.device}>
         <div className={styles.screen}>{children}</div>
       </div>
+      <ViewModeToggle variant="floating" />
     </div>
   );
 }

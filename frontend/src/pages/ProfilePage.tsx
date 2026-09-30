@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
+import { MenuLink } from "../components/MenuLink";
+import { DocumentIcon } from "../components/icons/DocumentIcon";
 import { PageHeader } from "../components/PageHeader";
 import { ViewModeToggle } from "../layout/ViewModeToggle";
 import styles from "./ProfilePage.module.css";
@@ -39,11 +41,11 @@ export function ProfilePage() {
           </dl>
         </div>
 
-        {/*
-          Room for a settings-style menu list of links (e.g. "Mijn
-          abonnementen"): use <MenuLink> from src/components/MenuLink.tsx,
-          one per <li>, inside a <ul>.
-        */}
+        <ul className={styles.menu}>
+          <li>
+            <MenuLink to="/subscriptions" label="Mijn abonnementen" Icon={DocumentIcon} />
+          </li>
+        </ul>
 
         <Button type="button" variant="secondary" onClick={handleLogout}>
           Afmelden

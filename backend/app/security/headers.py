@@ -9,6 +9,7 @@ _CSP = "; ".join(
         "style-src 'self'",
         "img-src 'self' data:",
         "font-src 'self'",
+        "media-src 'self' blob:",  # Kate's voice is played from an in-memory blob
         "connect-src 'self'",
         "object-src 'none'",
         "base-uri 'self'",
@@ -23,7 +24,7 @@ SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Permissions-Policy": "camera=(), microphone=(self), geolocation=(), payment=()",
     "Cross-Origin-Opener-Policy": "same-origin",
     "Cross-Origin-Resource-Policy": "same-origin",
 }

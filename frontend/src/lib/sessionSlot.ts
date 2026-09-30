@@ -1,5 +1,5 @@
 /**
- * Demo session slot. The /demo page embeds the app twice (two phones side by side); each copy
+ * Demo session slot. The /duo page embeds the app twice (two phones side by side); each copy
  * opens with `?slot=a` or `?slot=b` and sends it as `X-Session-Slot`, so the server keeps two
  * separate HttpOnly session cookies and each phone can be logged in as a different persona.
  *

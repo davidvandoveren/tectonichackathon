@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { getAuthConfig, getDemoUsers } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
@@ -151,7 +151,10 @@ export function LoginPage() {
           </Button>
         )}
       </form>
-      <p className={styles.footer}>Demo – synthetische data, geen echte bank</p>
+      <p className={styles.footer}>
+        Demo – synthetische data, geen echte bank en geen officiële KBC-app ·{" "}
+        <Link to="/privacy">Privacy &amp; AI</Link>
+      </p>
       <ViewModeToggle variant="floating" />
     </div>
   );

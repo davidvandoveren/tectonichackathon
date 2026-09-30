@@ -45,6 +45,9 @@ export function ProfilePage() {
           <li>
             <MenuLink to="/subscriptions" label="Mijn abonnementen" Icon={DocumentIcon} />
           </li>
+          <li>
+            <MenuLink to="/privacy" label="Privacy & AI" Icon={DocumentIcon} />
+          </li>
         </ul>
 
         <Button type="button" variant="secondary" onClick={handleLogout}>

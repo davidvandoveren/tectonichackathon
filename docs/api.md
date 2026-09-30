@@ -78,6 +78,69 @@ A `transfer` action is only a **proposal**: the UI opens `/transfer?to_name=…&
 `POST /api/v1/kate/speech` body `{"text": "…"}` → `audio/mpeg` (ElevenLabs voice).
 
 `POST /api/v1/kate/transcribe` body `{"audio_base64": "…", "mime_type": "audio/webm"}` (≤ 2 MB; webm/ogg/mp4/mpeg/wav) → `{"text": "…"}` (ElevenLabs Scribe).
+## Kate feed (the moments engine)
+
+Design: [`docs/design/moments-engine.md`](design/moments-engine.md). The proactive half of Kate
+is fully deterministic — no model, no network call — so it cannot fail during a demo.
+
+`GET /api/v1/kate/feed` →
+```json
+{
+  "items": [
+    {
+      "id": "first_salary",
+      "title": "Proficiat met je eerste loon!",
+      "body": "Zet elke maand automatisch een klein deel opzij...",
+      "urgency": 39,
+      "channel": "feed",
+      "reason": "Op 25/09 kwam er € 1 985,00 binnen van Proximus NV, een betaler die we niet eerder zagen. ...",
+      "cta_label": "Start met sparen",
+      "cta_target": "/transfer",
+      "requires_advisor": false
+    }
+  ],
+  "silenced": [
+    {"moment": "deal_match", "reason_code": "cashflow_first", "reason": "Je saldo staat krap. ..."}
+  ]
+}
+```
+
+- `id` is the moment type, stable across requests, and is what you pass to the dismiss endpoint.
+- `urgency` is `0–100`. Bands do not overlap: `risk` 70–100, `obligation` 40–69, `opportunity` 10–39, so a risk can never be outranked by a confident nudge. Items come back ranked, highest first.
+- `channel` is one of `feed`, `push`, `sms`, `call`, `none`. **At most one item per response uses an interruptive channel** (`push`/`sms`/`call`); the rest fall back to `feed`.
+- `reason` is the "Waarom zie ik dit?" text. It is assembled from the evidence that produced the moment, so it can never drift from what was actually observed. Always present, never empty.
+- `silenced` is what Kate found and deliberately did **not** say. `reason_code` is one of `low_confidence`, `cashflow_first`, `dismissed`. Worth showing in the UI — it is the most distinctive part of the engine.
+
+`POST /api/v1/kate/feed/{moment_type}/dismiss` → `204`. Suppresses that moment for 30 days; it then appears under `silenced` with `reason_code: "dismissed"`. A `risk` moment is never suppressed this way. Send `{}` as the body — the CSRF guard requires `Content-Type: application/json`.
+
+### Consent ("Wat weet Kate over mij?")
+
+`GET /api/v1/kate/consent` → `{"income": true, "spending": true, "balances": true, "products": true}`
+
+`PUT /api/v1/kate/consent` body `{"domain": "spending", "allowed": false}` → the updated object. An unknown domain gives `422`.
+
+Consent is applied **before** signal extraction, so a domain the customer switched off is never computed rather than computed and filtered. Switching off `spending` visibly changes the feed.
+
+### Time machine (demo only, admin only)
+
+`POST /api/v1/admin/time-machine` body `{"days": 40, "scenario": "salary_missing", "username": "jan"}` →
+```json
+{"days_shifted": 40, "clock_offset_days": 40, "today": "2026-11-09",
+ "username": "jan", "injected": 0, "feed": {"items": [...], "silenced": [...]}}
+```
+
+`scenario` is one of:
+
+| Scenario | What happens |
+|---|---|
+| `none` | Only the clock moves. |
+| `salary_paid` | The persona's own recurring income is projected into the window, derived from their transaction history (not from the seed file), and balances move with it. |
+| `salary_missing` | The projection is skipped, so money the customer counts on never arrives. The engine notices and escalates off the feed. **This is the demo.** |
+
+`days` is `1–365`; `username` defaults to the calling admin. Moving the clock shifts `get_today` for the *whole* app, so balances, transactions and the feed stay coherent.
+
+Requires the caller's username to be listed in `ADMIN_USERNAMES`. Anyone else — including a logged-in customer — gets **`404`, not `403`**: a caller who may not use an endpoint does not get to learn that it exists.
+
 
 ### Subscriptions ("Gebruik je dit nog?")
 `GET /api/v1/subscriptions` → monthly subscriptions detected in the customer's **own** transactions:

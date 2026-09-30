@@ -13,3 +13,6 @@ consent), the jury dashboard at scale, quotes, vision and outro. Synthetic data 
 
 The scene texts and durations live in `window.SCENES` (`kate2-video.html`) and `SCENES`
 (`make_voiceover.py`); keep both in sync when you change the script.
+
+## Credits
+Music: "Jay" by Lukrembo – Source: https://freetouse.com/music – Free To Use Music for Video. Voice: ElevenLabs.

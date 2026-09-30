@@ -13,6 +13,8 @@ import { getFeedActions, type FeedAction } from "../skills/skillsApi";
 import { TileViewToggle, type TileLayout } from "../components/TileViewToggle";
 import { TransferIcon } from "../components/icons/TransferIcon";
 import buttonStyles from "../components/Button.module.css";
+import { MobileHome } from "../components/MobileHome";
+import { useViewMode } from "../layout/ViewModeContext";
 import styles from "./HomePage.module.css";
 
 interface LoadState<T> {
@@ -24,6 +26,7 @@ interface LoadState<T> {
 const INITIAL_STATE = { data: null, error: null, isLoading: true };
 
 export function HomePage() {
+  const { resolved } = useViewMode();
   const [accountsState, setAccountsState] = useState<LoadState<Account[]>>(INITIAL_STATE);
   const [insightsState, setInsightsState] = useState<LoadState<Insight[]>>(INITIAL_STATE);
   const [tileLayout, setTileLayout] = useState<TileLayout>("grid");
@@ -66,6 +69,23 @@ export function HomePage() {
   const savingsAccounts = accounts.filter((account) => account.type === "savings");
   const creditCardAccounts = accounts.filter((account) => account.type === "credit_card");
 
+  const dismissInsight = (id: string) =>
+    setInsightsState((state) => ({
+      ...state,
+      data: state.data?.filter((insight) => insight.id !== id) ?? null,
+    }));
+
+  if (resolved === "mobile") {
+    return (
+      <MobileHome
+        accounts={accountsState}
+        insights={insightsState}
+        feedActions={feedActions}
+        onInsightDismissed={dismissInsight}
+      />
+    );
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.titleRow}>
@@ -89,12 +109,7 @@ export function HomePage() {
           <InsightCarousel
             insights={insightsState.data}
             actions={feedActions}
-            onDismissed={(id) =>
-              setInsightsState((state) => ({
-                ...state,
-                data: state.data?.filter((insight) => insight.id !== id) ?? null,
-              }))
-            }
+            onDismissed={dismissInsight}
           />
         )}
       </section>

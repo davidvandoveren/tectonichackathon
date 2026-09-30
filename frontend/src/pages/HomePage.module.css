@@ -1,33 +1,28 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
+  padding: var(--space-4);
 }
 
-.hero {
+.titleRow {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  background: var(--color-navy-900);
-  color: var(--color-text-on-navy);
-  padding: var(--space-5) var(--space-4) var(--space-6);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
-.greeting {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-top: var(--space-4);
+.title {
+  font-size: 1.875rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
 }
 
-.balanceLabel {
-  font-size: 0.8125rem;
-  opacity: 0.8;
-  margin-top: var(--space-3);
-}
-
-.balance {
-  font-size: 2rem;
-  font-weight: 700;
+.titleActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .section {
@@ -37,17 +32,7 @@
 }
 
 .sectionTitle {
-  font-size: 1.0625rem;
-  font-weight: 700;
-  padding: 0 var(--space-4);
-}
-
-.padded {
-  padding: 0 var(--space-4);
-}
-
-.accountList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
 }

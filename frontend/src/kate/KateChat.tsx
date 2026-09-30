@@ -36,6 +36,7 @@ import {
   StopIcon,
 } from "./icons";
 import styles from "./KateChat.module.css";
+import { OPEN_KATE_EVENT } from "./openKate";
 
 interface Message extends ChatTurn {
   id: number;
@@ -57,8 +58,13 @@ const SUGGESTIONS = [
 type MicState = "idle" | "listening" | "transcribing";
 type StopHandle = Recording | { stop: () => void };
 
-/** Kate: chat + voice. Icon top right, opens a full-screen conversation. */
-export function KateChat() {
+interface KateChatProps {
+  /** Hide the floating launcher when the layout has its own entry point (desktop header). */
+  hideLauncher?: boolean;
+}
+
+/** Kate: chat + voice. Icon top right (or `openKate()`), opens a full-screen conversation. */
+export function KateChat({ hideLauncher = false }: KateChatProps) {
   const auth = useContext(AuthContext);
   const firstName = auth?.user?.first_name;
   const [open, setOpen] = useState(false);
@@ -68,6 +74,12 @@ export function KateChat() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speakReplies, setSpeakReplies] = useState(false);
+
+  useEffect(() => {
+    const handleOpen = () => setOpen(true);
+    window.addEventListener(OPEN_KATE_EVENT, handleOpen);
+    return () => window.removeEventListener(OPEN_KATE_EVENT, handleOpen);
+  }, []);
   const [voice, setVoice] = useState<VoiceKind>("female");
   const [speakingId, setSpeakingId] = useState<number | null>(null);
   const [mic, setMic] = useState<MicState>("idle");
@@ -217,6 +229,7 @@ export function KateChat() {
   }
 
   if (!open) {
+    if (hideLauncher) return null;
     return (
       <button type="button" className={styles.launcher} onClick={() => setOpen(true)} aria-label="Open Kate">
         <SparkleIcon width={20} height={20} />

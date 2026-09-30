@@ -8,9 +8,11 @@ export default defineConfig({
     target: ["es2020", "safari15", "chrome100", "firefox100", "edge100"],
   },
   server: {
+    // Keep the browser's Host header so the backend's same-origin CSRF check (Origin == Host)
+    // also passes in dev. The short string form would rewrite Host to localhost:8000.
     proxy: {
-      "/api": "http://localhost:8000",
-      "/health": "http://localhost:8000",
+      "/api": { target: "http://localhost:8000", changeOrigin: false },
+      "/health": { target: "http://localhost:8000", changeOrigin: false },
     },
   },
   test: {

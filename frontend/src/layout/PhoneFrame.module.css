@@ -1,0 +1,69 @@
+.surround {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--kbc-bg-muted);
+}
+
+.device {
+  /* iPhone proportions (390 x 844): height follows the viewport, width follows the ratio. */
+  position: relative;
+  height: min(var(--phone-height), calc(100vh - var(--space-8)));
+  aspect-ratio: 390 / 844;
+  width: auto;
+  border-radius: 48px;
+  padding: 10px;
+  background: #111418;
+  box-shadow:
+    0 0 0 1px #2b3036,
+    0 20px 50px rgba(13, 42, 80, 0.25);
+}
+
+/* Dynamic Island */
+.device::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 26px;
+  border-radius: 999px;
+  background: #000;
+  z-index: 2;
+}
+
+.screen {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Room for the status bar / Dynamic Island, and no desktop scrollbar inside the phone. */
+  padding-top: 44px;
+  scrollbar-width: none;
+  border-radius: 38px;
+  background: var(--kbc-surface);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  /* Establishes a containing block for position:fixed descendants (the tab
+     bar, floating toggle), so they pin to this simulated screen instead of
+     the real browser viewport. */
+  transform: translateZ(0);
+  /* Kate's overlay sizes itself to the app column; inside the frame that is the screen. */
+  --max-width-app: 100vw;
+}
+
+.screen::-webkit-scrollbar {
+  display: none;
+}
+
+/* Kate's floating launcher sits in the top bar, left of the bell, instead of under the island. */
+.screen button[aria-label="Open Kate"] {
+  top: 50px;
+  right: 60px;
+  min-height: 36px;
+}

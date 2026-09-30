@@ -6,34 +6,35 @@
 
 .label {
   font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
 }
 
 .input {
   min-height: var(--touch-target);
   padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
-  border: 1.5px solid var(--color-border);
-  background: var(--color-surface);
+  border: 1.5px solid var(--kbc-line);
+  background: var(--kbc-surface);
   font-size: 1rem;
+  color: var(--kbc-navy);
 }
 
 .input:focus-visible {
-  border-color: var(--color-accent);
+  border-color: var(--kbc-blue);
 }
 
 .inputError {
-  border-color: var(--color-danger);
+  border-color: var(--kbc-red);
 }
 
 .hint {
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
 }
 
 .error {
   font-size: 0.8125rem;
-  color: var(--color-danger);
-  font-weight: 600;
+  color: var(--kbc-red);
+  font-weight: var(--font-weight-bold);
 }

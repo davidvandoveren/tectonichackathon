@@ -2,10 +2,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: var(--kbc-bg-muted);
 }
 
 .hero {
-  background: var(--color-navy-900);
+  background: var(--kbc-navy);
   padding: var(--space-8) var(--space-4) var(--space-6);
 }
 
@@ -15,11 +16,15 @@
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-5) var(--space-4);
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .heading {
-  font-size: 1.375rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
 }
 
 .fieldset {
@@ -33,7 +38,8 @@
 
 .legend {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
   padding: 0 0 var(--space-2);
 }
 
@@ -50,37 +56,38 @@
   gap: 2px;
   min-height: 64px;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--color-border);
-  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--kbc-line);
+  background: var(--kbc-surface);
   text-align: left;
   cursor: pointer;
 }
 
 .userCardSelected {
-  border-color: var(--color-accent);
+  border-color: var(--kbc-blue);
   background: #e8f8ff;
 }
 
 .userName {
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   font-size: 0.9375rem;
+  color: var(--kbc-navy);
 }
 
 .userPersona {
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
 }
 
 .submitError {
-  color: var(--color-danger);
-  font-weight: 600;
+  color: var(--kbc-red);
+  font-weight: var(--font-weight-bold);
   font-size: 0.875rem;
 }
 
 .footer {
   text-align: center;
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
   padding: var(--space-4);
 }

@@ -6,8 +6,8 @@
 
 .dateHeading {
   font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-slate);
   margin-bottom: var(--space-2);
 }
 
@@ -15,9 +15,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  background: var(--kbc-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-tile);
   overflow: hidden;
 }
 
@@ -30,7 +30,7 @@
 }
 
 .item:not(:last-child) {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--kbc-line);
 }
 
 .iconWrap {
@@ -40,7 +40,7 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: var(--color-bg);
+  background: var(--kbc-bg-muted);
   flex-shrink: 0;
 }
 
@@ -53,8 +53,9 @@
 }
 
 .description {
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   font-size: 0.9375rem;
+  color: var(--kbc-navy);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -62,18 +63,19 @@
 
 .counterparty {
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
 }
 
 .amount {
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   font-size: 0.9375rem;
+  color: var(--kbc-navy);
   white-space: nowrap;
 }
 
 .amountPositive {
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   font-size: 0.9375rem;
   white-space: nowrap;
-  color: var(--color-success);
+  color: var(--kbc-green);
 }

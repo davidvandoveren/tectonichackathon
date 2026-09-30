@@ -1,0 +1,53 @@
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--kbc-surface);
+  border: 1px solid var(--kbc-line);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-tile);
+}
+
+.floating {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--kbc-slate);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.optionSelected {
+  background: var(--kbc-blue);
+  color: #ffffff;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.compact .option {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  font-size: 0.6875rem;
+}
+
+/* Sits above the fixed bottom tab bar instead of overlapping it. */
+.floating.compact {
+  bottom: calc(var(--tabbar-height) + var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+

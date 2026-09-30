@@ -1,11 +1,11 @@
 import { NavLink } from "react-router";
-import { HomeIcon } from "./icons/HomeIcon";
+import { WalletIcon } from "./icons/WalletIcon";
 import { TransferIcon } from "./icons/TransferIcon";
 import { ProfileIcon } from "./icons/ProfileIcon";
 import styles from "./TabBar.module.css";
 
 const TABS = [
-  { to: "/", label: "Home", Icon: HomeIcon, end: true },
+  { to: "/", label: "Betalen", Icon: WalletIcon, end: true },
   { to: "/transfer", label: "Overschrijven", Icon: TransferIcon, end: false },
   { to: "/profile", label: "Profiel", Icon: ProfileIcon, end: false },
 ] as const;

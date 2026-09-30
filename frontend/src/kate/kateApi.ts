@@ -36,6 +36,22 @@ export function transferLink(action: KateAction): string {
   return `/transfer?${params.toString()}`;
 }
 
+export type VoiceKind = "female" | "male";
+
+export interface KateVoice {
+  voice: VoiceKind;
+  default_voice: VoiceKind;
+  available: VoiceKind[];
+}
+
+export function getKateVoice(signal?: AbortSignal): Promise<KateVoice> {
+  return apiClient.get<KateVoice>("/kate/voice", signal);
+}
+
+export function setKateVoice(voice: VoiceKind): Promise<KateVoice> {
+  return apiClient.post<KateVoice>("/kate/voice", { voice });
+}
+
 export function getKateStatus(signal?: AbortSignal): Promise<KateStatus> {
   return apiClient.get<KateStatus>("/kate/status", signal);
 }

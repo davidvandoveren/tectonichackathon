@@ -87,7 +87,22 @@ export function listenWithBrowser(lang = "nl-BE"): { result: Promise<string>; st
 }
 
 // --- Browser text-to-speech fallback -------------------------------------------------------------
-export function speakWithBrowser(text: string, onEnd?: () => void, lang = "nl-BE"): void {
+const FEMALE_HINTS = /female|vrouw|femme|ellen|colette|claire|fenna|lotte|amelie|google nederlands/i;
+const MALE_HINTS = /\bmale\b|man\b|homme|xander|arthur|frank|bart|maarten/i;
+
+function browserVoice(lang: string, kind: "female" | "male"): SpeechSynthesisVoice | undefined {
+  const voices = speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(lang.slice(0, 2)));
+  const hint = kind === "male" ? MALE_HINTS : FEMALE_HINTS;
+  return voices.find((v) => hint.test(v.name)) ?? voices.find((v) => v.lang === lang) ?? voices[0];
+}
+
+/** Fallback when ElevenLabs is not configured. Browsers rarely label gender, so this is best effort. */
+export function speakWithBrowser(
+  text: string,
+  onEnd?: () => void,
+  kind: "female" | "male" = "female",
+  lang = "nl-BE"
+): void {
   if (typeof speechSynthesis === "undefined") {
     onEnd?.();
     return;
@@ -95,6 +110,9 @@ export function speakWithBrowser(text: string, onEnd?: () => void, lang = "nl-BE
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
+  const voice = browserVoice(lang, kind);
+  if (voice) utterance.voice = voice;
+  if (kind === "male" && (!voice || !MALE_HINTS.test(voice.name))) utterance.pitch = 0.8;
   utterance.onend = () => onEnd?.();
   utterance.onerror = () => onEnd?.();
   speechSynthesis.speak(utterance);

@@ -2,6 +2,7 @@ import base64
 import json
 from datetime import date
 from decimal import Decimal
+from typing import ClassVar
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,6 +12,7 @@ from app.kate.assistant import chat
 from app.kate.context import CustomerContext, build_context
 from app.kate.llm import ChatTurn, KateUnavailableError
 from app.routers.kate import get_chat_model, get_voice
+from tests.conftest import login
 
 
 class RecordingModel:
@@ -38,8 +40,13 @@ class FailingModel:
 
 class FakeVoice:
     can_speak = True
+    spoken_with: ClassVar[list[str]] = []
 
-    def speak(self, text: str) -> bytes:
+    def available(self) -> list[str]:
+        return ["female", "male"]
+
+    def speak(self, text: str, kind: str = "female") -> bytes:
+        FakeVoice.spoken_with.append(kind)
         return b"ID3-fake-mp3"
 
     def transcribe(self, audio: bytes, mime_type: str, language: str | None = "nl") -> str:
@@ -231,3 +238,47 @@ def test_parse_tolerates_fences_and_bad_mode(client: TestClient, raw: str) -> No
     reply = chat(RecordingModel(raw), context, [], "hoi")
     assert reply.reply == "AI hoi"
     assert reply.mode in ("normal", "guidance")
+
+
+# --- two voices ----------------------------------------------------------------------------------
+def test_default_voice_follows_registered_gender(client: TestClient) -> None:
+    login(client, "emma")
+    assert client.get("/api/v1/kate/voice").json() == {
+        "voice": "female",
+        "default_voice": "female",
+        "available": [],
+    }
+    login(client, "jan")
+    assert client.get("/api/v1/kate/voice").json()["voice"] == "male"
+
+
+def test_customer_can_switch_voice_and_speech_uses_it(emma: TestClient) -> None:
+    emma.app.dependency_overrides[get_voice] = FakeVoice  # type: ignore[attr-defined]
+    FakeVoice.spoken_with.clear()
+    emma.post("/api/v1/kate/speech", json={"text": "hallo"})
+    body = emma.post("/api/v1/kate/voice", json={"voice": "male"}).json()
+    assert body == {"voice": "male", "default_voice": "female", "available": ["female", "male"]}
+    emma.post("/api/v1/kate/speech", json={"text": "hallo"})
+    assert FakeVoice.spoken_with == ["female", "male"]
+
+
+def test_voice_choice_is_per_customer_and_validated(client: TestClient) -> None:
+    login(client, "emma")
+    client.post("/api/v1/kate/voice", json={"voice": "male"})
+    assert client.post("/api/v1/kate/voice", json={"voice": "robot"}).status_code == 422
+    login(client, "marie")
+    assert client.get("/api/v1/kate/voice").json()["voice"] == "female"
+
+
+def test_voice_settings_require_login(client: TestClient) -> None:
+    assert client.get("/api/v1/kate/voice").status_code == 401
+    assert client.post("/api/v1/kate/voice", json={"voice": "male"}).status_code == 401
+
+
+def test_elevenlabs_voice_selection() -> None:
+    from app.kate.voice import ElevenLabsVoice
+
+    only_male = ElevenLabsVoice("k", {"male": "m-id"}, "tts", "stt")
+    assert only_male.available() == ["male"]
+    both = ElevenLabsVoice("k", {"female": "f-id", "male": "m-id"}, "tts", "stt")
+    assert both.available() == ["female", "male"]

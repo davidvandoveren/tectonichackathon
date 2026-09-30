@@ -75,6 +75,10 @@ All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_R
 ```
 A `transfer` action is only a **proposal**: the UI opens `/transfer?to_name=…&amount=…&description=…` and the customer confirms on the normal, server-validated transfer screen. `guidance` mode (bereavement, inheritance, …) means: no marketing, step plan, `advisor_handoff` with a summary for the advisor. Kate only ever sees the logged-in customer's own data (no IBANs; sensitive spending shown as "Overige uitgave"); transaction texts are passed to the model as data, never as instructions.
 
-`POST /api/v1/kate/speech` body `{"text": "…"}` → `audio/mpeg` (ElevenLabs voice).
+`POST /api/v1/kate/speech` body `{"text": "…"}` → `audio/mpeg` in the customer's chosen voice (ElevenLabs).
+
+`GET /api/v1/kate/voice` → `{"voice": "female" | "male", "default_voice": "female", "available": ["female", "male"]}`. Two voices; the **default follows the gender registered on the customer record** (never guessed from a name), unknown → Kate's default (female). `available` lists the voices configured in ElevenLabs (empty = browser voice fallback).
+
+`POST /api/v1/kate/voice` body `{"voice": "male"}` → the same shape; the customer's own choice always wins.
 
 `POST /api/v1/kate/transcribe` body `{"audio_base64": "…", "mime_type": "audio/webm"}` (≤ 2 MB; webm/ogg/mp4/mpeg/wav) → `{"text": "…"}` (ElevenLabs Scribe).

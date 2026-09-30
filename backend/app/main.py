@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings, get_settings
 from app.domain.bank import Bank
 from app.domain.seed import seed_bank
+from app.kate.voices import VoicePreferences
 from app.routers import auth, banking, kate
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
 from app.security.rate_limit import FailureLimiter, RequestLimiter
@@ -33,6 +34,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             settings.login_max_failures, settings.login_window_seconds
         )
         app.state.kate_limiter = RequestLimiter(settings.kate_max_requests_per_minute, 60)
+        app.state.kate_voice_preferences = VoicePreferences()
         logger.info(
             "Seeded %d synthetic customers (env=%s)", len(bank.list_users()), settings.app_env
         )

@@ -81,3 +81,9 @@ ol {
     scroll-behavior: auto !important;
   }
 }
+
+/* A phone embedded in the /demo page: no desktop scrollbars, like a real phone. */
+.embedded-phone,
+.embedded-phone * {
+  scrollbar-width: none;
+}

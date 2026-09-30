@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { getAuthConfig, getDemoUsers } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
@@ -42,6 +42,19 @@ export function LoginPage() {
       });
     return () => controller.abort();
   }, []);
+
+  // Demo page: `/login?as=emma` opens that persona directly when one-click login is on.
+  const autoLoginTried = useRef(false);
+  useEffect(() => {
+    const persona = new URLSearchParams(location.search).get("as");
+    if (!passwordless || !persona || !demoUsers || autoLoginTried.current) return;
+    autoLoginTried.current = true;
+    if (demoUsers.some((user) => user.username === persona)) {
+      void signIn(persona);
+    }
+    // signIn is recreated every render; the ref makes this run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passwordless, demoUsers, location.search]);
 
   async function signIn(username: string) {
     setIsSubmitting(true);

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Wordmark } from "../components/Wordmark";
@@ -6,6 +6,7 @@ import { BellIcon } from "../components/icons/BellIcon";
 import { TabBar } from "../components/TabBar";
 import { SparkleIcon } from "../kate/icons";
 import { openKate } from "../kate/openKate";
+import { useDragToScroll } from "./useDragToScroll";
 import styles from "./MobileShell.module.css";
 
 
@@ -20,6 +21,8 @@ function initials(firstName?: string, lastName?: string): string {
  */
 export function MobileShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const contentRef = useRef<HTMLElement>(null);
+  useDragToScroll(contentRef);
 
   return (
     <div className={styles.shell}>
@@ -39,7 +42,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
-      <main className={styles.content}>{children}</main>
+      <main ref={contentRef} className={styles.content}>{children}</main>
       <TabBar />
     </div>
   );

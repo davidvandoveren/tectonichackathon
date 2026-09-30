@@ -92,11 +92,11 @@ def demo_login(
 def _start_session(
     request: Request, response: Response, settings: Settings, sessions: SessionStore, user: User
 ) -> MeOut:
-    old_token = request.cookies.get(session_cookie_name(settings))
+    old_token = request.cookies.get(session_cookie_name(settings, request))
     if old_token:
         sessions.revoke(old_token)  # no session fixation: always issue a fresh token
     response.set_cookie(
-        key=session_cookie_name(settings),
+        key=session_cookie_name(settings, request),
         value=sessions.create(user.id),
         max_age=settings.session_ttl_seconds,
         httponly=True,
@@ -109,12 +109,12 @@ def _start_session(
 
 @router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(request: Request, settings: SettingsDep, sessions: SessionsDep) -> Response:
-    token = request.cookies.get(session_cookie_name(settings))
+    token = request.cookies.get(session_cookie_name(settings, request))
     if token:
         sessions.revoke(token)
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(
-        session_cookie_name(settings),
+        session_cookie_name(settings, request),
         path="/",
         secure=settings.cookie_secure,
         httponly=True,

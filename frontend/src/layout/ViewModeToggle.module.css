@@ -10,6 +10,9 @@
 }
 
 .floating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   position: fixed;
   right: var(--space-4);
   bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
@@ -51,3 +54,22 @@
   bottom: calc(var(--tabbar-height) + var(--space-3) + env(safe-area-inset-bottom, 0px));
 }
 
+
+.demoLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--kbc-navy);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+  box-shadow: var(--shadow-tile);
+}
+
+.demoLink span {
+  margin-left: 6px;
+}

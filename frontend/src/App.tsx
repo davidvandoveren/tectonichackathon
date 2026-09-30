@@ -14,6 +14,7 @@ import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
 import { KateConsentPage } from "./skills/KateConsentPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
 import { FamilyPage } from "./family/FamilyPage";
+import { DualPhoneDemo } from "./demo/DualPhoneDemo";
 import { DemoPage } from "./moments/DemoPage";
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/demo" element={<DualPhoneDemo />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route
             element={

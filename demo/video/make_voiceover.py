@@ -89,7 +89,7 @@ def ffmpeg_path() -> str:
 def tts(text: str, voice_id: str, key: str, model: str, out: Path) -> None:
     body = json.dumps({"text": text, "model_id": model, "voice_settings": VOICE_SETTINGS}).encode()
     req = urllib.request.Request(
-        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_192",
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128",
         data=body,
         headers={"xi-api-key": key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
     )

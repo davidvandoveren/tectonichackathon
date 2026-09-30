@@ -62,3 +62,30 @@ Rules: amount `> 0`, max 2 decimals, ≤ 10000.00, ≤ available balance; IBAN m
 [{"id": "i_…", "kind": "moment", "title": "Eerste loon ontvangen?", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever."}]
 ```
 `reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present. Today these come from simple rules in `backend/app/services/insights.py`; this is where the PoC's personalization engine plugs in.
+
+### Subscriptions ("Abonnementen")
+`GET /api/v1/subscriptions` →
+```json
+[{"id": "s_a_emma_1_spotify", "name": "Spotify", "amount": "11.99", "frequency": "monthly", "price_change": "2.00", "duplicate_of": null, "category": "leisure", "sensitive": false, "still_used": null, "remind_to_cancel": false}]
+```
+Derived from the customer's own bookings by `backend/app/kate/subscriptions.py` — no external
+catalogue. A counterparty counts as a subscription when it debits the account **once a month for
+at least 3 different months**, which is what separates a subscription from a daily shop.
+
+- `price_change` — increase between the oldest and newest booking, or `null`. A price *drop* is
+  reported as `null`: it needs no action.
+- `duplicate_of` — id of a cheaper subscription that does the same job. Only computed inside
+  `leisure`, because energy and internet are both `utilities` yet complement each other.
+- `sensitive` — always `false`. Recurring payments in sensitive categories (health, insurance)
+  are filtered out server-side and never appear in the list; the field documents that guardrail.
+- `still_used` / `remind_to_cancel` — this customer's own last answer, `null` / `false` until
+  they answer.
+- Fixed costs you cannot cancel (rent, `housing`) are left out, as is income.
+
+`POST /api/v1/subscriptions/{subscription_id}/feedback`
+```json
+{"still_used": false, "remind_to_cancel": true}
+```
+Returns `200` with `{"id": …, "still_used": false, "remind_to_cancel": true}`. `404` when the id
+is not one of *your* subscriptions — same message whether it never existed or belongs to someone
+else. The answer is remembered per customer and shows up on the next `GET /api/v1/subscriptions`.

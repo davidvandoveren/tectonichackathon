@@ -10,6 +10,13 @@ from app.domain.iban import format_iban, is_valid_iban, normalize_iban
 from app.domain.models import AccountType, Category
 
 Money = Annotated[Decimal, PlainSerializer(lambda value: f"{value:.2f}", return_type=str)]
+
+
+def _money_or_none(value: Decimal | None) -> str | None:
+    return None if value is None else f"{value:.2f}"
+
+
+OptionalMoney = Annotated[Decimal | None, PlainSerializer(_money_or_none, return_type=str | None)]
 MAX_TRANSFER = Decimal("10000.00")
 
 
@@ -100,3 +107,29 @@ class InsightOut(ApiModel):
     cta_label: str
     cta_target: str
     reason: str
+
+
+class SubscriptionOut(ApiModel):
+    id: str
+    name: str
+    amount: Money
+    frequency: str
+    price_change: OptionalMoney
+    duplicate_of: str | None
+    category: Category
+    # Always false: sensitive recurring payments are filtered out before they reach the API.
+    # The field stays in the response so the guardrail is visible to whoever reads it.
+    sensitive: bool
+    still_used: bool | None
+    remind_to_cancel: bool
+
+
+class SubscriptionFeedbackIn(ApiModel):
+    still_used: bool
+    remind_to_cancel: bool = False
+
+
+class SubscriptionFeedbackOut(ApiModel):
+    id: str
+    still_used: bool | None
+    remind_to_cancel: bool

@@ -57,6 +57,7 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | Sleutelcheck Gemini + ElevenLabs (`check_kate_keys`) | – | – | 🔍 PR #33 |
 | Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David · **Claude-sessie UI** (#18) | `frontend/` | ⏳ backend klaar zodra #34 op `main` staat (kaartflow in `docs/api.md`) |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
+| Demo-UI Kate-brein: urgentiemeter + kanaal op kaart, gesimuleerde push/sms-melding, "Bewust niet gezegd" op home, tijdmachine-knoppen op `/demo` (admin) | Alexandre · **Claude-sessie Insights** (#56) | nieuwe map `frontend/src/moments/` + paar regels in `types.ts`, `InsightCard.tsx`, `HomePage.tsx`, `App.tsx` (David reviewt) | 🚧 `feature/demo-ui` – niet aan beginnen |
 | Aikido baseline + eind-scan | Alexandre (zelf, in Aikido) | – | 🚧 baseline bezig |
 | Builderbase-projecttekst + demoscript (< 3 min) | Alexandre · **Claude-sessie Personas** (#42) | nieuw: `docs/submission.md`, `docs/demo-script.md` | 🔍 PR #50 |
 | Personas briefing-scenario's: **financieel krap** (`cashflow_risk` + bewuste stilte) en **erfenis** (context voor erfenis-modus) | Alexandre · **Claude-sessie Personas** (#43) | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #48 (na #29) |

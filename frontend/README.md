@@ -11,7 +11,7 @@ Not a real bank. Synthetic demo data only, served by the FastAPI backend in
 
 ```bash
 npm install
-npm run dev        # Vite dev server, proxies /api and /healthz to http://localhost:8000
+npm run dev        # Vite dev server, proxies /api and /health to http://localhost:8000
 npm run build       # tsc -b && vite build -> dist/
 npm run preview     # preview the production build
 npm run lint         # eslint .
@@ -20,7 +20,7 @@ npm test            # vitest run
 ```
 
 Run the backend separately on `:8000`; `vite.config.ts` proxies `/api` and
-`/healthz` there in dev. In production the backend serves `frontend/dist`
+`/health` there in dev. In production the backend serves `frontend/dist`
 from the same origin, so there is no CORS and no API base URL to configure.
 
 ## Structure

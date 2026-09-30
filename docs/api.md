@@ -157,6 +157,12 @@ Requires the caller's username to be listed in `ADMIN_USERNAMES`. Anyone else �
 ```
 `flags`: `price_increase`, `duplicate` (two services in the same `group`), `trial_converted`. The bank does not know *usage*, so we never guess it; the customer answers. Sensitive subscriptions (health, religion, politics, trade union, dating) are only counted in `hidden_sensitive`, never shown or analysed.
 
+Detection is **automatic**; the customer never has to enter anything. Recently detected ones have `is_new: true` (UI: "Nieuw gedetecteerd · Klopt dit niet? Verwijder").
+
+`POST /api/v1/subscriptions/{id}/dismiss` body `{"dismissed": true}` → removes it from the list with one click (the overview is returned; `dismissed` counts them). `{"dismissed": false}` undoes it. `404` if not yours.
+
+`POST /api/v1/subscriptions` body `{"name": "Streamz", "amount": "9.99", "next_charge": "2026-10-15"}` (`next_charge` optional) → `201` + overview. Optional manual add, e.g. for a subscription paid with another bank's card (`source: "manual"`).
+
 `POST /api/v1/subscriptions/{id}/feedback` body `{"still_used": false, "remind_to_cancel": true}` → the updated subscription (`status: "cancel_reminder"`, `remind_on` = 3 days before the next charge). `404` if the id is not one of *your* subscriptions.
 
 ### Kate Skills – what Kate can do, and may do (see `docs/design/kate-skills.md`)

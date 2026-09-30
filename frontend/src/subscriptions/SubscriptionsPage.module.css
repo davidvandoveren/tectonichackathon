@@ -322,3 +322,152 @@
   line-height: 1.5;
   text-align: center;
 }
+
+/* --- new detection, removal, manual add ------------------------------------------------------ */
+.newBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: #e3f5fd;
+  color: var(--color-navy-800);
+  font-size: 0.85rem;
+}
+
+.removeButton {
+  flex: none;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-navy-800);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-navy-800);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.flag_new {
+  background: var(--color-accent);
+  color: var(--color-text-on-navy);
+}
+
+.flag_manual {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.quietRemove {
+  margin-top: var(--space-3);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.removeButton:focus-visible,
+.quietRemove:focus-visible,
+.addButton:focus-visible,
+.toastButton:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-height) + var(--space-3));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: calc(min(100vw, var(--max-width-app)) - 2 * var(--space-4));
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-navy-900);
+  color: var(--color-text-on-navy);
+  box-shadow: 0 8px 24px rgba(0, 20, 40, 0.3);
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+}
+
+.toast span {
+  flex: 1;
+}
+
+.toastButton {
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addButton {
+  width: 100%;
+  min-height: var(--touch-target);
+  margin-top: var(--space-3);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-navy-800);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.addForm label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.addForm input {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.addTitle {
+  margin: 0;
+  font-weight: 700;
+}
+
+.addHint {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.addActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

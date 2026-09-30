@@ -10,7 +10,7 @@ import hashlib
 import itertools
 from collections import defaultdict
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Literal
@@ -23,6 +23,8 @@ MAX_AMOUNT = Decimal("100.00")  # above this it is rent/insurance/loan territory
 PRICE_INCREASE_MIN = Decimal("0.01")
 TRIAL_MAX_AMOUNT = Decimal("1.00")
 TRIAL_WORDS = ("proef", "trial", "gratis", "free")
+# Shown as "Nieuw gedetecteerd" while the first paid charge is this recent.
+NEW_DAYS = 45
 
 # Known services -> comparison group. Two active subscriptions in one group = possible duplicate.
 CATALOG: dict[str, str] = {
@@ -97,6 +99,8 @@ class Subscription:
     flags: list[Flag] = field(default_factory=list)
     duplicate_of: list[str] = field(default_factory=list)
     reason: str = ""
+    source: Literal["detected", "manual"] = "detected"
+    is_new: bool = False
 
     @property
     def yearly_cost(self) -> Decimal:
@@ -115,7 +119,15 @@ def subscription_id(owner_id: str, name: str) -> str:
     return f"sub_{digest}"
 
 
-def detect(owner_id: str, transactions: Sequence[Transaction], today: date) -> DetectionResult:
+def detect(
+    owner_id: str,
+    transactions: Sequence[Transaction],
+    today: date,
+    *,
+    dismissed: frozenset[str] = frozenset(),
+    manual: Sequence[Subscription] = (),
+) -> DetectionResult:
+    """`dismissed`: ids the customer said are not a subscription. `manual`: ones they added."""
     by_merchant: defaultdict[str, list[Transaction]] = defaultdict(list)
     for t in transactions:
         if t.amount <= 0 and t.category in SUBSCRIPTION_CATEGORIES:
@@ -131,8 +143,12 @@ def detect(owner_id: str, transactions: Sequence[Transaction], today: date) -> D
         if any(_is_sensitive(t) for t in bookings):
             hidden += 1
             continue
-        found.append(_build(owner_id, key, bookings, paid, today))
+        sub = _build(owner_id, key, bookings, paid, today)
+        if sub.id not in dismissed:
+            found.append(sub)
 
+    # Copies: flags are computed per request and must not accumulate on the stored objects.
+    found.extend(replace(m, flags=[], duplicate_of=[]) for m in manual if m.id not in dismissed)
     _mark_duplicates(found)
     for sub in found:
         sub.reason = _reason(sub)
@@ -200,6 +216,25 @@ def _build(
         last_charged=paid[-1].booked_at,
         next_expected=next_expected,
         flags=flags,
+        is_new=(today - paid[0].booked_at).days <= NEW_DAYS,
+    )
+
+
+def manual_subscription(
+    subscription_id: str, name: str, amount: Decimal, next_charge: date, added_on: date
+) -> Subscription:
+    """A subscription the customer entered themselves (e.g. paid by card elsewhere)."""
+    return Subscription(
+        id=subscription_id,
+        name=name,
+        group=_group_for(name.lower()),
+        amount=amount,
+        previous_amount=None,
+        frequency="monthly",
+        first_seen=added_on,
+        last_charged=added_on,
+        next_expected=next_charge,
+        source="manual",
     )
 
 
@@ -221,6 +256,8 @@ def _euro(amount: Decimal) -> str:
 
 
 def _reason(sub: Subscription) -> str:
+    if sub.source == "manual":
+        return f"Je voegde dit abonnement zelf toe op {sub.first_seen:%d/%m}."
     parts = [
         f"We zien sinds {sub.first_seen:%d/%m} elke maand een betaling van {_euro(sub.amount)} "
         f"aan {sub.name}."

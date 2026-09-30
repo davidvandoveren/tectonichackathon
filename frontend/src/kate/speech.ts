@@ -87,11 +87,16 @@ export function listenWithBrowser(lang = "nl-BE"): { result: Promise<string>; st
 }
 
 // --- Browser text-to-speech fallback -------------------------------------------------------------
-export function speakWithBrowser(text: string, lang = "nl-BE"): void {
-  if (typeof speechSynthesis === "undefined") return;
+export function speakWithBrowser(text: string, onEnd?: () => void, lang = "nl-BE"): void {
+  if (typeof speechSynthesis === "undefined") {
+    onEnd?.();
+    return;
+  }
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = () => onEnd?.();
   speechSynthesis.speak(utterance);
 }
 

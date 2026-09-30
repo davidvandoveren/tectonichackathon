@@ -43,12 +43,13 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David · **Claude-sessie UI** (#18) | `frontend/**` (behalve `kate/`, `subscriptions/`) | 🚧 `feature/kbc-touch-ui` |
 | Kate-chat (Gemini/mock), stem (ElevenLabs), erfenis-modus | Sander | `backend/app/kate/`, `routers/kate.py`, `frontend/src/kate/` | ✅ #12 op `main` |
 | Abonnementenbeheer ("Gebruik je dit nog?") | Sander | `backend/app/subscriptions/`, `routers/subscriptions.py`, `frontend/src/subscriptions/` | ✅ #14 op `main` |
-| Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine, data-toestemming (`PUT /kate/consent`) | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | 🔍 PR #15 |
+| Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine, data-toestemming (`PUT /kate/consent`) | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | ✅ #15 op `main` |
 | Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
 | Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | 🔍 PR #20 |
 | README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
 | Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🚧 `feature/personas`, **MUST** – niet aan beginnen |
-| Jury-dashboard (10.000 klanten) | **niemand** | – | ⏳ open |
+| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🚧 `feature/insights-engine` – niet aan beginnen |
+| Jury-dashboard (10.000 klanten) | Sander (#25) | – | 🚧 |
 | Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David (frontend) | `frontend/` | ⏳ na #15/#16 |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
 | Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |

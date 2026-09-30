@@ -9,15 +9,31 @@
 }
 
 .device {
-  width: var(--phone-width);
-  height: var(--phone-height);
-  max-height: calc(100vh - var(--space-8));
-  border-radius: 40px;
-  padding: 12px;
-  background: #0a1a2e;
+  /* iPhone proportions (390 x 844): height follows the viewport, width follows the ratio. */
+  position: relative;
+  height: min(var(--phone-height), calc(100vh - var(--space-8)));
+  aspect-ratio: 390 / 844;
+  width: auto;
+  border-radius: 48px;
+  padding: 10px;
+  background: #111418;
   box-shadow:
-    0 24px 60px rgba(13, 42, 80, 0.35),
-    0 2px 8px rgba(13, 42, 80, 0.2);
+    0 0 0 1px #2b3036,
+    0 20px 50px rgba(13, 42, 80, 0.25);
+}
+
+/* Dynamic Island */
+.device::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 26px;
+  border-radius: 999px;
+  background: #000;
+  z-index: 2;
 }
 
 .screen {
@@ -25,7 +41,10 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  border-radius: 28px;
+  /* Room for the status bar / Dynamic Island, and no desktop scrollbar inside the phone. */
+  padding-top: 44px;
+  scrollbar-width: none;
+  border-radius: 38px;
   background: var(--kbc-surface);
   display: flex;
   flex-direction: column;
@@ -36,4 +55,15 @@
   transform: translateZ(0);
   /* Kate's overlay sizes itself to the app column; inside the frame that is the screen. */
   --max-width-app: 100vw;
+}
+
+.screen::-webkit-scrollbar {
+  display: none;
+}
+
+/* Kate's floating launcher sits in the top bar, left of the bell, instead of under the island. */
+.screen button[aria-label="Open Kate"] {
+  top: 50px;
+  right: 60px;
+  min-height: 36px;
 }

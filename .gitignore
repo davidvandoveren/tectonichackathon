@@ -30,3 +30,6 @@ Thumbs.db
 .mypy_cache/
 .pytest_cache/
 coverage/
+
+# git worktrees (one dir per feature, local only)
+.worktrees/

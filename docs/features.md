@@ -25,10 +25,11 @@ het in een minuut nakijkt. Alleen wat op `main` staat; open PR's staan apart ond
 | `sofie` | Projectingenieur, 29, Antwerpen, pendelt met de auto | Spaargewoonte automatiseren, ongebruikt Luxepakket, tankdeal: de *Bevestig*-demo |
 | `bram` | Magazijnier via interim, 26, Mechelen, krap bij kas | Huur in gevaar (push, urgentie 91) en bewuste stilte (deal ingehouden) |
 | `els` | Lerares, 54, Hasselt, moeder overleed onlangs | Erfenis-begeleidingsmodus in de chat, **lege** feed (geen verkoop) |
+| `tom` | Leerkracht, 45, Hasselt, niets bijzonders aan de hand | **Controlegeval: Kate zegt helemaal niets** (geen kaart, geen stilte, geen abonnementen): bewijs dat Kate niet spamt |
 | `lucas` | Verpleegkundige, 23, Leuven, verloofd met Emma | Familiekring (partner, gedeeld potje) |
 | `noor` | Scholier, 17, Gent, dochter van Jan | Familiekring (voogdij stopt op 18 jaar) |
 
-Bron: `backend/app/domain/seed.py` (emma … els) en `backend/app/family/scenario.py` (lucas, noor).
+Bron: `backend/app/domain/seed.py` (emma … els, tom) en `backend/app/family/scenario.py` (lucas, noor).
 De feeds hierboven zijn nagekeken op de live versie (30/09).
 
 ### Admin-only
@@ -79,7 +80,7 @@ falen. Vier lagen: signalen → momenten → arbitrage → compositie. Ontwerp:
 Elke KBC-functie is een pack met acties; Kate stelt voor, de klant beslist. Ontwerp:
 [design/kate-skills.md](design/kate-skills.md). Eigenaar: David (#16, #34, #38, #46, #53).
 **Snelste check van alles hieronder:** `cd backend && python scripts/skills_tour.py`
-(of `--persona jan` / `marie`; op Windows eerst `set PYTHONIOENCODING=utf-8` voor de €-tekens). Geen server, keys of wachtwoord nodig; het draait de echte API in-process.
+(of `--persona sofie`, `bram`, … elke demo-persona; UTF-8 staat al goed, ook op Windows). Geen server, keys of wachtwoord nodig; het draait de echte API in-process.
 
 | Feature | Wat het doet | Waar zien | Snel checken | Status |
 |---|---|---|---|---|

@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Wordmark } from "../components/Wordmark";
-import { BellIcon } from "../components/icons/BellIcon";
 import { TabBar } from "../components/TabBar";
 import { SparkleIcon } from "../kate/icons";
 import { openKate } from "../kate/openKate";
+import { NotificationBell } from "../notifications/NotificationBell";
 import styles from "./MobileShell.module.css";
 
 
@@ -33,10 +33,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
             <SparkleIcon width={18} height={18} aria-hidden="true" />
             <span>Kate</span>
           </button>
-          <button type="button" className={styles.iconButton} aria-disabled="true" title="Binnenkort" aria-label="Meldingen">
-            <BellIcon aria-hidden="true" />
-            <span className={styles.dot} aria-hidden="true" />
-          </button>
+          <NotificationBell variant="mobile" />
         </div>
       </header>
       <main className={styles.content}>{children}</main>

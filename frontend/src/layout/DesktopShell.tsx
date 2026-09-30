@@ -9,13 +9,13 @@ import { HouseIcon } from "../components/icons/HouseIcon";
 import { PeopleIcon } from "../components/icons/PeopleIcon";
 import { CarIcon } from "../components/icons/CarIcon";
 import { ProfileIcon } from "../components/icons/ProfileIcon";
-import { BellIcon } from "../components/icons/BellIcon";
 import { EnvelopeIcon } from "../components/icons/EnvelopeIcon";
 import { ChatIcon } from "../components/icons/ChatIcon";
 import { ChevronDownIcon } from "../components/icons/ChevronDownIcon";
 import { DocumentIcon } from "../components/icons/DocumentIcon";
 import { AskKateButton } from "../kate/AskKateButton";
 import { openKate } from "../kate/openKate";
+import { NotificationBell } from "../notifications/NotificationBell";
 import { ViewModeToggle } from "./ViewModeToggle";
 import styles from "./DesktopShell.module.css";
 
@@ -31,9 +31,9 @@ interface SidebarItem {
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: "Betalen", Icon: WalletIcon, to: "/", isActive: (p) => p === "/" || p.startsWith("/accounts/") },
   { label: "Overschrijven", Icon: TransferIcon, to: "/transfer" },
-  { label: "Sparen & Beleggen", Icon: PiggyBankIcon },
+  { label: "Sparen & Beleggen", Icon: PiggyBankIcon, to: "/invest" },
   { label: "Wonen", Icon: HouseIcon },
-  { label: "Gezin", Icon: PeopleIcon },
+  { label: "Gezin", Icon: PeopleIcon, to: "/family" },
   { label: "Voertuig", Icon: CarIcon },
   { label: "Profiel", Icon: ProfileIcon, to: "/profile" },
 ];
@@ -43,6 +43,15 @@ const SUBNAV_ITEMS = ["Rekeninguittreksels", "Doorlopende betalingsopdrachten", 
 function contextTitle(pathname: string): string {
   if (pathname === "/profile") {
     return "Overzicht Profiel";
+  }
+  if (pathname === "/invest") {
+    return "Sparen & Beleggen";
+  }
+  if (pathname === "/family") {
+    return "Gezin";
+  }
+  if (pathname === "/notifications") {
+    return "Meldingen";
   }
   return "Overzicht Betalen";
 }
@@ -119,13 +128,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
           <div className={styles.headerActions}>
             <AskKateButton onClick={openKate} />
 
-            <button type="button" className={styles.headerIconButton} aria-disabled="true" title="Binnenkort">
-              <span className={styles.headerIconWrap}>
-                <BellIcon aria-hidden="true" />
-                <span className={styles.dot} aria-hidden="true" />
-              </span>
-              <span>Acties</span>
-            </button>
+            <NotificationBell variant="desktop" />
             <button type="button" className={styles.headerIconButton} aria-disabled="true" title="Binnenkort">
               <span className={styles.headerIconWrap}>
                 <EnvelopeIcon aria-hidden="true" />

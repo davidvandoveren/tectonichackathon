@@ -9,7 +9,7 @@ export interface KateStatus {
 }
 
 export interface KateAction {
-  type: "none" | "transfer" | "advisor_handoff";
+  type: "none" | "transfer" | "advisor_handoff" | "invest_guide";
   to_name: string | null;
   amount: string | null;
   description: string | null;

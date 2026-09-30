@@ -12,7 +12,7 @@ from datetime import date
 
 from pydantic import ValidationError
 
-from app.kate.assistant import AdvisorHandoffAction, NoAction, TransferAction
+from app.kate.assistant import AdvisorHandoffAction, AnyAction, TransferAction
 from app.skills.service import NotAllowedError, NotEligibleError, SkillsService
 
 logger = logging.getLogger("kbc_poc.kate")
@@ -34,7 +34,7 @@ class ChatProposal:
 def propose_from_chat(
     skills: SkillsService,
     owner_id: str,
-    action: NoAction | TransferAction | AdvisorHandoffAction,
+    action: AnyAction,
     message: str,
     today: date,
 ) -> ChatProposal | None:

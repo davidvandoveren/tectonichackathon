@@ -121,6 +121,7 @@ _TRANSFER = re.compile(
 _GUIDANCE_WORDS = ("overleden", "overlijden", "erfenis", "gestorven", "begrafenis")
 _OFFER = "Als je wil, kan ik je helpen met wat er financieel geregeld moet worden."
 _YES_WORDS = ("ja", "graag", "oké", "oke", "ok", "yes", "goed", "doe maar", "alstublieft", "aub")
+_INVEST_WORDS = ("beleg", "etf", "bolero", "aandelen", "tracker", "indexfonds")
 _SPEND_WORDS = ("uitgegeven", "uitgaven", "spend", "besteed")
 _BALANCE_WORDS = ("saldo", "hoeveel staat", "hoeveel geld")
 
@@ -157,6 +158,17 @@ class MockChat:
                 + _OFFER
                 + " Zal ik dat rustig met je overlopen?",
                 mode="guidance",
+            )
+
+        if any(word in lower for word in _INVEST_WORDS):
+            return _json(
+                intro
+                + "Goed dat je erover nadenkt! Veel mensen beginnen met een brede wereld-ETF: "
+                "één product met duizenden bedrijven, lage kosten, en elke maand een vast bedrag "
+                "bijkopen. Belangrijk: eerst een buffer op je spaarrekening, en alleen geld "
+                "beleggen dat je jaren kan missen. Ik raad geen concreet product aan, jij kiest. "
+                "Wil je stap voor stap bekijken welke ETF's bij jouw profiel passen?",
+                action={"type": "invest_guide"},
             )
 
         if match := _TRANSFER.search(message):

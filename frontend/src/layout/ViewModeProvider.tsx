@@ -32,7 +32,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     writeStoredViewMode(mode);
   }, []);
 
-  // A phone embedded in the /demo page is always a plain phone: mobile layout, no extra frame.
+  // A phone embedded in the /duo page is always a plain phone: mobile layout, no extra frame.
   const embedded = sessionSlot !== null;
   const resolved = useMemo(
     () => (embedded ? "mobile" : resolveLayout(preference, isWideViewport)),

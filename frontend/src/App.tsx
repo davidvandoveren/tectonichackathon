@@ -25,7 +25,7 @@ export function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/demo" element={<DualPhoneDemo />} />
+          <Route path="/duo" element={<DualPhoneDemo />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route
             element={

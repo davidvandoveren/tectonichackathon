@@ -12,12 +12,12 @@ _CSP = "; ".join(
         "media-src 'self' blob:",  # Kate's voice is played from an in-memory blob
         "connect-src 'self'",
         "object-src 'none'",
-        "frame-src 'self'",  # only our own /demo page, which embeds the app twice
+        "frame-src 'self'",  # only our own /duo page, which embeds the app twice
         "worker-src 'self'",
         "manifest-src 'self'",
         "base-uri 'self'",
         "form-action 'self'",
-        "frame-ancestors 'self'",  # own /demo page embeds two phones; nobody else
+        "frame-ancestors 'self'",  # own /duo page embeds two phones; nobody else
     ]
 )
 

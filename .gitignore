@@ -21,3 +21,12 @@ build/
 Thumbs.db
 .idea/
 .vscode/
+
+# local reference material (not ours to publish)
+*.pdf
+
+# local env / tooling
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+coverage/

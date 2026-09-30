@@ -1,0 +1,22 @@
+# Production-like local run of the exact image we deploy: `docker compose up --build`
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      APP_ENV: development
+      COOKIE_SECURE: "false"
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD in .env (see .env.example)}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3

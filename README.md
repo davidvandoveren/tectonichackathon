@@ -35,13 +35,80 @@ Submission (via Builderbase): short description, **demo video (< 3 min)**, this 
 
 _TODO – fill in once the team picks a direction. See [docs/ideas.md](docs/ideas.md) for the brainstorm._
 
+**Base app (ready):** a KBC-Mobile-style banking app to build the PoC on. Synthetic customers can log in, see accounts and transactions, make transfers, and get a **"Voor jou"** feed of personalised, explainable insights ("Waarom zie ik dit?"). The personalization engine plugs in at [`backend/app/services/insights.py`](backend/app/services/insights.py).
+
+## Architecture
+
+```
+Browser (React + Vite + TS, mobile-first)
+   │  same origin, HttpOnly SameSite=Strict session cookie
+   ▼
+FastAPI (Python 3.13) ── /api/v1/*  → routers → Bank (owner-scoped data) + insights rules
+   └─ serves the built SPA from /       (one container → one Cloud Run service)
+```
+
+| Folder | What |
+|---|---|
+| `backend/` | FastAPI API, domain logic, synthetic data seed, pytest suite |
+| `frontend/` | React SPA (see `frontend/README.md`) |
+| `docs/api.md` | API contract between frontend and backend |
+| `Dockerfile` | Multi-stage build: Node builds the SPA, slim non-root Python image runs it |
+| `deploy/cloudrun.sh` | One-command deploy to Google Cloud Run |
+
+**Security by design** (Aikido audits business logic, IDOR, authn, authz):
+- Every data query takes the logged-in user's id (`Bank.account_for(owner_id, ...)`): other users' data is unreachable by construction and returns the same `404` as a non-existent id.
+- Server-side sessions (random token, only its hash stored, revoked on logout, rotated on login) in an `HttpOnly; Secure; SameSite=Strict` `__Host-` cookie. No tokens in JS/localStorage.
+- scrypt password hashing, constant-time compare, timing-equalised unknown users, login rate limiting (429).
+- Server-side validation of every transfer: IBAN mod-97, amount > 0, 2 decimals, max € 10 000, sufficient funds, no same-account or credit-card transfers.
+- CSRF guard (JSON-only + Origin check) on top of SameSite, strict CSP and security headers, no API docs in production, validation errors never echo input.
+- Secrets only via env / Google Secret Manager; container runs as non-root with a read-only filesystem in compose.
+- CI: ruff, mypy (strict), pytest, ESLint, tsc, vitest, `pip-audit`, `npm audit`, Docker build; Dependabot for all ecosystems.
+
 ## How to run
 
-_TODO – add exact steps when there is code._
+**Prerequisites:** Python 3.13, Node 24 (or only Docker).
+
+```bash
+cp .env.example .env          # then set DEMO_PASSWORD (min 8 chars)
+```
+
+**Option A – Docker (production-like):**
+```bash
+docker compose up --build     # http://localhost:8080
+```
+
+**Option B – dev mode with hot reload (two terminals):**
+```bash
+# terminal 1 – API on :8000
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Windows (PowerShell): .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload --env-file ../.env
+
+# terminal 2 – web on :5173 (proxies /api to :8000)
+cd frontend
+npm ci && npm run dev
+```
+Log in as `emma`, `jan` or `marie` with your `DEMO_PASSWORD`. API docs (dev only): http://localhost:8000/api/docs
+
+**Checks (same as CI):**
+```bash
+cd backend && ruff check . && ruff format --check . && mypy app && pytest
+cd frontend && npm run lint && npm run typecheck && npm test && npm run build
+```
+
+**Deploy to Google Cloud Run:**
+```bash
+gcloud auth login
+PROJECT_ID=<your-gcp-project> ./deploy/cloudrun.sh
+```
 
 ## What is unfinished / known limitations
 
-_TODO – keep this honest and up to date; the rules require it._
+- **Data is in memory and synthetic.** It resets on every restart; that is why Cloud Run runs with `--max-instances 1`. Next step: a Firestore/Cloud SQL implementation of `Bank` and a shared session store.
+- **Demo login:** all personas share one password from `DEMO_PASSWORD`. No MFA/itsme – out of scope for the PoC.
+- **Insights are simple rules**, not yet ML/LLM – this is where the PoC's personalization engine goes.
+- Rate limiting is per instance (in memory).
 
 ## Team & contributing
 

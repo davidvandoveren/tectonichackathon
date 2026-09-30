@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import Field, field_validator
 
-from app.dependencies import BankDep, CurrentUser, TodayDep
+from app.dependencies import BankDep, CurrentUser, KateStateDep, TodayDep
 from app.domain.models import User
 from app.schemas import ApiModel, Money
 from app.subscriptions.detect import Subscription, detect, manual_subscription, subscription_id
@@ -27,6 +27,14 @@ def get_feedback_store(request: Request) -> FeedbackStore:
 
 
 StoreDep = Annotated[FeedbackStore, Depends(get_feedback_store)]
+
+
+def spending_allowed(user: CurrentUser, state: KateStateDep) -> bool:
+    """Detection reads the customer's spending, so it needs the `spending` consent domain."""
+    return "spending" in state.consent_for(user.id)
+
+
+SpendingAllowedDep = Annotated[bool, Depends(spending_allowed)]
 
 
 class SubscriptionOut(ApiModel):
@@ -60,6 +68,9 @@ class SubscriptionsOut(ApiModel):
     hidden_sensitive: int
     # Removed by the customer ("Klopt dit niet?"); can be restored.
     dismissed: int
+    # False when the customer switched off the "spending" consent: nothing is detected, only
+    # subscriptions they added themselves are shown.
+    spending_consent: bool = True
 
 
 class FeedbackIn(ApiModel):
@@ -86,11 +97,17 @@ class ManualIn(ApiModel):
 
 
 def _own_subscriptions(
-    user: User, bank: BankDep, today: date, store: FeedbackStore, *, include_dismissed: bool = False
+    user: User,
+    bank: BankDep,
+    today: date,
+    store: FeedbackStore,
+    allowed: bool,
+    *,
+    include_dismissed: bool = False,
 ) -> tuple[list[Subscription], int]:
     result = detect(
         user.id,
-        bank.all_transactions_for(user.id),  # own data only
+        bank.all_transactions_for(user.id) if allowed else [],  # own data, with consent only
         today,
         dismissed=frozenset() if include_dismissed else store.dismissed(user.id),
         manual=store.manual(user.id),
@@ -98,8 +115,10 @@ def _own_subscriptions(
     return result.subscriptions, result.hidden_sensitive
 
 
-def _overview(user: User, bank: BankDep, today: date, store: FeedbackStore) -> "SubscriptionsOut":
-    subs, hidden = _own_subscriptions(user, bank, today, store)
+def _overview(
+    user: User, bank: BankDep, today: date, store: FeedbackStore, allowed: bool
+) -> "SubscriptionsOut":
+    subs, hidden = _own_subscriptions(user, bank, today, store, allowed)
     items = [_out(sub, store.get(user.id, sub.id)) for sub in subs]
     return SubscriptionsOut(
         subscriptions=items,
@@ -109,6 +128,7 @@ def _overview(user: User, bank: BankDep, today: date, store: FeedbackStore) -> "
             (i.yearly_cost for i in items if i.status == "cancel_reminder"), Decimal(0)
         ),
         hidden_sensitive=hidden,
+        spending_consent=allowed,
         dismissed=len(store.dismissed(user.id)),
     )
 
@@ -137,14 +157,23 @@ def _out(sub: Subscription, feedback: Feedback) -> SubscriptionOut:
 
 @router.get("/subscriptions", response_model=SubscriptionsOut)
 def list_subscriptions(
-    user: CurrentUser, bank: BankDep, today: TodayDep, store: StoreDep
+    user: CurrentUser,
+    bank: BankDep,
+    today: TodayDep,
+    store: StoreDep,
+    allowed: SpendingAllowedDep,
 ) -> SubscriptionsOut:
-    return _overview(user, bank, today, store)
+    return _overview(user, bank, today, store, allowed)
 
 
 @router.post("/subscriptions", response_model=SubscriptionsOut, status_code=status.HTTP_201_CREATED)
 def add_subscription(
-    body: ManualIn, user: CurrentUser, bank: BankDep, today: TodayDep, store: StoreDep
+    body: ManualIn,
+    user: CurrentUser,
+    bank: BankDep,
+    today: TodayDep,
+    store: StoreDep,
+    allowed: SpendingAllowedDep,
 ) -> SubscriptionsOut:
     next_charge = body.next_charge or today + timedelta(days=30)
     if not today <= next_charge <= today + timedelta(days=366):
@@ -158,7 +187,7 @@ def add_subscription(
     )
     if not store.add_manual(user.id, sub):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Too many subscriptions")
-    return _overview(user, bank, today, store)
+    return _overview(user, bank, today, store, allowed)
 
 
 @router.post("/subscriptions/{subscription_id}/dismiss", response_model=SubscriptionsOut)
@@ -169,16 +198,17 @@ def dismiss_subscription(
     bank: BankDep,
     today: TodayDep,
     store: StoreDep,
+    allowed: SpendingAllowedDep,
 ) -> SubscriptionsOut:
     """ "Klopt dit niet? Verwijder" with one click, and undo (`dismissed: false`)."""
-    all_own, _ = _own_subscriptions(user, bank, today, store, include_dismissed=True)
+    all_own, _ = _own_subscriptions(user, bank, today, store, allowed, include_dismissed=True)
     if not any(s.id == subscription_id for s in all_own):
         raise HTTPException(status.HTTP_404_NOT_FOUND, _NOT_FOUND)
     if body.dismissed:
         store.dismiss(user.id, subscription_id)
     else:
         store.restore(user.id, subscription_id)
-    return _overview(user, bank, today, store)
+    return _overview(user, bank, today, store, allowed)
 
 
 @router.post("/subscriptions/{subscription_id}/feedback", response_model=SubscriptionOut)
@@ -189,8 +219,9 @@ def subscription_feedback(
     bank: BankDep,
     today: TodayDep,
     store: StoreDep,
+    allowed: SpendingAllowedDep,
 ) -> SubscriptionOut:
-    subs, _ = _own_subscriptions(user, bank, today, store)
+    subs, _ = _own_subscriptions(user, bank, today, store, allowed)
     sub = next((s for s in subs if s.id == subscription_id), None)
     if sub is None:  # unknown or someone else's: same answer, no enumeration
         raise HTTPException(status.HTTP_404_NOT_FOUND, _NOT_FOUND)

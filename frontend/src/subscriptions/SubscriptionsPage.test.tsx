@@ -102,4 +102,17 @@ describe("SubscriptionsPage", () => {
     expect(await screen.findByText("Streamz")).toBeInTheDocument();
     expect(bodies).toEqual([{ dismissed: true }, { dismissed: false }]);
   });
+
+  it("explains an empty list when spending consent is off", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      json({ ...overview, subscriptions: [], spending_consent: false, hidden_sensitive: 0 })
+    );
+    render(
+      <MemoryRouter>
+        <SubscriptionsPage />
+      </MemoryRouter>
+    );
+    expect(await screen.findByText(/geen toestemming om je uitgaven te bekijken/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Wat weet Kate/ })).toHaveAttribute("href", "/kate");
+  });
 });

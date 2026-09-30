@@ -73,6 +73,8 @@ Fed by the moments engine (see [Kate feed](#kate-feed-the-moments-engine)): home
 ### Kate (chat, voice, speech recognition)
 All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_REQUESTS_PER_MINUTE`, default 20 → `429`). Upstream failures (Gemini/ElevenLabs) → `503`. Without keys Kate runs in **demo mode** (`llm: "mock"`, canned answers) and the UI falls back to the browser's own speech recognition and voice.
 
+**Data consent:** Kate's chat only receives the kinds of data the customer allowed via `PUT /api/v1/kate/consent` (`spending` → spend + outgoing transactions, `income` → incoming, `balances` → balances, `products` → accounts). What is switched off is listed to the model as `withheld`, and Kate says she has no access instead of guessing. Sensitive spending is defined once in `backend/app/privacy/sensitive.py`.
+
 `GET /api/v1/kate/status` → `{"llm": "mock" | "gemini", "voice": true, "speech_recognition": true}`
 
 `POST /api/v1/kate/chat` body `{"message": "Stuur Lucas 25 euro voor de pizza", "history": [{"role": "kate" | "user", "text": "…"}]}` (message ≤ 1000 chars, history ≤ 10 turns) →
@@ -172,6 +174,8 @@ Detection is **automatic**; the customer never has to enter anything. Recently d
 `POST /api/v1/subscriptions/{id}/dismiss` body `{"dismissed": true}` → removes it from the list with one click (the overview is returned; `dismissed` counts them). `{"dismissed": false}` undoes it. `404` if not yours.
 
 `POST /api/v1/subscriptions` body `{"name": "Streamz", "amount": "9.99", "next_charge": "2026-10-15"}` (`next_charge` optional) → `201` + overview. Optional manual add, e.g. for a subscription paid with another bank's card (`source: "manual"`).
+
+With the `spending` consent switched off, nothing is detected: `subscriptions` only holds what the customer added manually and `spending_consent` is `false` (the page explains why and links to `/kate`).
 
 `POST /api/v1/subscriptions/{id}/feedback` body `{"still_used": false, "remind_to_cancel": true}` → the updated subscription (`status: "cancel_reminder"`, `remind_on` = 3 days before the next charge). `404` if the id is not one of *your* subscriptions.
 

@@ -30,6 +30,8 @@ export interface SubscriptionsOverview {
   yearly_savings: string;
   hidden_sensitive: number;
   dismissed: number;
+  /** False when the customer switched off the "spending" consent (nothing is detected). */
+  spending_consent?: boolean;
 }
 
 export function getSubscriptions(signal?: AbortSignal): Promise<SubscriptionsOverview> {

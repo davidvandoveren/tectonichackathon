@@ -7,7 +7,7 @@ channel adds a caller, not a new policy.
 
 import secrets
 import threading
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
@@ -23,11 +23,16 @@ from app.skills.registry import Registry, tool_definition
 
 PROPOSAL_TTL = timedelta(hours=24)
 MAX_REASON = 400
+# Resource limits per customer, so no caller can grow the in-memory stores without bound.
+MAX_OPEN_PROPOSALS = 20
+MAX_KEPT_PROPOSALS = 200
+MAX_ACTIVITY = 500
 
 Status = Literal["suggested", "pending", "executed", "failed", "declined", "expired"]
 Source = Literal["moment", "chat", "voice", "ui"]
 Final = Literal["executed", "failed", "declined", "expired"]
 Event = Literal["proposed", "suggested", "consent_changed"] | Final
+_OPEN: tuple[Status, ...] = ("pending", "suggested")
 
 
 class UnknownActionError(LookupError):
@@ -95,7 +100,9 @@ class SkillsService:
         self._consent = ConsentStore()
         self._holdings = Holdings()
         self._proposals: dict[str, Proposal] = {}
-        self._activity: defaultdict[str, list[ActivityEntry]] = defaultdict(list)
+        self._activity: defaultdict[str, deque[ActivityEntry]] = defaultdict(
+            lambda: deque(maxlen=MAX_ACTIVITY)
+        )
         self._lock = threading.RLock()
 
     # --- consent -------------------------------------------------------------------------------
@@ -173,7 +180,12 @@ class SkillsService:
             created_at=self._clock(),
         )
         with self._lock:
+            if self._open_count(owner_id) >= MAX_OPEN_PROPOSALS:
+                raise NotEligibleError(
+                    "Er staan al te veel voorstellen open. Keur er eerst enkele goed of af."
+                )
             self._proposals[proposal.id] = proposal
+            self._prune(owner_id)
             self._log(
                 owner_id,
                 "suggested" if status == "suggested" else "proposed",
@@ -237,6 +249,20 @@ class SkillsService:
         if proposal.status not in allowed:
             raise InvalidStateError(f"proposal is {proposal.status}")
         return proposal
+
+    def _open_count(self, owner_id: str) -> int:
+        own = [p for p in list(self._proposals.values()) if p.owner_id == owner_id]
+        return sum(1 for p in own if self._expire_if_due(p).status in _OPEN)
+
+    def _prune(self, owner_id: str) -> None:
+        """Forget the oldest finished proposals beyond MAX_KEPT_PROPOSALS; open ones always stay."""
+        own = [p for p in self._proposals.values() if p.owner_id == owner_id]
+        excess = len(own) - MAX_KEPT_PROPOSALS
+        if excess <= 0:
+            return
+        finished = sorted((p for p in own if p.status not in _OPEN), key=lambda p: p.created_at)
+        for proposal in finished[:excess]:
+            del self._proposals[proposal.id]
 
     def _expire_if_due(self, proposal: Proposal) -> Proposal:
         due = self._clock() - proposal.created_at > PROPOSAL_TTL

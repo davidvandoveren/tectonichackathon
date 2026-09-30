@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings, get_settings
@@ -27,6 +27,7 @@ from app.routers import (
     skills,
     subscriptions,
 )
+from app.security.body_limit import BodySizeLimitMiddleware
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
 from app.security.rate_limit import FailureLimiter, RequestLimiter
 from app.security.sessions import SessionStore
@@ -36,6 +37,14 @@ from app.subscriptions.scenario import book_subscriptions
 from app.subscriptions.store import FeedbackStore
 
 logger = logging.getLogger("kbc_poc")
+
+# RFC 9116: where to report a vulnerability. Keep `Expires` less than a year ahead.
+SECURITY_TXT = """\
+Contact: https://github.com/davidvandoveren/tectonichackathon/security/advisories/new
+Policy: https://github.com/davidvandoveren/tectonichackathon/blob/main/SECURITY.md
+Expires: 2027-06-30T00:00:00.000Z
+Preferred-Languages: nl, en
+"""
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -75,6 +84,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.dependency_overrides[get_settings] = lambda: settings
     app.add_middleware(CsrfGuardMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
+    # Added last = runs first: oversized bodies are refused before anything reads them.
+    app.add_middleware(BodySizeLimitMiddleware)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -89,6 +100,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/health", include_in_schema=False)
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/.well-known/security.txt", include_in_schema=False)
+    def security_txt() -> PlainTextResponse:
+        return PlainTextResponse(SECURITY_TXT)
 
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(banking.router, prefix="/api/v1")

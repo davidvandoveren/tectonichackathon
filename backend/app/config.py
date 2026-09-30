@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     static_dir: Path | None = None
     login_max_failures: int = 5
     login_window_seconds: int = 5 * 60
+    # Proxies in front of the app that append to X-Forwarded-For (Cloud Run: 1, Cloud Run behind
+    # an external HTTPS load balancer: 2). 0 = use the socket peer. See security/client_ip.py.
+    trusted_proxy_hops: int = Field(default=0, ge=0, le=5)
     # Usernames allowed to use the demo-only admin endpoints (time machine). Comma separated.
     # Empty means nobody, so the endpoints answer 404 for everyone until a demo is set up.
     admin_usernames: str = ""

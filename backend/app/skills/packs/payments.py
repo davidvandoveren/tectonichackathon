@@ -18,7 +18,7 @@ from app.skills.base import (
     clean,
     euro,
 )
-from app.skills.holdings import StandingOrder
+from app.skills.holdings import MAX_STANDING_ORDERS, StandingOrder
 from app.skills.packs._accounts import own_account
 
 
@@ -66,6 +66,8 @@ class StandingOrderParams(Params):
 def _has_savings(ctx: SkillContext, _: StandingOrderParams) -> str | None:
     if own_account(ctx, AccountType.SAVINGS) is None:
         return "Je hebt nog geen spaarrekening."
+    if len(ctx.holdings.of(ctx.owner_id).standing_orders) >= MAX_STANDING_ORDERS:
+        return f"Je hebt al {MAX_STANDING_ORDERS} bestendige opdrachten."
     return None
 
 

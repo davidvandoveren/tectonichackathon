@@ -27,6 +27,7 @@ export interface ChatTurn {
 }
 
 export const MAX_HISTORY = 10;
+export const MAX_TURN_TEXT = 1200;
 
 /** Pre-fill for the normal transfer screen; the customer checks and confirms there. */
 export function transferLink(action: KateAction): string {
@@ -60,7 +61,7 @@ export function getKateStatus(signal?: AbortSignal): Promise<KateStatus> {
 export function sendKateMessage(message: string, history: ChatTurn[]): Promise<KateChatResponse> {
   return apiClient.post<KateChatResponse>("/kate/chat", {
     message,
-    history: history.slice(-MAX_HISTORY),
+    history: history.slice(-MAX_HISTORY).map((turn) => ({ ...turn, text: turn.text.slice(0, MAX_TURN_TEXT) })),
   });
 }
 

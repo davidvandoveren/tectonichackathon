@@ -12,9 +12,21 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings, get_settings
 from app.domain.bank import Bank
 from app.domain.seed import seed_bank
+from app.family.circle import FamilyCircle
+from app.family.scenario import seed_family
 from app.kate.voices import VoicePreferences
 from app.moments.state import KateState
-from app.routers import admin, auth, banking, kate, kate_feed, skills, subscriptions
+from app.routers import (
+    admin,
+    auth,
+    banking,
+    dashboard,
+    family,
+    kate,
+    kate_feed,
+    skills,
+    subscriptions,
+)
 from app.security.body_limit import BodySizeLimitMiddleware
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
 from app.security.rate_limit import FailureLimiter, RequestLimiter
@@ -43,6 +55,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         bank = Bank()
         seed_bank(bank, settings.demo_password.get_secret_value(), date.today())
         book_subscriptions(bank, date.today())
+        app.state.family = FamilyCircle(bank)
+        seed_family(bank, app.state.family, settings.demo_password.get_secret_value(), date.today())
         app.state.subscription_feedback = FeedbackStore()
         app.state.bank = bank
         app.state.kate = KateState()
@@ -96,8 +110,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(kate.router, prefix="/api/v1")
     app.include_router(kate_feed.router, prefix="/api/v1")
     app.include_router(admin.router, prefix="/api/v1")
+    app.include_router(dashboard.router, prefix="/api/v1")
     app.include_router(subscriptions.router, prefix="/api/v1")
     app.include_router(skills.router, prefix="/api/v1")
+    app.include_router(family.router, prefix="/api/v1")
 
     if settings.static_dir and (settings.static_dir / "index.html").is_file():
         _mount_frontend(app, settings.static_dir.resolve())

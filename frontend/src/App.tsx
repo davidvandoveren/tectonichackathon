@@ -11,6 +11,9 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
+import { KateConsentPage } from "./skills/KateConsentPage";
+import { DashboardPage } from "./dashboard/DashboardPage";
+import { FamilyPage } from "./family/FamilyPage";
 
 export function App() {
   return (
@@ -31,7 +34,17 @@ export function App() {
             <Route path="/transfer" element={<TransferPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
+            <Route path="/kate" element={<KateConsentPage />} />
+            <Route path="/family" element={<FamilyPage />} />
           </Route>
+          <Route
+            path="/jury"
+            element={
+              <RequireAuth>
+                <DashboardPage />
+              </RequireAuth>
+            }
+          />
           <Route path="/404" element={<NotFoundPage />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

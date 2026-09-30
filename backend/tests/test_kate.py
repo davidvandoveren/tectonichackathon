@@ -88,12 +88,31 @@ def test_mock_chat_discloses_ai_and_prefills_transfer(emma: TestClient) -> None:
     }
 
 
-def test_mock_chat_switches_to_guidance_for_bereavement(emma: TestClient) -> None:
-    body = emma.post(
+def test_mock_chat_bereavement_first_empathy_then_offer_then_plan(emma: TestClient) -> None:
+    first = emma.post(
         "/api/v1/kate/chat", json={"message": "Mijn moeder is overleden, wat met de erfenis?"}
     ).json()
-    assert body["mode"] == "guidance"
-    assert body["action"]["type"] == "advisor_handoff"
+    assert first["mode"] == "guidance"
+    assert first["action"]["type"] == "none"  # no plan or hand-off before the customer says yes
+    assert "gecondoleerd" in first["reply"] and "financieel" in first["reply"]
+
+    history = [
+        {"role": "user", "text": "Mijn moeder is overleden, wat met de erfenis?"},
+        {"role": "kate", "text": first["reply"]},
+    ]
+    second = emma.post("/api/v1/kate/chat", json={"message": "ja graag", "history": history})
+    assert second.json()["action"]["type"] == "advisor_handoff"
+
+
+def test_style_guide_is_part_of_the_prompt() -> None:
+    from app.kate.assistant import SYSTEM_PROMPT, load_style_guide
+
+    guide = load_style_guide()
+    assert "Spiegel de klant" in guide
+    assert "tenzij de klant expliciet" in guide.lower()
+    assert guide in SYSTEM_PROMPT
+    # The hard rules come after the guide and win over it.
+    assert SYSTEM_PROMPT.index("HARDE REGELS") > SYSTEM_PROMPT.index("GEDRAGSGIDS")
 
 
 def test_context_only_contains_own_data(emma: TestClient) -> None:
@@ -116,7 +135,7 @@ def test_invalid_model_action_is_dropped(emma: TestClient) -> None:
     _use_model(emma, model)
     body = emma.post("/api/v1/kate/chat", json={"message": "hoi"}).json()
     assert body["action"]["type"] == "none"
-    assert body["reply"].startswith("Ik ben Kate")  # AI disclosure enforced
+    assert body["reply"].startswith("Kate hier, digitale assistent (AI).")  # AI disclosure enforced
 
 
 def test_unknown_action_type_is_dropped(emma: TestClient) -> None:
@@ -284,3 +303,35 @@ def test_elevenlabs_voice_selection() -> None:
     assert only_male.available() == ["male"]
     both = ElevenLabsVoice("k", {"female": "f-id", "male": "m-id"}, "tts", "stt")
     assert both.available() == ["female", "male"]
+
+
+# --- long messages never break the conversation -------------------------------------------------
+def test_long_history_is_trimmed_not_refused(emma: TestClient) -> None:
+    model = RecordingModel(_answer(reply="AI: ok", action={"type": "none"}))
+    _use_model(emma, model)
+    history = [{"role": "kate" if i % 2 else "user", "text": "x" * 3000} for i in range(30)]
+    response = emma.post("/api/v1/kate/chat", json={"message": "en nu?", "history": history})
+    assert response.status_code == 200
+    assert len(model.turns) == 11  # last 10 turns + the new message
+    assert all(len(t.text) <= 1200 for t in model.turns)
+
+
+def test_absurd_input_is_still_refused(emma: TestClient) -> None:
+    huge = [{"role": "user", "text": "x" * 9000}]
+    assert (
+        emma.post("/api/v1/kate/chat", json={"message": "hoi", "history": huge}).status_code == 422
+    )
+    too_many = [{"role": "user", "text": "x"}] * 101
+    assert (
+        emma.post("/api/v1/kate/chat", json={"message": "hoi", "history": too_many}).status_code
+        == 422
+    )
+
+
+def test_long_answer_with_disclosure_stays_within_limit(emma: TestClient) -> None:
+    _use_model(emma, RecordingModel(_answer(reply="lang " * 400, action={"type": "none"})))
+    reply = emma.post("/api/v1/kate/chat", json={"message": "hoi"}).json()["reply"]
+    assert len(reply) <= 1200 and reply.startswith("Kate hier")
+    # ...so it can be sent back as history and read aloud without a 422.
+    emma.app.dependency_overrides[get_voice] = FakeVoice  # type: ignore[attr-defined]
+    assert emma.post("/api/v1/kate/speech", json={"text": reply + "x" * 500}).status_code == 200

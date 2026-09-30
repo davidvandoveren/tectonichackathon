@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.dependencies import BankDep, CurrentUser, TodayDep
+from app.dependencies import BankDep, CurrentUser, KateStateDep, TodayDep
 from app.domain.bank import TransferError, TransferRequest
 from app.schemas import AccountOut, InsightOut, TransactionOut, TransferIn
-from app.services.insights import CustomerSignals, insights_for
+from app.services.insights import insights_for
 
 router = APIRouter(tags=["banking"])
 
@@ -61,11 +61,7 @@ def create_transfer(
 
 
 @router.get("/insights", response_model=list[InsightOut])
-def list_insights(user: CurrentUser, bank: BankDep, today: TodayDep) -> list[InsightOut]:
-    signals = CustomerSignals(
-        user_id=user.id,
-        accounts=bank.accounts_for(user.id),
-        transactions=bank.all_transactions_for(user.id),
-        today=today,
-    )
-    return [InsightOut.model_validate(i) for i in insights_for(signals)]
+def list_insights(
+    user: CurrentUser, bank: BankDep, state: KateStateDep, today: TodayDep
+) -> list[InsightOut]:
+    return [InsightOut.model_validate(i) for i in insights_for(bank, user, today, state)]

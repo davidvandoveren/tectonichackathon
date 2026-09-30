@@ -59,9 +59,16 @@ Rules: amount `> 0`, max 2 decimals, ≤ 10000.00, ≤ available balance; IBAN m
 ### Insights ("Voor jou") – the personalization hook
 `GET /api/v1/insights` →
 ```json
-[{"id": "i_…", "kind": "moment", "title": "Eerste loon ontvangen?", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever."}]
+[{"id": "i_first_salary_u_emma", "kind": "moment", "title": "Proficiat met je eerste loon!", "body": "…", "cta_label": "Start met sparen", "cta_target": "/transfer", "reason": "We zagen een nieuwe maandelijkse storting van je werkgever.",
+  "moment": "first_salary", "urgency": 39, "channel": "feed", "confidence": 0.82}]
 ```
-`reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present. Today these come from simple rules in `backend/app/services/insights.py`; this is where the PoC's personalization engine plugs in.
+`reason` is the plain-language "Waarom zie ik dit?" explanation and is **always** present.
+
+Fed by the moments engine (see [Kate feed](#kate-feed-the-moments-engine)): home shows exactly the items of `GET /kate/feed`, in the same order (highest urgency first), and obeys the same consent switches, dismissals and time machine. What Kate deliberately keeps quiet about is only in the feed's `silenced`.
+
+- `kind`: `alert` (a risk, e.g. a missing salary), `guidance` (needs an advisor), otherwise `moment`.
+- `moment` is the moment type: pass it to `POST /kate/feed/{moment}/dismiss` for "Niet meer tonen".
+- `urgency` (0–100), `channel` and `confidence` (0–1) are **optional additions**; the original fields keep their meaning, so older clients keep working.
 
 ### Kate (chat, voice, speech recognition)
 All Kate endpoints need a login and share a per-customer rate limit (`KATE_MAX_REQUESTS_PER_MINUTE`, default 20 → `429`). Upstream failures (Gemini/ElevenLabs) → `503`. Without keys Kate runs in **demo mode** (`llm: "mock"`, canned answers) and the UI falls back to the browser's own speech recognition and voice.
@@ -110,6 +117,7 @@ is fully deterministic — no model, no network call — so it cannot fail durin
 ```
 
 - `id` is the moment type, stable across requests, and is what you pass to the dismiss endpoint.
+  Moment types: `cashflow_risk`, `income_missing` (risk) · `moving_house` (obligation) · `first_salary`, `idle_savings`, `savings_habit_automatable`, `deal_match`, `card_package_waste` (pays for Reis-/Luxepakket, no travel seen → drop it and save), `card_package_gap` (travels, no Reispakket) (opportunity).
 - `urgency` is `0–100`. Bands do not overlap: `risk` 70–100, `obligation` 40–69, `opportunity` 10–39, so a risk can never be outranked by a confident nudge. Items come back ranked, highest first.
 - `channel` is one of `feed`, `push`, `sms`, `call`, `none`. **At most one item per response uses an interruptive channel** (`push`/`sms`/`call`); the rest fall back to `feed`.
 - `reason` is the "Waarom zie ik dit?" text. It is assembled from the evidence that produced the moment, so it can never drift from what was actually observed. Always present, never empty.
@@ -122,6 +130,8 @@ is fully deterministic — no model, no network call — so it cannot fail durin
 `GET /api/v1/kate/consent` → `{"income": true, "spending": true, "balances": true, "products": true}`
 
 `PUT /api/v1/kate/consent` body `{"domain": "spending", "allowed": false}` → the updated object. An unknown domain gives `422`.
+
+`products` covers what Kate reads about the customer's KBC products (card packages); switching it off silences `card_package_waste` and lets `card_package_gap` fire without knowing a package is held.
 
 Consent is applied **before** signal extraction, so a domain the customer switched off is never computed rather than computed and filtered. Switching off `spending` visibly changes the feed.
 
@@ -213,3 +223,50 @@ No entry = no button on that card (no matching action, the customer switched the
 `POST /api/v1/proposals/from-moment` body `{"moment": "first_salary"}` → `201` proposal (same shape as `POST /proposals`, `source: "moment"`, `reason` = the engine's evidence). The server recomputes the moment itself, so a client cannot choose the amounts; a moment that is not in this customer's feed right now → `404`; consent `off` → `403`; not possible → `409`; extra fields → `422`.
 
 Card flow: **Bevestig** → `POST /proposals/from-moment` → `POST /proposals/{id}/approve` `{}` → show `outcome.message` (`navigate`: open `outcome.navigate_to`; `advisor_handoff`: show that an advisor will call). **Nee, bedankt** → `POST /kate/feed/{moment}/dismiss` `{}`.
+
+### Family circle – linked accounts (`/family`)
+Customers link their accounts to the people around them. A link exists only after **both** sides accept; each side chooses what **it** shares with the other and can never raise what the other shares. Either side can end a link at any time. Levels, each including the previous: `exists` (only that the link exists) · `gift` (may contribute to pots you share with them, sees progress only) · `pot` (also sees who gave what) · `balances` (also your account balances, read-only; never transactions or IBANs).
+
+**Minors:** guardianship comes from the civil registry (seeded: Jan → Noor), never from an invite. Until the 18th birthday the guardian sees the child's balances by law and neither side can end the link (`409`). On the birthday (the app clock, so the time machine shows it) it ends automatically and only the child's own choice counts. Minors cannot be invited, cannot invite and get no nudges to give money.
+
+`GET /api/v1/family` →
+```json
+{"me": {"minor": false, "adult_on": null},
+ "links": [{"id": "fl_3f2a9c1b7d4e", "status": "active" | "pending", "direction": null | "incoming" | "outgoing",
+   "other_name": "Lucas Janssens", "my_role": "partner", "their_role": "partner", "i_share": "pot", "they_share": "pot",
+   "guardianship": null | {"my_side": "guardian" | "ward", "active": true, "ends_on": "2026-10-21"},
+   "can_end": true, "can_view_accounts": false, "since": "2026-07-02"}],
+ "pots": [{"id": "fp_…", "name": "Ons trouwfeest", "goal": "8000.00", "balance": "2500.00", "progress_percent": 31,
+   "owner_name": "Emma Peeters", "mine": true, "access": "owner" | "pot" | "gift", "members": ["Lucas Janssens"] | null,
+   "contributions": [{"name": "Lucas Janssens", "amount": "150.00", "booked_on": "2026-09-28", "mine": false}]}],
+ "suggestions": [{"id": "…", "kind": "invite" | "guardianship_ending" | "now_adult" | "pot_contribution",
+   "title": "…", "body": "…", "reason": "Waarom zie ik dit?", "cta_label": "…", "cta_target": "/family"}]}
+```
+Roles: `partner`, `parent`, `child`, `grandparent`, `grandchild`, `godparent`, `godchild`, `sibling`, `other`.
+
+`POST /api/v1/family/invites` body `{"username": "lucas", "my_role": "partner", "share": "exists"}` → `202 {"message": "…", "link": Link}`. **Same answer whether or not the username is a customer** (or a minor, or already linked): an outgoing invite only ever shows what you typed. Max 10 open invites.
+
+`POST /api/v1/family/links/{id}/accept` body `{"share": "gift"}` → `Link` (only the invitee; `409` if already answered).
+`POST /api/v1/family/links/{id}/sharing` body `{"share": "pot"}` → `Link` (changes only *your* side).
+`POST /api/v1/family/links/{id}/end` body `{}` → `204` (decline, cancel or end; `409` during guardianship).
+`GET /api/v1/family/links/{id}/accounts` → `[{"name": "Spaarrekening", "type": "savings", "balance": "1150.00", "currency": "EUR"}]`, only if the other side shares `balances` with you.
+`POST /api/v1/family/pots` body `{"name": "Huis", "goal": "20000.00", "member_link_ids": ["fl_…"]}` → `201 Pot` (members = your own active links; a member sees the pot only while you share at least `gift` with them).
+`POST /api/v1/family/pots/{id}/contributions` body `{"from_account_id": "a_marie_1", "amount": "50.00", "note": "Van oma"}` → `201 Pot`. Uses the normal transfer rules (own account, no credit card, enough funds, max € 10.000).
+
+Every endpoint answers **`404` for "unknown" and "not yours" alike** (another customer's link or pot, an account that is not yours), so nothing can be enumerated. Demo logins added for this: `lucas` (Emma's fiancé) and `noor` (Jan's daughter, 17, turns 18 in three weeks).
+
+### Jury dashboard (admin only)
+`GET /api/v1/admin/dashboard?size=10000` (`size` 100–10 000) → Kate's real engine (`moments.engine.run`, unchanged) run over a reproducible synthetic population, plus a trace per demo persona. Same `AdminUser` gate as the time machine: `404` for everyone else, off unless `ADMIN_USERNAMES` is set. Follows the time machine's clock. Cached per (size, day); a cold 10 000 run takes ~10 s.
+```json
+{"today": "2026-09-30",
+ "population": {"size": 10000, "with_message": 5470, "interrupted": 1053, "silent": 4530, "nothing_at_all": 4257, "held_back": 273,
+   "by_moment": {"deal_match": 2312, "idle_savings": 1439}, "by_channel": {"feed": 5018, "push": 635, "sms": 163, "call": 255},
+   "silence_reasons": {"low_confidence": 414}, "silence_labels": {"low_confidence": "…"},
+   "archetypes": [{"archetype": "salary_missing", "label": "Loon blijft uit", "customers": 308, "with_message": 308, "interrupted": 308, "silent": 0, "top_moments": ["income_missing"]}],
+   "p50_ms": 0.73, "p95_ms": 1.17, "p99_ms": 1.6, "kbc_customers": 2300000, "full_bank_cpu_minutes": 28.1},
+ "personas": [{"username": "jan", "display_name": "Jan Maes", "persona": "…", "signals": [{"type": "…", "evidence": "…"}],
+   "moments": [{"type": "moving_house", "urgency": "obligation", "confidence": "0.60"}],
+   "actions": [{"title": "Ga je verhuizen?", "channel": "feed", "urgency": "57", "reason": "…"}], "silenced": []}]}
+```
+UI: `/jury` (full width, outside the phone frame).
+

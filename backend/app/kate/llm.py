@@ -18,6 +18,7 @@ import httpx
 from app.kate.context import CustomerContext
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+RETRY_NEXT_MODEL = frozenset({404, 429, 500, 502, 503, 504})
 TIMEOUT_SECONDS = 25.0
 
 logger = logging.getLogger("kbc_poc.kate")
@@ -68,10 +69,16 @@ class GeminiChat:
                     json=body,
                     timeout=TIMEOUT_SECONDS,
                 )
-                if response.status_code == 404:  # model not available for this key: try the next
-                    logger.warning("Gemini model %s not available (404), trying next", model)
+                # Not available for this key (404), rate limited (429) or overloaded (5xx):
+                # another model usually answers, so try the next one.
+                if response.status_code in RETRY_NEXT_MODEL:
+                    logger.warning(
+                        "Gemini model %s unavailable (HTTP %s), trying next",
+                        model,
+                        response.status_code,
+                    )
                     last_error = httpx.HTTPStatusError(
-                        "model not found", request=response.request, response=response
+                        "model unavailable", request=response.request, response=response
                     )
                     continue
                 response.raise_for_status()
@@ -112,6 +119,8 @@ _TRANSFER = re.compile(
     re.IGNORECASE,
 )
 _GUIDANCE_WORDS = ("overleden", "overlijden", "erfenis", "gestorven", "begrafenis")
+_OFFER = "Als je wil, kan ik je helpen met wat er financieel geregeld moet worden."
+_YES_WORDS = ("ja", "graag", "oké", "oke", "ok", "yes", "goed", "doe maar", "alstublieft", "aub")
 _SPEND_WORDS = ("uitgegeven", "uitgaven", "spend", "besteed")
 _BALANCE_WORDS = ("saldo", "hoeveel staat", "hoeveel geld")
 
@@ -127,18 +136,27 @@ class MockChat:
         is_first = not any(t.role == "kate" for t in turns)
         intro = "Hallo, ik ben Kate, je digitale assistent (AI). " if is_first else ""
 
-        if any(word in lower for word in _GUIDANCE_WORDS):
+        last_kate = next((t.text for t in reversed(turns[:-1]) if t.role == "kate"), "")
+        if _OFFER in last_kate and _is_yes(lower):
             return _json(
-                intro + "Wat verdrietig, gecondoleerd. Ik help je stap voor stap, zonder haast: "
-                "1) de overlijdensakte, 2) een attest of akte van erfopvolging, 3) daarna kan een "
-                "adviseur de rekeningen met je overlopen. Zal ik een gesprek met een adviseur "
-                "klaarzetten, zodat je je verhaal niet opnieuw hoeft te doen?",
+                "Oké, stap voor stap en zonder haast: 1) de overlijdensakte, 2) een attest of "
+                "akte van erfopvolging, 3) daarna overloopt een adviseur de rekeningen met je. "
+                "Ik zet dat gesprek voor je klaar, dan hoef je je verhaal niet opnieuw te doen.",
                 mode="guidance",
                 action={
                     "type": "advisor_handoff",
                     "summary": "Klant meldt een overlijden in de familie en vraagt hulp bij de "
                     "erfenis. Begeleiding gewenst, geen commerciële voorstellen.",
                 },
+            )
+
+        if any(word in lower for word in _GUIDANCE_WORDS):
+            return _json(
+                intro
+                + "Wat verschrikkelijk, gecondoleerd. Neem gerust je tijd. "
+                + _OFFER
+                + " Zal ik dat rustig met je overlopen?",
+                mode="guidance",
             )
 
         if match := _TRANSFER.search(message):
@@ -184,6 +202,11 @@ def _single_spaced(text: str) -> str:
 
 def _nl(amount: Decimal) -> str:
     return f"{amount:,.2f}".replace(",", " ").replace(".", ",")
+
+
+def _is_yes(text: str) -> bool:
+    words = re.findall(r"[a-zà-ÿ]+", text)
+    return any(w in _YES_WORDS for w in words) or "doe maar" in text
 
 
 def _parse_amount(raw: str) -> Decimal | None:

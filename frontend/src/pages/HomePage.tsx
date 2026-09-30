@@ -9,6 +9,7 @@ import { InsightCarousel } from "../components/InsightCarousel";
 import { Skeleton } from "../components/Skeleton";
 import { ErrorState } from "../components/ErrorState";
 import { EmptyState } from "../components/EmptyState";
+import { getFeedActions, type FeedAction } from "../skills/skillsApi";
 import { TileViewToggle, type TileLayout } from "../components/TileViewToggle";
 import { TransferIcon } from "../components/icons/TransferIcon";
 import buttonStyles from "../components/Button.module.css";
@@ -26,6 +27,7 @@ export function HomePage() {
   const [accountsState, setAccountsState] = useState<LoadState<Account[]>>(INITIAL_STATE);
   const [insightsState, setInsightsState] = useState<LoadState<Insight[]>>(INITIAL_STATE);
   const [tileLayout, setTileLayout] = useState<TileLayout>("grid");
+  const [feedActions, setFeedActions] = useState<Record<string, FeedAction>>({});
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,6 +45,10 @@ export function HomePage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // Optional: without Kate Skills actions the cards simply keep their plain link.
+    getFeedActions(controller.signal)
+      .then((list) => setFeedActions(Object.fromEntries(list.map((a) => [a.moment, a]))))
+      .catch(() => setFeedActions({}));
     getInsights(controller.signal)
       .then((data) => setInsightsState({ data, error: null, isLoading: false }))
       .catch((error: unknown) => {
@@ -79,7 +85,18 @@ export function HomePage() {
         </h2>
         {insightsState.isLoading && <Skeleton height={160} />}
         {insightsState.error && <ErrorState message={insightsState.error} />}
-        {insightsState.data && <InsightCarousel insights={insightsState.data} />}
+        {insightsState.data && (
+          <InsightCarousel
+            insights={insightsState.data}
+            actions={feedActions}
+            onDismissed={(id) =>
+              setInsightsState((state) => ({
+                ...state,
+                data: state.data?.filter((insight) => insight.id !== id) ?? null,
+              }))
+            }
+          />
+        )}
       </section>
 
       {accountsState.isLoading && (

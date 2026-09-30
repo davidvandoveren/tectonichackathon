@@ -7,7 +7,10 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("DEMO_PASSWORD", "test-demo-password")
 
 from app.config import Settings
-from app.main import create_app
+
+# Tests must never pick up a developer's local .env (real keys, demo modes).
+Settings.model_config["env_file"] = None
+from app.main import create_app  # noqa: E402 - needs the env_file override above
 
 DEMO_PASSWORD = "test-demo-password"
 

@@ -6,7 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator
 
-from app.domain.bank import MAX_TRANSFER
+from app.domain.bank import MAX_TRANSFER as MAX_TRANSFER  # re-exported
 from app.domain.iban import format_iban, is_valid_iban, normalize_iban
 from app.domain.models import AccountType, Category
 
@@ -100,3 +100,8 @@ class InsightOut(ApiModel):
     cta_label: str
     cta_target: str
     reason: str
+    # Added by the moments engine (see docs/api.md); older clients can ignore them.
+    moment: str | None = None
+    urgency: int | None = Field(default=None, ge=0, le=100)
+    channel: str | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)

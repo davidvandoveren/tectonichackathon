@@ -2,7 +2,9 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
 import { MenuLink } from "../components/MenuLink";
+import { ChatQuestionIcon } from "../components/icons/ChatQuestionIcon";
 import { DocumentIcon } from "../components/icons/DocumentIcon";
+import { PeopleIcon } from "../components/icons/PeopleIcon";
 import { PageHeader } from "../components/PageHeader";
 import { ViewModeToggle } from "../layout/ViewModeToggle";
 import styles from "./ProfilePage.module.css";
@@ -44,6 +46,12 @@ export function ProfilePage() {
         <ul className={styles.menu}>
           <li>
             <MenuLink to="/subscriptions" label="Mijn abonnementen" Icon={DocumentIcon} />
+          </li>
+          <li>
+            <MenuLink to="/kate" label="Wat weet en mag Kate?" Icon={ChatQuestionIcon} />
+          </li>
+          <li>
+            <MenuLink to="/family" label="Familiekring" Icon={PeopleIcon} />
           </li>
           <li>
             <MenuLink to="/privacy" label="Privacy & AI" Icon={DocumentIcon} />

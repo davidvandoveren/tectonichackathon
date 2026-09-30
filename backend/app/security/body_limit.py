@@ -12,8 +12,12 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 DEFAULT_MAX_BODY_BYTES = 64 * 1024
-# Speech-to-text uploads carry up to ~2 MiB of audio, base64 encoded (+33%).
-MAX_BODY_BYTES_BY_PATH: Mapping[str, int] = {"/api/v1/kate/transcribe": 3 * 1024 * 1024}
+MAX_BODY_BYTES_BY_PATH: Mapping[str, int] = {
+    # Speech-to-text uploads carry up to ~2 MiB of audio, base64 encoded (+33%).
+    "/api/v1/kate/transcribe": 3 * 1024 * 1024,
+    # Chat accepts up to 100 history turns of 8000 characters (trimmed server-side).
+    "/api/v1/kate/chat": 1024 * 1024,
+}
 
 _TOO_LARGE = "Request body too large"
 

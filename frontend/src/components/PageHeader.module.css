@@ -1,0 +1,27 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
+  background: var(--color-navy-900);
+  color: var(--color-text-on-navy);
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin-left: calc(var(--space-2) * -1);
+  border: none;
+  background: transparent;
+  color: var(--color-text-on-navy);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}

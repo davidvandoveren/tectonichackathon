@@ -1,0 +1,86 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.hero {
+  background: var(--color-navy-900);
+  padding: var(--space-8) var(--space-4) var(--space-6);
+}
+
+.form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+}
+
+.heading {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.legend {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0 0 var(--space-2);
+}
+
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.userCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.userCardSelected {
+  border-color: var(--color-accent);
+  background: #e8f8ff;
+}
+
+.userName {
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.userPersona {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.submitError {
+  color: var(--color-danger);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  padding: var(--space-4);
+}

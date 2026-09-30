@@ -49,7 +49,9 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | ✅ #20 op `main` |
 | README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
 | Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #29, **MUST** – niet aan beginnen |
-| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🚧 `feature/insights-engine` – niet aan beginnen |
+| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🔍 PR #37 |
+| **Fix #35:** geen `deal_match` (of ander moment) op gevoelige uitgaven zoals de apotheek; openbaar vervoer is geen deal-handelaar | Alexandre · **Claude-sessie Insights** (#35) | `backend/app/moments/` (+ tests) | 🚧 `fix/deal-match-sensitive` – niet aan beginnen |
+| Momenten `card_package_waste` + `card_package_gap` (ontwerp §5.2), prijzen uit Skills `cards`-pack (niet dupliceren) | Alexandre · **Claude-sessie Insights** (#39) | `backend/app/moments/` (+ tests), feed-sectie `docs/api.md` | ⏳ na #35, `feature/card-package-moments` – niet aan beginnen |
 | Jury-dashboard (10.000 klanten) | Sander (#25) | – | 🔍 PR #30 |
 | Family circle: gekoppelde accounts + gedeeld potje | Sander (#28) | – | 🚧 |
 | Sleutelcheck Gemini + ElevenLabs (`check_kate_keys`) | – | – | 🔍 PR #33 |

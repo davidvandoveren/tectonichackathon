@@ -173,7 +173,7 @@ def test_voice_endpoints_with_fake_voice(emma: TestClient) -> None:
 
 
 def test_microphone_allowed_for_own_origin(client: TestClient) -> None:
-    response = client.get("/healthz")
+    response = client.get("/health")
     assert "microphone=(self)" in response.headers["Permissions-Policy"]
 
 

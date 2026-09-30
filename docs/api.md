@@ -12,7 +12,7 @@ Base path: `/api/v1`. JSON only. Served same-origin with the web app, so no CORS
 ## Endpoints
 
 ### Health
-`GET /healthz` → `{"status": "ok"}` (no `/api/v1` prefix)
+`GET /health` → `{"status": "ok"}` (no `/api/v1` prefix; not `/healthz`, which Cloud Run reserves)
 
 ### Auth
 `GET /api/v1/auth/demo-users` → the synthetic personas you can log in as (for the login screen)
@@ -21,6 +21,10 @@ Base path: `/api/v1`. JSON only. Served same-origin with the web app, so no CORS
 ```
 
 `POST /api/v1/auth/login` body `{"username": "emma", "password": "..."}` → `200` + session cookie, body = `Me` (below). Wrong credentials → `401 {"detail": "Invalid username or password"}`.
+
+`GET /api/v1/auth/config` → `{"passwordless_login": false}`
+
+`POST /api/v1/auth/demo-login` body `{"username": "emma"}` → `200` + session cookie, body = `Me`. One-click demo login without password; only when the server runs with `PASSWORDLESS_LOGIN=true`, otherwise `404`.
 
 `POST /api/v1/auth/logout` → `204`, cookie cleared.
 

@@ -61,8 +61,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             {"detail": f"{field}: {message}"}, status.HTTP_422_UNPROCESSABLE_CONTENT
         )
 
-    @app.get("/healthz", include_in_schema=False)
-    def healthz() -> dict[str, str]:
+    @app.get("/health", include_in_schema=False)
+    def health() -> dict[str, str]:
         return {"status": "ok"}
 
     app.include_router(auth.router, prefix="/api/v1")

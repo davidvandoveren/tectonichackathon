@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { getDemoUsers } from "../api/auth";
+import { getAuthConfig, getDemoUsers } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 import type { DemoUser } from "../api/types";
@@ -16,12 +16,13 @@ interface LocationState {
 }
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [demoUsers, setDemoUsers] = useState<DemoUser[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [passwordless, setPasswordless] = useState(false);
   const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -29,9 +30,10 @@ export function LoginPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    getDemoUsers(controller.signal)
-      .then((users) => {
+    Promise.all([getDemoUsers(controller.signal), getAuthConfig(controller.signal)])
+      .then(([users, config]) => {
         setDemoUsers(users);
+        setPasswordless(config.passwordless_login);
         setLoadError(null);
       })
       .catch((error: unknown) => {
@@ -40,16 +42,11 @@ export function LoginPage() {
     return () => controller.abort();
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!selectedUsername) {
-      setSubmitError("Kies eerst een profiel.");
-      return;
-    }
+  async function signIn(username: string) {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await login(selectedUsername, password);
+      await (passwordless ? demoLogin(username) : login(username, password));
       const state = location.state as LocationState | null;
       const redirectTo = state?.from?.pathname ?? "/";
       navigate(redirectTo, { replace: true });
@@ -63,6 +60,22 @@ export function LoginPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedUsername) {
+      setSubmitError("Kies eerst een profiel.");
+      return;
+    }
+    void signIn(selectedUsername);
+  }
+
+  function handlePersonaClick(username: string) {
+    setSelectedUsername(username);
+    if (passwordless) {
+      void signIn(username);
     }
   }
 
@@ -97,8 +110,10 @@ export function LoginPage() {
                     type="button"
                     role="radio"
                     aria-checked={isSelected}
+                    aria-label={passwordless ? `Aanmelden als ${demoUser.display_name}` : undefined}
+                    disabled={isSubmitting}
                     className={isSelected ? `${styles.userCard} ${styles.userCardSelected}` : styles.userCard}
-                    onClick={() => setSelectedUsername(demoUser.username)}
+                    onClick={() => handlePersonaClick(demoUser.username)}
                   >
                     <span className={styles.userName}>{demoUser.display_name}</span>
                     <span className={styles.userPersona}>{demoUser.persona}</span>
@@ -109,13 +124,15 @@ export function LoginPage() {
           )}
         </fieldset>
 
-        <TextField
-          label="Wachtwoord"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        {!passwordless && (
+          <TextField
+            label="Wachtwoord"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        )}
 
         {submitError && (
           <p className={styles.submitError} role="alert" aria-live="assertive">
@@ -123,9 +140,15 @@ export function LoginPage() {
           </p>
         )}
 
-        <Button type="submit" fullWidth disabled={isSubmitting || !selectedUsername}>
-          {isSubmitting ? "Bezig met aanmelden…" : "Aanmelden"}
-        </Button>
+        {passwordless ? (
+          <p className={styles.legend} aria-live="polite">
+            {isSubmitting ? "Bezig met aanmelden…" : "Tik op een profiel om meteen aan te melden."}
+          </p>
+        ) : (
+          <Button type="submit" fullWidth disabled={isSubmitting || !selectedUsername}>
+            {isSubmitting ? "Bezig met aanmelden…" : "Aanmelden"}
+          </Button>
+        )}
       </form>
       <p className={styles.footer}>Demo – synthetische data, geen echte bank</p>
     </div>

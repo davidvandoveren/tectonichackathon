@@ -1,8 +1,16 @@
 import { apiClient } from "./client";
-import type { DemoUser, Me } from "./types";
+import type { AuthConfig, DemoUser, Me } from "./types";
 
 export function getDemoUsers(signal?: AbortSignal): Promise<DemoUser[]> {
   return apiClient.get<DemoUser[]>("/auth/demo-users", signal);
+}
+
+export function getAuthConfig(signal?: AbortSignal): Promise<AuthConfig> {
+  return apiClient.get<AuthConfig>("/auth/config", signal);
+}
+
+export function demoLogin(username: string): Promise<Me> {
+  return apiClient.post<Me>("/auth/demo-login", { username });
 }
 
 export function login(username: string, password: string): Promise<Me> {

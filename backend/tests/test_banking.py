@@ -102,7 +102,7 @@ def test_csrf_guard_rejects_non_json_and_foreign_origin(emma: TestClient) -> Non
 
 
 def test_security_headers_present(client: TestClient) -> None:
-    headers = client.get("/healthz").headers
+    headers = client.get("/health").headers
     assert "default-src 'self'" in headers["content-security-policy"]
     assert headers["x-content-type-options"] == "nosniff"
     assert headers["x-frame-options"] == "DENY"

@@ -10,6 +10,10 @@ export interface DemoUser {
   persona: string;
 }
 
+export interface AuthConfig {
+  passwordless_login: boolean;
+}
+
 export interface Me {
   id: string;
   username: string;

@@ -1,14 +1,12 @@
 .bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
+  flex-shrink: 0;
   height: var(--tabbar-height);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: content-box;
   background: var(--kbc-surface);
   border-top: 1px solid var(--kbc-line);
-  flex-shrink: 0;
+  box-shadow: 0 -2px 12px rgba(13, 42, 80, 0.06);
 }
 
 .tab {
@@ -19,13 +17,29 @@
   justify-content: center;
   gap: 3px;
   min-height: var(--touch-target);
-  text-decoration: none;
-  color: var(--kbc-slate);
-  font-size: 0.75rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-default);
+  color: var(--kbc-slate);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tab svg {
+  width: 22px;
+  height: 22px;
 }
 
 .active {
   color: var(--kbc-blue);
   font-weight: var(--font-weight-bold);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--kbc-focus);
+  outline-offset: -4px;
+  border-radius: var(--radius-sm);
 }

@@ -101,7 +101,9 @@ Same direction as above, framed as **the brain behind the next generation of Kat
 
 ### f. Family circle – linked accounts (idea: Sander)
 
-> **Status: 🚧 in progress** (Sander · Claude session, issue #28) – first version: links with mutual consent + per-link permissions, shared pot, guardian link ends at 18.
+> **Status: ✅ first version ready** (Sander · Claude session, issue #28). Page `/family` (Profiel → Familiekring), API in [docs/api.md](api.md#family-circle--linked-accounts-family).
+> Works: invite → accept (mutual consent), per-link sharing (`exists` < `gift` < `pot` < `balances`), end any time, shared pots with contributions via the normal transfer rules, registry guardianship that ends automatically at 18 (try the time machine on Jan/Noor), Kate suggestions with *Waarom zie ik dit?*. Demo: log in as **marie** (contribute to Emma's wedding pot), **jan** (sees Noor's balances until she turns 18), **noor** after the time machine.
+> Not yet: heir verification / death, "care for older parents" alerts, joint accounts, removing members from a pot, circle signals feeding the Moments Engine.
 
 Customers can **link their KBC accounts to the people around them**: fiancé(e), spouse/partner, child, grandchild, godchild, mother, father, step-parents, and so on. This creates an **"organic" environment where everything fits together**. Kate understands the customer as part of a family, not as a loose individual, and helps across the whole circle at the right moments.
 

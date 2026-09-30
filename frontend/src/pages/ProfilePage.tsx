@@ -44,6 +44,13 @@ export function ProfilePage() {
           </span>
           <span aria-hidden="true">›</span>
         </Link>
+        <Link to="/family" className={styles.menuLink}>
+          <span>
+            <strong>Familiekring</strong>
+            <small>Gekoppelde familie, wat je deelt en gedeelde potjes</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
         <Button type="button" variant="secondary" onClick={handleLogout}>
           Afmelden
         </Button>

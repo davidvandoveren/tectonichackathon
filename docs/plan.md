@@ -49,7 +49,7 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
 | Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🚧 `feature/personas`, **MUST** – niet aan beginnen |
 | Jury-dashboard (10.000 klanten) | Sander (#25) | `backend/app/population/`, `routers/dashboard.py` | 🚧 `feature/jury-dashboard` |
-| **Family circle**: gekoppelde accounts (wederzijdse toestemming, rechten per link), gedeeld potje, 18 jaar = voogdij stopt | Sander · **Claude-sessie Family** (#28) | `backend/app/family/`, `routers/family.py`, `frontend/src/family/` | 🚧 in progress |
+| **Family circle**: gekoppelde accounts (wederzijdse toestemming, rechten per link), gedeeld potje, 18 jaar = voogdij stopt | Sander · **Claude-sessie Family** (#28) | `backend/app/family/`, `routers/family.py`, `frontend/src/family/` | ✅ eerste versie klaar (branch `claude/tectonic-hackathon-repo-setup-u4va4c`) |
 | Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David (frontend) | `frontend/` | ⏳ na #15/#16 |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
 | Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |

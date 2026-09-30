@@ -195,3 +195,34 @@ Every KBC function (payments, savings, cards, deals, insurance, loans, investing
 [{"at": "2026-09-30T18:40:00Z", "event": "proposed" | "suggested" | "executed" | "failed" | "declined" | "expired" | "consent_changed",
   "action": "savings.move_to_savings", "summary": "€ 50,00 naar je spaarrekening", "source": "moment", "reason": "…"}]
 ```
+
+### Family circle – linked accounts (`/family`)
+Customers link their accounts to the people around them. A link exists only after **both** sides accept; each side chooses what **it** shares with the other and can never raise what the other shares. Either side can end a link at any time. Levels, each including the previous: `exists` (only that the link exists) · `gift` (may contribute to pots you share with them, sees progress only) · `pot` (also sees who gave what) · `balances` (also your account balances, read-only; never transactions or IBANs).
+
+**Minors:** guardianship comes from the civil registry (seeded: Jan → Noor), never from an invite. Until the 18th birthday the guardian sees the child's balances by law and neither side can end the link (`409`). On the birthday (the app clock, so the time machine shows it) it ends automatically and only the child's own choice counts. Minors cannot be invited, cannot invite and get no nudges to give money.
+
+`GET /api/v1/family` →
+```json
+{"me": {"minor": false, "adult_on": null},
+ "links": [{"id": "fl_3f2a9c1b7d4e", "status": "active" | "pending", "direction": null | "incoming" | "outgoing",
+   "other_name": "Lucas Janssens", "my_role": "partner", "their_role": "partner", "i_share": "pot", "they_share": "pot",
+   "guardianship": null | {"my_side": "guardian" | "ward", "active": true, "ends_on": "2026-10-21"},
+   "can_end": true, "can_view_accounts": false, "since": "2026-07-02"}],
+ "pots": [{"id": "fp_…", "name": "Ons trouwfeest", "goal": "8000.00", "balance": "2500.00", "progress_percent": 31,
+   "owner_name": "Emma Peeters", "mine": true, "access": "owner" | "pot" | "gift", "members": ["Lucas Janssens"] | null,
+   "contributions": [{"name": "Lucas Janssens", "amount": "150.00", "booked_on": "2026-09-28", "mine": false}]}],
+ "suggestions": [{"id": "…", "kind": "invite" | "guardianship_ending" | "now_adult" | "pot_contribution",
+   "title": "…", "body": "…", "reason": "Waarom zie ik dit?", "cta_label": "…", "cta_target": "/family"}]}
+```
+Roles: `partner`, `parent`, `child`, `grandparent`, `grandchild`, `godparent`, `godchild`, `sibling`, `other`.
+
+`POST /api/v1/family/invites` body `{"username": "lucas", "my_role": "partner", "share": "exists"}` → `202 {"message": "…", "link": Link}`. **Same answer whether or not the username is a customer** (or a minor, or already linked): an outgoing invite only ever shows what you typed. Max 10 open invites.
+
+`POST /api/v1/family/links/{id}/accept` body `{"share": "gift"}` → `Link` (only the invitee; `409` if already answered).
+`POST /api/v1/family/links/{id}/sharing` body `{"share": "pot"}` → `Link` (changes only *your* side).
+`POST /api/v1/family/links/{id}/end` body `{}` → `204` (decline, cancel or end; `409` during guardianship).
+`GET /api/v1/family/links/{id}/accounts` → `[{"name": "Spaarrekening", "type": "savings", "balance": "1150.00", "currency": "EUR"}]`, only if the other side shares `balances` with you.
+`POST /api/v1/family/pots` body `{"name": "Huis", "goal": "20000.00", "member_link_ids": ["fl_…"]}` → `201 Pot` (members = your own active links; a member sees the pot only while you share at least `gift` with them).
+`POST /api/v1/family/pots/{id}/contributions` body `{"from_account_id": "a_marie_1", "amount": "50.00", "note": "Van oma"}` → `201 Pot`. Uses the normal transfer rules (own account, no credit card, enough funds, max € 10.000).
+
+Every endpoint answers **`404` for "unknown" and "not yours" alike** (another customer's link or pot, an account that is not yours), so nothing can be enumerated. Demo logins added for this: `lucas` (Emma's fiancé) and `noor` (Jan's daughter, 17, turns 18 in three weeks).

@@ -220,3 +220,7 @@ customer's proposal), `403` on consent `off`, and the auto-within-mandate path.
 No recommender logic of our own (that is the engine's job), no frontend, no changes to the chat
 code (only the adapter it can call), no persistence beyond memory, no scheduler for standing
 orders (the time machine can run them later).
+
+## 10. Try it
+
+`cd backend && python scripts/skills_tour.py` (optionally `--persona jan`) runs the whole flow in-process, no server or keys needed: catalogue, feed cards with a confirm button, confirming one, a mandate, the guardrails, switching an action off, and the activity log.

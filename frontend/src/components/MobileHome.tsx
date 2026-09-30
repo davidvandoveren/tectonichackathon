@@ -13,6 +13,9 @@ import { ErrorState } from "./ErrorState";
 import { TransferIcon } from "./icons/TransferIcon";
 import { DocumentIcon } from "./icons/DocumentIcon";
 import { PeopleIcon } from "./icons/PeopleIcon";
+import { ChannelNotification } from "../moments/ChannelNotification";
+import { SilencedList } from "../moments/SilencedList";
+import type { KateFeed } from "../moments/momentsApi";
 import styles from "./MobileHome.module.css";
 
 interface Loadable<T> {
@@ -26,6 +29,7 @@ interface MobileHomeProps {
   insights: Loadable<Insight[]>;
   feedActions: Record<string, FeedAction>;
   onInsightDismissed: (id: string) => void;
+  kateFeed: KateFeed;
 }
 
 const TYPE_LABEL: Record<Account["type"], string> = {
@@ -48,12 +52,13 @@ function Amount({ account }: { account: Account }) {
 }
 
 /** The KBC Mobile "Start" screen: greeting, swipeable account cards, shortcuts and Kate's cards. */
-export function MobileHome({ accounts, insights, feedActions, onInsightDismissed }: MobileHomeProps) {
+export function MobileHome({ accounts, insights, feedActions, onInsightDismissed, kateFeed }: MobileHomeProps) {
   const { user } = useAuth();
   const list = accounts.data ?? [];
 
   return (
     <div className={styles.page}>
+      <ChannelNotification items={kateFeed.items} />
       <h1 className={styles.greeting}>
         {greeting()}
         {user ? `, ${user.first_name}` : ""}
@@ -115,6 +120,7 @@ export function MobileHome({ accounts, insights, feedActions, onInsightDismissed
         {insights.data && (
           <InsightCarousel insights={insights.data} actions={feedActions} onDismissed={onInsightDismissed} />
         )}
+        <SilencedList silenced={kateFeed.silenced} />
       </section>
     </div>
   );

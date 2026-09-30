@@ -5,7 +5,9 @@ import styles from "./PhoneFrame.module.css";
 /** Real iPhone screen in CSS pixels plus the bezel around it. */
 const DEVICE_WIDTH = 390 + 2 * 12;
 const DEVICE_HEIGHT = 844 + 2 * 12;
-const MARGIN = 32;
+const MARGIN = 48;
+/** Never show the phone larger than this, so it reads as a phone on big monitors too. */
+const MAX_SCALE = 0.78;
 
 /**
  * Renders the mobile shell on a true 390x844 iPhone screen. The whole device is scaled down as
@@ -18,7 +20,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fit = () => {
       const scale = Math.min(
-        1,
+        MAX_SCALE,
         (window.innerHeight - MARGIN) / DEVICE_HEIGHT,
         (window.innerWidth - MARGIN) / DEVICE_WIDTH,
       );

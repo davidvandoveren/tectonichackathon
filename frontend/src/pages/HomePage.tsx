@@ -86,6 +86,7 @@ export function HomePage() {
         insights={insightsState}
         feedActions={feedActions}
         onInsightDismissed={dismissInsight}
+        kateFeed={kateFeed}
       />
     );
   }

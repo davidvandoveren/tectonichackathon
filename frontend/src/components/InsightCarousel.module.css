@@ -1,0 +1,20 @@
+.track {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: var(--space-1) var(--space-4) var(--space-2);
+  margin: 0 calc(var(--space-4) * -1);
+}
+
+.item {
+  display: flex;
+}
+
+.item:first-child {
+  margin-left: var(--space-3);
+}
+
+.item:last-child {
+  margin-right: var(--space-3);
+}

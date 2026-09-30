@@ -1,0 +1,53 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: var(--color-navy-900);
+  color: var(--color-text-on-navy);
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+.greeting {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: var(--space-4);
+}
+
+.balanceLabel {
+  font-size: 0.8125rem;
+  opacity: 0.8;
+  margin-top: var(--space-3);
+}
+
+.balance {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  padding: 0 var(--space-4);
+}
+
+.padded {
+  padding: 0 var(--space-4);
+}
+
+.accountList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

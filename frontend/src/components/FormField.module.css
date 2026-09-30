@@ -1,0 +1,39 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.input {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 1rem;
+}
+
+.input:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.inputError {
+  border-color: var(--color-danger);
+}
+
+.hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+  font-weight: 600;
+}

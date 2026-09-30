@@ -78,3 +78,16 @@ A `transfer` action is only a **proposal**: the UI opens `/transfer?to_name=…&
 `POST /api/v1/kate/speech` body `{"text": "…"}` → `audio/mpeg` (ElevenLabs voice).
 
 `POST /api/v1/kate/transcribe` body `{"audio_base64": "…", "mime_type": "audio/webm"}` (≤ 2 MB; webm/ogg/mp4/mpeg/wav) → `{"text": "…"}` (ElevenLabs Scribe).
+
+### Subscriptions ("Gebruik je dit nog?")
+`GET /api/v1/subscriptions` → monthly subscriptions detected in the customer's **own** transactions:
+```json
+{"subscriptions": [{"id": "sub_3f2a…", "name": "Netflix", "group": "streaming", "amount": "13.49", "previous_amount": null,
+  "yearly_cost": "161.88", "frequency": "monthly", "first_seen": "2026-07-28", "last_charged": "2026-09-26",
+  "next_expected": "2026-10-26", "flags": ["duplicate"], "duplicate_of": ["Disney+"], "reason": "We zien sinds …",
+  "status": "unknown" | "in_use" | "cancel_reminder", "remind_on": null}],
+ "monthly_total": "36.47", "yearly_total": "437.64", "yearly_savings": "0.00", "hidden_sensitive": 0}
+```
+`flags`: `price_increase`, `duplicate` (two services in the same `group`), `trial_converted`. The bank does not know *usage*, so we never guess it; the customer answers. Sensitive subscriptions (health, religion, politics, trade union, dating) are only counted in `hidden_sensitive`, never shown or analysed.
+
+`POST /api/v1/subscriptions/{id}/feedback` body `{"still_used": false, "remind_to_cancel": true}` → the updated subscription (`status: "cancel_reminder"`, `remind_on` = 3 days before the next charge). `404` if the id is not one of *your* subscriptions.

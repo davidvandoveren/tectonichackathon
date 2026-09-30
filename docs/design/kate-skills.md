@@ -1,7 +1,7 @@
 # Design – Kate Skills: one platform every KBC function plugs into
 
-Status: **in implementation** · Date: 2026-09-30 · Owner: David
-Scope: `backend/app/skills/` (new), `backend/app/routers/skills.py` (new), one line in
+Status: **backend implemented** (PR `feature/kate-skills`) · Date: 2026-09-30 · Owner: David
+Scope: `backend/app/skills/` (new), `backend/app/routers/skills.py` (new), two additive lines in
 `backend/app/main.py`. Does **not** touch `frontend/`, `backend/app/moments/`,
 `backend/app/kate/` or `seed.py`.
 
@@ -65,8 +65,9 @@ No change to the core, the chat, the engine or the API.
 | `auto` | execute within a customer-set **mandate** (max per execution, max per month), then report it |
 
 Each action has a default level (mostly `prepare`) and a ceiling from its risk class. The
-customer can lower any action to `off`; they can raise it only up to the ceiling. `auto` always
-needs a mandate, and mandates have hard server-side ceilings (EUR 500 per execution,
+customer can lower any action to `off`; they can raise it only up to the ceiling. `auto` on an
+action that moves money always needs a mandate (free actions such as activating a Kate Deal do
+not), and mandates have hard server-side ceilings (EUR 500 per execution,
 EUR 1 000 per month) that no setting can exceed.
 
 This is the demo line: *"Kate mag van mij elke maand tot € 200 naar mijn spaarrekening zetten,
@@ -107,8 +108,9 @@ an AI Act / GDPR review would ask for.
 
 The engine emits moments; skills turn a moment into a **concrete, pre-filled action**. The
 mapping lives on the skills side (`skills/moments.py`) and is data, keyed by the moment types in
-`docs/design/moments-engine.md`. It depends only on a tiny protocol (`type`, `confidence`,
-`meta`, `reason`), not on the engine's code, so both can be built in parallel.
+`docs/design/moments-engine.md`. `draft_for_moment(moment_type, meta)` needs only the moment
+type and its `meta` strings, not the engine's code, so both can be built in parallel. The engine
+passes the result to `propose(source="moment", reason=<its evidence>)`.
 
 | Moment (engine) | Action (skill) | Params from |
 |---|---|---|
@@ -126,13 +128,25 @@ exactly) + **consent** (this layer: may Kate?).
 
 ### 3.2 Chat and voice → tools
 
-`registry.tools_for(owner_id)` returns only the actions this customer allows (level ≥
+`SkillsService.tools_for(owner_id)` returns only the actions this customer allows (level ≥
 `suggest`), as JSON-schema tool definitions built from the params models. The chat owner swaps
 the hard-coded action union for these tools and posts the model's choice to the proposal
 service. A prompt-injected transaction text can at most produce a *proposal* the customer must
 still confirm — and never for an action they switched off.
 
-### 3.3 UI
+### 3.3 Existing chat proposals (PR #12) and subscriptions (PR #14)
+
+PR #12 lets the chat return a `transfer` / `advisor_handoff` action that pre-fills the transfer
+screen. There must be **one** proposal system, not two: after #12 is merged, a small follow-up
+PR (agreed with its owner) makes the chat post its action to `SkillsService.propose(source="chat")`
+and use `tools_for(owner_id)` instead of the hard-coded union. `payments.transfer` and
+`advisor.book_call` already produce the same outcomes (`navigate` with the same pre-fill URL,
+`advisor_handoff` with a summary), so the UI flow stays the same.
+
+PR #14's subscription manager fits as a pack the same way (`subscriptions.remind_to_cancel`),
+without changing its detection code.
+
+### 3.4 UI
 
 The UI needs no knowledge of individual products: it renders proposals (title, reason, params
 summary, *Bevestig* / *Nee, bedankt*), the consent ladder per skill, and the activity log.

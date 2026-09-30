@@ -12,10 +12,12 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings, get_settings
 from app.domain.bank import Bank
 from app.domain.seed import seed_bank
-from app.routers import auth, banking
+from app.routers import auth, banking, subscriptions
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
 from app.security.rate_limit import FailureLimiter
 from app.security.sessions import SessionStore
+from app.subscriptions.scenario import book_subscriptions
+from app.subscriptions.store import FeedbackStore
 
 logger = logging.getLogger("kbc_poc")
 
@@ -27,6 +29,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         bank = Bank()
         seed_bank(bank, settings.demo_password.get_secret_value(), date.today())
+        book_subscriptions(bank, date.today())
+        app.state.subscription_feedback = FeedbackStore()
         app.state.bank = bank
         app.state.sessions = SessionStore(settings.session_ttl_seconds)
         app.state.login_limiter = FailureLimiter(
@@ -66,6 +70,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(banking.router, prefix="/api/v1")
+    app.include_router(subscriptions.router, prefix="/api/v1")
 
     if settings.static_dir and (settings.static_dir / "index.html").is_file():
         _mount_frontend(app, settings.static_dir.resolve())

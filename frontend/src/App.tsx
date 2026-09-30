@@ -9,6 +9,7 @@ import { TransferPage } from "./pages/TransferPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
+import { DashboardPage } from "./dashboard/DashboardPage";
 
 export function App() {
   return (
@@ -28,6 +29,14 @@ export function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
         </Route>
+        <Route
+          path="/jury"
+          element={
+            <RequireAuth>
+              <DashboardPage />
+            </RequireAuth>
+          }
+        />
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>

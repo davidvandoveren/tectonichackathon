@@ -195,3 +195,19 @@ Every KBC function (payments, savings, cards, deals, insurance, loans, investing
 [{"at": "2026-09-30T18:40:00Z", "event": "proposed" | "suggested" | "executed" | "failed" | "declined" | "expired" | "consent_changed",
   "action": "savings.move_to_savings", "summary": "€ 50,00 naar je spaarrekening", "source": "moment", "reason": "…"}]
 ```
+
+### Jury dashboard (admin only)
+`GET /api/v1/admin/dashboard?size=10000` (`size` 100–10 000) → Kate's real engine (`moments.engine.run`, unchanged) run over a reproducible synthetic population, plus a trace per demo persona. Same `AdminUser` gate as the time machine: `404` for everyone else, off unless `ADMIN_USERNAMES` is set. Follows the time machine's clock. Cached per (size, day); a cold 10 000 run takes ~10 s.
+```json
+{"today": "2026-09-30",
+ "population": {"size": 10000, "with_message": 5470, "interrupted": 1053, "silent": 4530, "nothing_at_all": 4257, "held_back": 273,
+   "by_moment": {"deal_match": 2312, "idle_savings": 1439}, "by_channel": {"feed": 5018, "push": 635, "sms": 163, "call": 255},
+   "silence_reasons": {"low_confidence": 414}, "silence_labels": {"low_confidence": "…"},
+   "archetypes": [{"archetype": "salary_missing", "label": "Loon blijft uit", "customers": 308, "with_message": 308, "interrupted": 308, "silent": 0, "top_moments": ["income_missing"]}],
+   "p50_ms": 0.73, "p95_ms": 1.17, "p99_ms": 1.6, "kbc_customers": 2300000, "full_bank_cpu_minutes": 28.1},
+ "personas": [{"username": "jan", "display_name": "Jan Maes", "persona": "…", "signals": [{"type": "…", "evidence": "…"}],
+   "moments": [{"type": "moving_house", "urgency": "obligation", "confidence": "0.60"}],
+   "actions": [{"title": "Ga je verhuizen?", "channel": "feed", "urgency": "57", "reason": "…"}], "silenced": []}]}
+```
+UI: `/jury` (full width, outside the phone frame).
+

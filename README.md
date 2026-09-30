@@ -91,6 +91,11 @@ npm ci && npm run dev
 ```
 Log in as `emma`, `jan` or `marie` with your `DEMO_PASSWORD`. API docs (dev only): http://localhost:8000/api/docs
 
+**Real AI & voice (optional):** put `KATE_LLM_PROVIDER=gemini`, `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID_FEMALE` and `ELEVENLABS_VOICE_ID_MALE` in `.env`, then check them (never prints a key, writes two voice samples):
+```bash
+cd backend && python -m scripts.check_kate_keys
+```
+
 **Checks (same as CI):**
 ```bash
 cd backend && ruff check . && ruff format --check . && mypy app && pytest

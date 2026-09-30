@@ -43,12 +43,15 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David · **Claude-sessie UI** (#18) | `frontend/**` (behalve `kate/`, `subscriptions/`) | 🚧 `feature/kbc-touch-ui` |
 | Kate-chat (Gemini/mock), stem (ElevenLabs), erfenis-modus | Sander | `backend/app/kate/`, `routers/kate.py`, `frontend/src/kate/` | ✅ #12 op `main` |
 | Abonnementenbeheer ("Gebruik je dit nog?") | Sander | `backend/app/subscriptions/`, `routers/subscriptions.py`, `frontend/src/subscriptions/` | ✅ #14 op `main` |
-| Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | 🔍 PR #15 |
+| Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine, data-toestemming (`PUT /kate/consent`) | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | 🔍 PR #15 |
 | Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
+| Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | 🔍 PR #20 |
+| README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
+| Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | **niemand** (bestand van Alexandre) | `backend/app/domain/seed.py` | ⏳ open, **MUST** |
 | Jury-dashboard (10.000 klanten) | **niemand** | – | ⏳ open |
-| Toestemmingsscherm, voorstelkaarten, activiteitenscherm (UI op #16) | David (frontend) | `frontend/` | ⏳ na #16 |
+| Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David (frontend) | `frontend/` | ⏳ na #15/#16 |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
-| Aikido baseline + eind-scan, README "Our solution", Builderbase-tekst, video | **nog toe te wijzen** | – | ⏳ baseline dringend |
+| Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |
 
 **David werkt met twee Claude-sessies tegelijk; zo zijn ze afgebakend:**
 
@@ -64,7 +67,9 @@ Nieuwe taken worden eerst als issue geclaimd (regel 0) voor een van beide sessie
 - Eén voorstel-systeem: de chat (#12) stuurt zijn `transfer`/`advisor_handoff` via `SkillsService.propose` (#16) zodra #16 op `main` staat.
 - Eén lijst gevoelige categorieën: nu dubbel in `kate/context.py` en `subscriptions/detect.py` → samenvoegen in één gedeelde module.
 - Eén bron voor kaartpakketprijzen: Skills `cards`-pack en `moments/catalog.py`.
-- Is Alexandre de "Chun" uit 3.1? Zo niet: wie is Chun en wat doet hij?
+- ✅ Alexandre = Alexandre Chun = "Chun" uit 3.1.
+- **Brein → acties is al gekoppeld:** #16 `draft_for_moment()` zet elk moment uit #15 (ook `income_missing`) om in een vooraf ingevulde Skills-actie. Feed-kaarten kunnen dus een *Bevestigen*-knop krijgen zonder extra backendwerk.
+- **Toestemming = twee lagen, één scherm:** data (`PUT /kate/consent {domain, allowed}`, #15) en acties (`PUT /skills/consent/{action_id}`, #16). Abonnementen (#14) moeten het domein `spending` respecteren (Sander).
 
 ### 3.1 Oorspronkelijke verdeling (achterhaald, ter referentie)
 

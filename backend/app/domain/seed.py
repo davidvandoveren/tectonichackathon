@@ -181,6 +181,72 @@ PERSONAS = (
         weekly=(Weekly(0, "TotalEnergies Berchem", 55, 75, Category.TRANSPORT),),
         savings_habits=(SavingsHabit(28, 2, "250.00", "Naar spaarrekening"),),
     ),
+    Persona(
+        username="lucas",
+        first_name="Lucas",
+        last_name="Wouters",
+        persona="Magazijnier via interim, 26, Mechelen, krap bij kas",
+        accounts=(
+            # Well under next month's rent: the engine must warn before the 1st, not after.
+            ("Zichtrekening", AccountType.CURRENT, "212.40"),
+            ("Spaarrekening", AccountType.SAVINGS, "35.00"),
+        ),
+        recurring=(
+            Recurring(1, "Huur studio", "Immo Mechelen Centrum", "-720.00", Category.HOUSING),
+            Recurring(28, "Loon interim", "Randstad Mechelen", "1740.00", Category.INCOME),
+            Recurring(6, "Energie", "Eneco", "-85.00", Category.UTILITIES),
+            Recurring(14, "Internet & mobiel", "Telenet", "-45.00", Category.UTILITIES),
+            Recurring(18, "Afbetaling", "Klarna", "-39.90", Category.OTHER),
+        ),
+        # One cheap supermarket for everything: a real deal exists, and Kate must hold it back
+        # while the rent is at risk.
+        daily_spend=(
+            ("Aldi Mechelen", Category.GROCERIES, 6, 40),
+            ("Frituur 't Hoekske", Category.LEISURE, 4, 18),
+            ("Bolt Food", Category.LEISURE, 4, 18),
+            ("Snooker Mechelen", Category.LEISURE, 4, 18),
+            ("Pizza Hut Mechelen", Category.LEISURE, 4, 18),
+        ),
+    ),
+    Persona(
+        username="els",
+        first_name="Els",
+        last_name="Claes",
+        persona="Lerares, 54, Hasselt, haar moeder overleed onlangs",
+        accounts=(
+            ("Zichtrekening", AccountType.CURRENT, "41280.55"),
+            ("Spaarrekening", AccountType.SAVINGS, "8600.00"),
+            ("KBC Mastercard", AccountType.CREDIT_CARD, "-96.40"),
+        ),
+        recurring=(
+            Recurring(2, "Woonkrediet", "KBC Bank", "-980.00", Category.HOUSING),
+            Recurring(28, "Wedde", "AgODi Vlaamse Gemeenschap", "3150.00", Category.INCOME),
+            Recurring(6, "Energie", "Luminus", "-135.00", Category.UTILITIES),
+            Recurring(10, "Internet & tv", "Telenet", "-89.00", Category.UTILITIES),
+        ),
+        daily_spend=(
+            ("Delhaize Hasselt", Category.GROCERIES, 10, 60),
+            ("Colruyt Hasselt", Category.GROCERIES, 10, 60),
+            ("Carrefour Hasselt", Category.GROCERIES, 10, 60),
+            ("Lidl Hasselt", Category.GROCERIES, 10, 60),
+        ),
+        # The estate is paid out by the notary, not by an employer: booked as "other", the way a
+        # bank would categorise it, so it can never pass for a first salary.
+        one_offs=(
+            OneOff(82, "Uitvaart mama", "Uitvaartzorg Hasselt", "-5840.00", Category.OTHER),
+            OneOff(
+                79, "Provisie notaris", "Notariskantoor Vandersteen", "-1250.00", Category.OTHER
+            ),
+            OneOff(71, "Rouwkaarten", "Drukkerij Limburg", "-310.00", Category.OTHER),
+            OneOff(
+                4,
+                "Nalatenschap mama - uitkering",
+                "Notariskantoor Vandersteen",
+                "38450.00",
+                Category.OTHER,
+            ),
+        ),
+    ),
 )
 
 

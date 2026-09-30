@@ -110,6 +110,11 @@ cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 gcloud auth login
 PROJECT_ID=<your-gcp-project> ./deploy/cloudrun.sh
 ```
+The first deploy asks for the demo password and, optionally, the Gemini and ElevenLabs keys (Enter = skip; Kate then shows "Demo-modus"). All three go to **Secret Manager**, never into env vars or the repo, and are reused on every later deploy. To add or rotate a key later, pass it in the environment, plus any non-secret settings you want on the service:
+```bash
+GEMINI_API_KEY=... ELEVENLABS_API_KEY=... ELEVENLABS_VOICE_ID_FEMALE=... ELEVENLABS_VOICE_ID_MALE=... \
+ADMIN_USERNAMES=jan PROJECT_ID=<your-gcp-project> ./deploy/cloudrun.sh
+```
 
 ## What is unfinished / known limitations
 

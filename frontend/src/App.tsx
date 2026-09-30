@@ -14,6 +14,7 @@ import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
 import { KateConsentPage } from "./skills/KateConsentPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
 import { FamilyPage } from "./family/FamilyPage";
+import { DemoPage } from "./moments/DemoPage";
 
 export function App() {
   return (
@@ -36,6 +37,7 @@ export function App() {
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/kate" element={<KateConsentPage />} />
             <Route path="/family" element={<FamilyPage />} />
+            <Route path="/demo" element={<DemoPage />} />
           </Route>
           <Route
             path="/jury"

@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import Field, field_validator
 
-from app.dependencies import BankDep, CurrentUser, SettingsDep, TodayDep
+from app.dependencies import BankDep, CurrentUser, KateStateDep, SettingsDep, TodayDep
 from app.domain.models import User
 from app.kate import assistant
 from app.kate.context import build_context
@@ -172,9 +172,15 @@ def kate_status(
 
 @router.post("/chat", response_model=ChatOut)
 def kate_chat(
-    body: ChatIn, user: LimitedUser, bank: BankDep, today: TodayDep, model: ChatModelDep
+    body: ChatIn,
+    user: LimitedUser,
+    bank: BankDep,
+    today: TodayDep,
+    model: ChatModelDep,
+    state: KateStateDep,
 ) -> ChatOut:
-    context = build_context(bank, user, today)  # only this customer's own data
+    # Only this customer's own data, and only the kinds they allowed (PUT /kate/consent).
+    context = build_context(bank, user, today, state.consent_for(user.id))
     history = [ChatTurn(role=t.role, text=t.text) for t in body.history]
     try:
         result = assistant.chat(model, context, history, body.message)

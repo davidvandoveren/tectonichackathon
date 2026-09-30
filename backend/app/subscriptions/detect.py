@@ -17,6 +17,11 @@ from typing import Literal
 
 from app.domain.models import Category, Transaction
 
+# SENSITIVE_KEYWORDS stays importable from here for existing callers (skills/moments.py).
+from app.privacy.sensitive import SENSITIVE_KEYWORDS, is_sensitive
+
+__all__ = ["SENSITIVE_KEYWORDS", "Subscription", "detect"]
+
 MONTHLY_MIN_DAYS = 25
 MONTHLY_MAX_DAYS = 35
 MAX_AMOUNT = Decimal("100.00")  # above this it is rent/insurance/loan territory, not a subscription
@@ -57,30 +62,6 @@ GROUP_LABELS = {
 }
 SUBSCRIPTION_CATEGORIES = {Category.LEISURE, Category.SHOPPING, Category.UTILITIES, Category.OTHER}
 
-SENSITIVE_KEYWORDS = (
-    "apotheek",
-    "psycholoog",
-    "therapeut",
-    "ziekenhuis",
-    "hospitalisatie",
-    "mutualiteit",
-    "ziekenfonds",
-    "kerk",
-    "moskee",
-    "synagoge",
-    "parochie",
-    "partij",
-    "vakbond",
-    "acv",
-    "abvv",
-    "aclvb",
-    "tinder",
-    "bumble",
-    "grindr",
-    "dating",
-    "meditatie",
-    "headspace",
-)
 
 Flag = Literal["price_increase", "duplicate", "trial_converted"]
 
@@ -168,8 +149,7 @@ def _is_monthly(paid: list[Transaction]) -> bool:
 
 
 def _is_sensitive(t: Transaction) -> bool:
-    text = f"{t.counterparty} {t.description}".lower()
-    return any(word in text for word in SENSITIVE_KEYWORDS)
+    return is_sensitive(t)
 
 
 def _group_for(key: str) -> str | None:

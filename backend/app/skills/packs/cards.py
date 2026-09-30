@@ -32,19 +32,37 @@ PACKAGES: dict[str, Package] = {
 
 PackageId = Literal["shopping", "reis", "luxe"]
 
+#: A package counts as held when its fee was charged within this many days (same rule as the
+#: Moments Engine's `paid_package_unused` signal, so a card and its button always agree).
+PACKAGE_HELD_DAYS = 40
+
+
+def held_packages(ctx: SkillContext) -> set[str]:
+    """Packages taken via Kate, plus those the customer already pays for, minus dropped ones."""
+    own = ctx.holdings.of(ctx.owner_id)
+    booked = {
+        package_id
+        for package_id, package in PACKAGES.items()
+        for t in ctx.bank.all_transactions_for(ctx.owner_id)
+        if t.amount < 0
+        and (ctx.today - t.booked_at).days <= PACKAGE_HELD_DAYS
+        and package.name.lower() in f"{t.counterparty} {t.description}".lower()
+    }
+    return (own.card_packages | booked) - own.dropped_packages
+
 
 class PackageParams(Params):
     package: PackageId
 
 
 def _not_held(ctx: SkillContext, params: PackageParams) -> str | None:
-    if params.package in ctx.holdings.of(ctx.owner_id).card_packages:
+    if params.package in held_packages(ctx):
         return f"Je hebt het {PACKAGES[params.package].name} al."
     return None
 
 
 def _held(ctx: SkillContext, params: PackageParams) -> str | None:
-    if params.package not in ctx.holdings.of(ctx.owner_id).card_packages:
+    if params.package not in held_packages(ctx):
         return f"Je hebt geen {PACKAGES[params.package].name}."
     return None
 
@@ -52,14 +70,18 @@ def _held(ctx: SkillContext, params: PackageParams) -> str | None:
 def _add(ctx: SkillContext, params: PackageParams) -> Outcome:
     package = PACKAGES[params.package]
     with ctx.holdings.lock:
-        ctx.holdings.of(ctx.owner_id).card_packages.add(params.package)
+        own = ctx.holdings.of(ctx.owner_id)
+        own.card_packages.add(params.package)
+        own.dropped_packages.discard(params.package)
     return Outcome("done", f"{package.name} is actief ({euro(package.monthly)} per maand).")
 
 
 def _drop(ctx: SkillContext, params: PackageParams) -> Outcome:
     package = PACKAGES[params.package]
     with ctx.holdings.lock:
-        ctx.holdings.of(ctx.owner_id).card_packages.discard(params.package)
+        own = ctx.holdings.of(ctx.owner_id)
+        own.card_packages.discard(params.package)
+        own.dropped_packages.add(params.package)
     return Outcome(
         "done", f"{package.name} opgezegd: je bespaart {euro(package.monthly * 12)} per jaar."
     )

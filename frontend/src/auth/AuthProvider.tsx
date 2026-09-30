@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { getMe } from "../api/me";
-import { login as loginRequest, logout as logoutRequest } from "../api/auth";
+import { demoLogin as demoLoginRequest, login as loginRequest, logout as logoutRequest } from "../api/auth";
 import { onUnauthorized } from "../api/client";
 import type { Me } from "../api/types";
 import { AuthContext, type AuthStatus } from "./AuthContext";
@@ -39,11 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return me;
   }, []);
 
+  const demoLogin = useCallback(async (username: string) => {
+    const me = await demoLoginRequest(username);
+    setUser(me);
+    setStatus("authenticated");
+    return me;
+  }, []);
+
   const logout = useCallback(async () => {
     await logoutRequest();
     setUser(null);
     setStatus("unauthenticated");
   }, []);
 
-  return <AuthContext.Provider value={{ status, user, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ status, user, login, demoLogin, logout }}>{children}</AuthContext.Provider>;
 }

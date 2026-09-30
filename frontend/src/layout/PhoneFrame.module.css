@@ -1,36 +1,41 @@
 .surround {
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-6) var(--space-4);
+  overflow: hidden;
   background: var(--kbc-bg-muted);
 }
 
 .device {
-  /* iPhone proportions (390 x 844): height follows the viewport, width follows the ratio. */
+  /* Exact iPhone size (390 x 844 screen + 12px bezel), scaled as one piece to fit the window. */
   position: relative;
-  height: min(var(--phone-height), calc(100vh - var(--space-8)));
-  aspect-ratio: 390 / 844;
-  width: auto;
-  border-radius: 48px;
-  padding: 10px;
+  flex-shrink: 0;
+  width: 414px;
+  height: 868px;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 56px;
   background: #111418;
   box-shadow:
     0 0 0 1px #2b3036,
-    0 20px 50px rgba(13, 42, 80, 0.25);
+    0 24px 60px rgba(13, 42, 80, 0.25);
+  transform: scale(var(--phone-scale, 1));
+  transform-origin: center;
+  /* The scaled box still takes its full layout size; pull the surround in so it stays centred. */
+  margin: calc((1 - var(--phone-scale, 1)) * -434px) calc((1 - var(--phone-scale, 1)) * -207px);
 }
 
 /* Dynamic Island */
 .device::before {
   content: "";
   position: absolute;
-  top: 20px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: 30%;
-  height: 26px;
+  width: 124px;
+  height: 36px;
   border-radius: 999px;
   background: #000;
   z-index: 2;
@@ -39,31 +44,31 @@
 .screen {
   height: 100%;
   width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* Room for the status bar / Dynamic Island, and no desktop scrollbar inside the phone. */
-  padding-top: 44px;
-  scrollbar-width: none;
-  border-radius: 38px;
+  overflow: hidden;
+  /* Room for the status bar / Dynamic Island. */
+  padding-top: 50px;
+  border-radius: 44px;
   background: var(--kbc-surface);
-  display: flex;
-  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Everything below the status bar. Containing block for position:fixed overlays (Kate), so they
+   stay inside the phone and below the Dynamic Island. */
+.viewport {
   position: relative;
-  /* Establishes a containing block for position:fixed descendants (the tab
-     bar, floating toggle), so they pin to this simulated screen instead of
-     the real browser viewport. */
+  height: 100%;
+  overflow: hidden;
   transform: translateZ(0);
   /* Kate's overlay sizes itself to the app column; inside the frame that is the screen. */
   --max-width-app: 100vw;
 }
 
-.screen::-webkit-scrollbar {
-  display: none;
+/* The app shell fills the simulated screen instead of the browser viewport. */
+.viewport > * {
+  height: 100%;
 }
 
-/* Kate's floating launcher sits in the top bar, left of the bell, instead of under the island. */
-.screen button[aria-label="Open Kate"] {
-  top: 50px;
-  right: 60px;
-  min-height: 36px;
+/* No desktop scrollbars inside the phone. */
+.screen * {
+  scrollbar-width: none;
 }

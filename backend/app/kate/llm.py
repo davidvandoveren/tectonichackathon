@@ -110,6 +110,8 @@ def _answer_text(payload: dict[str, object]) -> str:
     return text
 
 
+# Only ever matched against `_single_spaced` text: the name may contain spaces and is followed by
+# whitespace, which on raw input with long whitespace runs backtracks quadratically (ReDoS).
 _TRANSFER = re.compile(
     r"(?:stuur|betaal|schrijf)\s+(?P<name>[A-Za-zÀ-ÿ' -]{2,40}?)\s+"
     r"(?:€\s*)?(?P<amount>\d{1,5}(?:[.,]\d{1,2})?)\s*(?:euro|eur|€)?"
@@ -129,7 +131,7 @@ class MockChat:
     name = "mock"
 
     def complete(self, system: str, turns: list[ChatTurn], context: CustomerContext) -> str:
-        message = turns[-1].text if turns else ""
+        message = _single_spaced(turns[-1].text) if turns else ""
         lower = message.lower()
         is_first = not any(t.role == "kate" for t in turns)
         intro = "Hallo, ik ben Kate, je digitale assistent (AI). " if is_first else ""
@@ -200,6 +202,10 @@ class MockChat:
             intro + f"Ik ben er voor je, {context.first_name}. Je kan me vragen stellen over je "
             "uitgaven of saldo, of zeggen: 'Stuur Lucas 25 euro voor de pizza'."
         )
+
+
+def _single_spaced(text: str) -> str:
+    return " ".join(text.split())
 
 
 def _nl(amount: Decimal) -> str:

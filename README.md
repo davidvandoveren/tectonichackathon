@@ -2,6 +2,8 @@
 
 > Tectonic Hackathon, 30 September 2026 · Case partner: **KBC** · Status: 🚧 work in progress
 
+**Alle features en hoe je elk ervan checkt (team en jury): [docs/features.md](docs/features.md)**
+
 ## The challenge
 
 KBC is one of the largest banks in Belgium (banking, investment, insurance) with **2,300,000+ customers**.
@@ -55,13 +57,16 @@ FastAPI (Python 3.13) ── /api/v1/*  → routers → Bank (owner-scoped data)
 | `Dockerfile` | Multi-stage build: Node builds the SPA, slim non-root Python image runs it |
 | `deploy/cloudrun.sh` | One-command deploy to Google Cloud Run |
 
-**Security by design** (Aikido audits business logic, IDOR, authn, authz):
+**Security by design** (Aikido audits business logic, IDOR, authn, authz). Full map of controls, tests and legal basis: [docs/security-and-compliance.md](docs/security-and-compliance.md); reporting: [SECURITY.md](SECURITY.md).
 - Every data query takes the logged-in user's id (`Bank.account_for(owner_id, ...)`): other users' data is unreachable by construction and returns the same `404` as a non-existent id.
 - Server-side sessions (random token, only its hash stored, revoked on logout, rotated on login) in an `HttpOnly; Secure; SameSite=Strict` `__Host-` cookie. No tokens in JS/localStorage.
-- scrypt password hashing, constant-time compare, timing-equalised unknown users, login rate limiting (429).
-- Server-side validation of every transfer: IBAN mod-97, amount > 0, 2 decimals, max € 10 000, sufficient funds, no same-account or credit-card transfers.
+- scrypt password hashing, constant-time compare, timing-equalised unknown users, login rate limiting (429) per user and per real client IP (spoofed `X-Forwarded-For` is ignored), failed logins logged.
+- Server-side validation of every transfer: IBAN mod-97, amount > 0, 2 decimals, max € 10 000, sufficient funds, no same-account or credit-card transfers; the amount rules are re-checked inside `Bank` so no internal caller (e.g. Kate Skills) can skip them.
+- Kate (AI) only proposes; paying someone else always needs the customer's confirmation, automatic actions need a capped mandate, model output is schema-validated.
+- DoS limits: request body cap, bounded per-customer state (sessions, proposals, activity, goals), no ReDoS-prone regexes, Kate rate limit.
 - CSRF guard (JSON-only + Origin check) on top of SameSite, strict CSP and security headers, no API docs in production, validation errors never echo input.
-- Secrets only via env / Google Secret Manager; container runs as non-root with a read-only filesystem in compose.
+- Secrets only via env / Google Secret Manager; container runs as non-root (read-only filesystem in compose), Cloud Run as a dedicated least-privilege service account.
+- Legal: public [Privacy & AI page](frontend/src/pages/PrivacyPage.tsx) (`/privacy`), AI disclosure (EU AI Act art. 50), no sensitive-category profiling (GDPR art. 9), no automated credit/investment decisions (art. 22), only a strictly necessary cookie, "not an official KBC app" disclaimer, `noindex`.
 - CI: ruff, mypy (strict), pytest, ESLint, tsc, vitest, `pip-audit`, `npm audit`, Docker build; Dependabot for all ecosystems.
 
 ## How to run

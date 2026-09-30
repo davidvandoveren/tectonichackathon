@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from app.config import Settings
@@ -11,10 +13,15 @@ from app.dependencies import (
 )
 from app.domain.models import User
 from app.schemas import AuthConfigOut, DemoLoginIn, DemoUserOut, LoginIn, MeOut
+from app.security.client_ip import client_ip
 from app.security.passwords import hash_password, verify_password
 from app.security.sessions import SessionStore
 
 router = APIRouter(tags=["auth"])
+
+# Security events (failed logins, lockouts) for monitoring. Never passwords or tokens; user input
+# is logged with %r so a crafted username cannot forge extra log lines (CWE-117).
+security_log = logging.getLogger("kbc_poc.security")
 
 # Verified against when the username is unknown, so response timing does not reveal which
 # usernames exist.
@@ -46,9 +53,10 @@ def login(
     sessions: SessionsDep,
     limiter: LimiterDep,
 ) -> MeOut:
-    client_ip = request.client.host if request.client else "unknown"
-    keys = (f"ip:{client_ip}", f"user:{body.username.lower()}")
+    ip = client_ip(request, settings.trusted_proxy_hops)
+    keys = (f"ip:{ip}", f"user:{body.username.lower()}")
     if limiter.is_blocked(*keys):
+        security_log.warning("login blocked (rate limit) username=%r ip=%r", body.username, ip)
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Too many attempts, try later")
 
     user = bank.find_user_by_username(body.username)
@@ -56,6 +64,7 @@ def login(
         verify_password(body.password, _DUMMY_HASH, _DUMMY_SALT)
     if user is None or not verify_password(body.password, user.password_hash, user.password_salt):
         limiter.record_failure(*keys)
+        security_log.warning("login failed username=%r ip=%r", body.username, ip)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
 
     limiter.reset(f"user:{body.username.lower()}")

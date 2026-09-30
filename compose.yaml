@@ -11,6 +11,8 @@ services:
     environment:
       APP_ENV: development
       COOKIE_SECURE: "false"
+      # No proxy in front locally: rate limit on the socket peer.
+      TRUSTED_PROXY_HOPS: "0"
       DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD in .env (see .env.example)}
     read_only: true
     tmpfs:

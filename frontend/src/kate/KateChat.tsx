@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ApiError } from "../api/client";
+import { isSafeInternalPath } from "../lib/cta";
 import { AuthContext } from "../auth/AuthContext";
 import {
   fetchSpeech,
@@ -10,6 +11,8 @@ import {
   sendKateMessage,
   transcribe,
   transferLink,
+  confirmProposal,
+  declineProposal,
   type ChatTurn,
   type KateAction,
   type KateStatus,
@@ -458,8 +461,55 @@ function KateChatInner({ hideLauncher = false }: KateChatProps) {
   );
 }
 
+type CardState = { kind: "open" } | { kind: "busy" } | { kind: "declined" } | { kind: "done"; message: string };
+
 function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: () => void }) {
-  const [requested, setRequested] = useState(false);
+  const navigate = useNavigate();
+  const [state, setState] = useState<CardState>({ kind: "open" });
+  const [error, setError] = useState<string | null>(null);
+  // Only a "pending" Skills proposal can be confirmed with one tap; "suggested" means the
+  // customer allowed Kate to suggest, not to prepare, so they finish it themselves.
+  const canConfirm = !!action.proposal_id && action.proposal_status === "pending";
+
+  async function confirm() {
+    if (!action.proposal_id) return;
+    setState({ kind: "busy" });
+    setError(null);
+    try {
+      const result = await confirmProposal(action.proposal_id);
+      const outcome = result.outcome;
+      if (outcome?.kind === "navigate" && outcome.navigate_to && isSafeInternalPath(outcome.navigate_to)) {
+        onNavigate();
+        navigate(outcome.navigate_to);
+        return;
+      }
+      setState({ kind: "done", message: outcome?.message ?? "Klaargezet." });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.detail : "Dat lukte even niet. Probeer het opnieuw.");
+      setState({ kind: "open" });
+    }
+  }
+
+  async function decline() {
+    if (action.proposal_id) {
+      try {
+        await declineProposal(action.proposal_id);
+      } catch {
+        // Declining is best effort: the proposal simply expires otherwise.
+      }
+    }
+    setState({ kind: "declined" });
+  }
+
+  const busy = state.kind === "busy";
+  const footer =
+    state.kind === "declined" ? (
+      <p className={styles.actionNote}>Oké, ik zet dit niet door.</p>
+    ) : state.kind === "done" ? (
+      <p className={styles.actionDone} role="status">
+        ✓ {state.message}
+      </p>
+    ) : null;
 
   if (action.type === "transfer") {
     return (
@@ -478,10 +528,27 @@ function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: ()
             </>
           )}
         </dl>
-        <Link to={transferLink(action)} className={styles.actionButton} onClick={onNavigate}>
-          Controleer en bevestig
-        </Link>
-        <p className={styles.actionNote}>Kate voert niets zelf uit. Jij bevestigt.</p>
+        {footer ??
+          (canConfirm ? (
+            <div className={styles.actionButtons}>
+              <button type="button" className={styles.actionButton} onClick={() => void confirm()} disabled={busy}>
+                Bevestigen
+              </button>
+              <button type="button" className={styles.actionSecondary} onClick={() => void decline()} disabled={busy}>
+                Nee, dank je
+              </button>
+            </div>
+          ) : (
+            <Link to={transferLink(action)} className={styles.actionButton} onClick={onNavigate}>
+              Controleer en bevestig
+            </Link>
+          ))}
+        {error && (
+          <p className={styles.actionError} role="alert">
+            {error}
+          </p>
+        )}
+        <p className={styles.actionNote}>Kate betaalt nooit zelf. Je bevestigt op het gewone overschrijvingsscherm.</p>
       </div>
     );
   }
@@ -493,9 +560,26 @@ function ActionCard({ action, onNavigate }: { action: KateAction; onNavigate: ()
         <p className={styles.actionTitle}>Gesprek voorbereid</p>
         <p className={styles.actionNote}>Dit krijgt je adviseur mee, zodat je je verhaal niet opnieuw hoeft te doen:</p>
         <blockquote className={styles.summary}>{action.summary}</blockquote>
-        <button type="button" className={styles.actionButton} onClick={() => setRequested(true)} disabled={requested}>
-          {requested ? "Aangevraagd ✓ (demo)" : "Plan een gesprek"}
-        </button>
+        {footer ??
+          (canConfirm ? (
+            <div className={styles.actionButtons}>
+              <button type="button" className={styles.actionButton} onClick={() => void confirm()} disabled={busy}>
+                Plan een gesprek
+              </button>
+              <button type="button" className={styles.actionSecondary} onClick={() => void decline()} disabled={busy}>
+                Nu niet
+              </button>
+            </div>
+          ) : (
+            <p className={styles.actionNote}>
+              Wil je dat Kate dit voor je klaarzet? Pas het aan in <Link to="/kate" onClick={onNavigate}>Wat weet en mag Kate?</Link>
+            </p>
+          ))}
+        {error && (
+          <p className={styles.actionError} role="alert">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

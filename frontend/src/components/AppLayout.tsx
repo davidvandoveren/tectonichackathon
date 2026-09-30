@@ -29,9 +29,9 @@ export function AppLayout() {
   } else {
     const framed = preference === "mobile" && isWideViewport;
     const mobileShell = (
-      <MobileShell showToggle={!framed}>
+      <MobileShell>
         <Outlet />
-        <KateChat />
+        <KateChat hideLauncher />
       </MobileShell>
     );
     return framed ? <PhoneFrame>{mobileShell}</PhoneFrame> : mobileShell;

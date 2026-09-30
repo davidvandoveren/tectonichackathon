@@ -15,16 +15,22 @@ SERVICE="${SERVICE:-tectonichackathon}"
 SECRET="${SECRET:-demo-password}"
 GEMINI_SECRET="${GEMINI_SECRET:-gemini-api-key}"
 ELEVENLABS_SECRET="${ELEVENLABS_SECRET:-elevenlabs-api-key}"
+# The identity the service runs as (6-30 chars, lowercase letters, digits, dashes).
+RUNTIME_SA="${RUNTIME_SA:-${SERVICE}-run}"
+SA_EMAIL="${RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
 
 gcloud config set project "$PROJECT_ID"
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
-  artifactregistry.googleapis.com secretmanager.googleapis.com
+  artifactregistry.googleapis.com secretmanager.googleapis.com iam.googleapis.com
 
-PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
-RUNTIME_SA="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+# Least privilege: the service runs as its own service account with no project roles at all, only
+# read access to its own secrets. (The default compute account has Editor on the whole project.)
+if ! gcloud iam service-accounts describe "$SA_EMAIL" >/dev/null 2>&1; then
+  gcloud iam service-accounts create "$RUNTIME_SA" --display-name="Cloud Run runtime: $SERVICE"
+fi
 
 grant_access() {
-  gcloud secrets add-iam-policy-binding "$1" --member="$RUNTIME_SA" \
+  gcloud secrets add-iam-policy-binding "$1" --member="serviceAccount:${SA_EMAIL}" \
     --role=roles/secretmanager.secretAccessor >/dev/null
 }
 
@@ -76,6 +82,7 @@ done
 gcloud run deploy "$SERVICE" \
   --source . \
   --region "$REGION" \
+  --service-account "$SA_EMAIL" \
   --allow-unauthenticated \
   --max-instances 1 \
   --memory 512Mi \

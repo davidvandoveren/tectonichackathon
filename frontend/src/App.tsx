@@ -9,6 +9,7 @@ import { AccountDetailPage } from "./pages/AccountDetailPage";
 import { TransferPage } from "./pages/TransferPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 import { SubscriptionsPage } from "./subscriptions/SubscriptionsPage";
 import { KateConsentPage } from "./skills/KateConsentPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
@@ -21,6 +22,7 @@ export function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route
             element={
               <RequireAuth>

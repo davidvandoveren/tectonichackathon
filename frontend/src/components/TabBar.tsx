@@ -1,19 +1,22 @@
 import { NavLink } from "react-router";
-import { WalletIcon } from "./icons/WalletIcon";
+import { HouseIcon } from "./icons/HouseIcon";
 import { TransferIcon } from "./icons/TransferIcon";
-import { ProfileIcon } from "./icons/ProfileIcon";
+import { WalletIcon } from "./icons/WalletIcon";
+import { SparkleIcon } from "../kate/icons";
+import { openKate } from "../kate/openKate";
 import styles from "./TabBar.module.css";
 
-const TABS = [
-  { to: "/", label: "Betalen", Icon: WalletIcon, end: true },
-  { to: "/transfer", label: "Overschrijven", Icon: TransferIcon, end: false },
-  { to: "/profile", label: "Profiel", Icon: ProfileIcon, end: false },
+const LINKS = [
+  { to: "/", label: "Start", Icon: HouseIcon, end: true },
+  { to: "/transfer", label: "Betalen", Icon: TransferIcon, end: false },
+  { to: "/profile", label: "Mijn KBC", Icon: WalletIcon, end: false },
 ] as const;
 
+/** KBC Mobile bottom navigation: Start, Betalen, Mijn KBC and Kate. */
 export function TabBar() {
   return (
     <nav className={styles.bar} aria-label="Hoofdnavigatie">
-      {TABS.map(({ to, label, Icon, end }) => (
+      {LINKS.map(({ to, label, Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -24,6 +27,10 @@ export function TabBar() {
           <span>{label}</span>
         </NavLink>
       ))}
+      <button type="button" className={styles.tab} onClick={openKate}>
+        <SparkleIcon width={22} height={22} aria-hidden="true" />
+        <span>Kate</span>
+      </button>
     </nav>
   );
 }

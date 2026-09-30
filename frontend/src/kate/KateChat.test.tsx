@@ -1,0 +1,57 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { KateChat } from "./KateChat";
+import { transferLink } from "./kateApi";
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
+afterEach(() => vi.restoreAllMocks());
+
+describe("KateChat", () => {
+  it("shows a transfer proposal the customer still has to confirm", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.endsWith("/kate/status")) {
+        return Promise.resolve(jsonResponse({ llm: "mock", voice: false, speech_recognition: false }));
+      }
+      return Promise.resolve(
+        jsonResponse({
+          reply: "Ik ben Kate (AI). Overschrijving klaargezet.",
+          mode: "normal",
+          action: { type: "transfer", to_name: "Lucas", amount: "25.00", description: "Pizza", summary: null },
+        })
+      );
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <KateChat />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open Kate" }));
+    expect(screen.getByText(/Ik ben een AI/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Bericht aan Kate"), "Stuur Lucas 25 euro voor de pizza");
+    await user.click(screen.getByRole("button", { name: "Stuur" }));
+
+    const link = await screen.findByRole("link", { name: "Controleer en bevestig" });
+    expect(link).toHaveAttribute("href", "/transfer?to_name=Lucas&amount=25.00&description=Pizza");
+    expect(screen.getByText(/Jij bevestigt/)).toBeInTheDocument();
+  });
+
+  it("builds an encoded internal transfer link", () => {
+    const href = transferLink({
+      type: "transfer",
+      to_name: "A&B //evil",
+      amount: "1.00",
+      description: null,
+      summary: null,
+    });
+    expect(href.startsWith("/transfer?")).toBe(true);
+    expect(href).toContain("to_name=A%26B+%2F%2Fevil");
+  });
+});

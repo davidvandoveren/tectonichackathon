@@ -40,15 +40,24 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | Onderdeel | Eigenaar | Code | Status |
 |---|---|---|---|
 | Basis-app: login, rekeningen, overschrijvingen, security, CI, Cloud Run | David | `backend/app/{routers,security,domain}/`, `Dockerfile`, `.github/` | ✅ op `main`, live |
-| UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David | `frontend/**` (behalve `kate/`, `subscriptions/`) | 🚧 `feature/kbc-touch-ui` |
+| UI in KBC Touch/KBC Mobile-stijl + mobiel/desktop-toggle | David · **Claude-sessie UI** (#18) | `frontend/**` (behalve `kate/`, `subscriptions/`) | 🚧 `feature/kbc-touch-ui` |
 | Kate-chat (Gemini/mock), stem (ElevenLabs), erfenis-modus | Sander | `backend/app/kate/`, `routers/kate.py`, `frontend/src/kate/` | ✅ #12 op `main` |
 | Abonnementenbeheer ("Gebruik je dit nog?") | Sander | `backend/app/subscriptions/`, `routers/subscriptions.py`, `frontend/src/subscriptions/` | ✅ #14 op `main` |
 | Kate-brein: momenten, urgentie, kanaal, bewuste stilte, tijdmachine | Alexandre | `backend/app/moments/`, `routers/admin.py`, `routers/kate_feed.py` | 🔍 PR #15 |
-| Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
+| Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
 | Jury-dashboard (10.000 klanten) | **niemand** | – | ⏳ open |
 | Toestemmingsscherm, voorstelkaarten, activiteitenscherm (UI op #16) | David (frontend) | `frontend/` | ⏳ na #16 |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
 | Aikido baseline + eind-scan, README "Our solution", Builderbase-tekst, video | **nog toe te wijzen** | – | ⏳ baseline dringend |
+
+**David werkt met twee Claude-sessies tegelijk; zo zijn ze afgebakend:**
+
+| Sessie | Werkt aan | Raakt aan | Raakt NIET aan |
+|---|---|---|---|
+| **Claude-sessie UI** (#18) | KBC Touch/Mobile UI, toggle, daarna UI voor #15 en #16 | alleen `frontend/**` (niet `frontend/src/kate/`, `frontend/src/subscriptions/`) | backend |
+| **Claude-sessie Skills** (#19) | Kate Skills-backend (#16) en de koppeling van chat/momenten aan voorstellen | alleen `backend/app/skills/**`, `routers/skills.py`, 2 regels in `main.py`, eigen sectie in `docs/api.md` | `frontend/**`, `kate/`, `moments/`, `subscriptions/` |
+
+Nieuwe taken worden eerst als issue geclaimd (regel 0) voor een van beide sessies ze oppakt.
 
 **Openstaande afstemming (dubbel werk vermijden):**
 - `feature/subscriptions-chun` (Alexandre) bouwt abonnementen een tweede keer; #14 staat al op `main`. Niet mergen; extra's toevoegen aan `backend/app/subscriptions/`.

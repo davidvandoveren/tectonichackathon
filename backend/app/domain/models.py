@@ -66,3 +66,8 @@ class Insight:
     cta_label: str
     cta_target: str
     reason: str
+    # Filled in by the moments engine; optional so the original shape stays valid.
+    moment: str | None = None
+    urgency: int | None = None
+    channel: str | None = None
+    confidence: float | None = None

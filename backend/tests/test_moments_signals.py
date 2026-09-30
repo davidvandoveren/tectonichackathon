@@ -221,6 +221,38 @@ def test_merchant_concentration_stays_silent_on_scattered_spending() -> None:
     assert find(extract_signals(ledger([CURRENT], scattered)), "merchant_concentration") is None
 
 
+def test_a_sensitive_merchant_never_becomes_a_signal() -> None:
+    """Issue #35: health, religion, politics, unions and dating must never feed the profile."""
+    pharmacy = [tx(d, "-20.00", "Apotheek", Category.OTHER) for d in (80, 66, 52, 38, 24, 10)]
+
+    signals = extract_signals(ledger([CURRENT], pharmacy))
+
+    assert find(signals, "merchant_concentration") is None
+    assert not any("Apotheek" in s.evidence or "Apotheek" in s.meta.values() for s in signals)
+
+
+def test_sensitive_spending_is_invisible_to_every_extractor() -> None:
+    """Filtered before extraction, not afterwards: a large hospital bill is no 'outlier' either."""
+    history = [tx(d, "-40.00", f"Winkel {d}", Category.OTHER) for d in range(35, 90, 7)]
+
+    def big_bill_at(merchant: str) -> Transaction:
+        return tx(3, "-2400.00", merchant, Category.OTHER)
+
+    ordinary = extract_signals(ledger([CURRENT], [*history, big_bill_at("Mediamarkt")]))
+    sensitive = extract_signals(ledger([CURRENT], [*history, big_bill_at("AZ Ziekenhuis")]))
+
+    assert find(ordinary, "large_outflow_outlier") is not None, "the fixture must be meaningful"
+    assert sensitive == extract_signals(ledger([CURRENT], history))
+
+
+def test_public_transport_is_not_a_deal_merchant() -> None:
+    """Issue #35: De Lijn and NMBS have no Kate Deal; a fuel station does."""
+    for operator in ("De Lijn", "NMBS", "SNCB", "STIB", "MIVB", "TEC"):
+        rides = [tx(d, "-6.00", operator, Category.TRANSPORT) for d in (80, 66, 52, 38, 24, 10)]
+
+        assert find(extract_signals(ledger([CURRENT], rides)), "merchant_concentration") is None
+
+
 # --- self-transfers (the savings habit) --------------------------------------------------------
 
 
@@ -294,3 +326,78 @@ def test_every_signal_carries_a_plain_language_evidence_string() -> None:
     for signal in extract_signals(ledger([CURRENT], txs)):
         assert signal.evidence.strip(), f"{signal.type} has no evidence"
         assert 0.0 < signal.strength <= 1.0, f"{signal.type} has strength {signal.strength}"
+
+
+# --- card packages (design §5.2) ---------------------------------------------------------------
+
+
+def package_fees(name: str, amount: str) -> list[Transaction]:
+    return [tx(d, f"-{amount}", f"{name} kredietkaart", Category.OTHER) for d in (87, 57, 27)]
+
+
+def test_an_unused_luxepakket_is_noticed() -> None:
+    signal = find(
+        extract_signals(ledger([CURRENT], package_fees("Luxepakket", "25.00"))),
+        "paid_package_unused",
+    )
+
+    assert signal is not None
+    assert signal.domain == "products"
+    assert signal.meta["package"] == "luxe"
+    assert signal.meta["yearly_cost"] == "300.00"
+    assert "Luxepakket" in signal.evidence
+
+
+def test_a_package_that_is_used_for_travel_is_not_waste() -> None:
+    txs = [*package_fees("Luxepakket", "25.00"), tx(40, "-189.00", "Ryanair", Category.LEISURE)]
+
+    signals = extract_signals(ledger([CURRENT], txs))
+
+    assert find(signals, "paid_package_unused") is None
+    assert find(signals, "travel_cover_held") is not None
+
+
+def test_a_shoppingpakket_is_never_called_waste_for_lack_of_travel() -> None:
+    signals = extract_signals(ledger([CURRENT], package_fees("Shoppingpakket", "1.50")))
+
+    assert find(signals, "paid_package_unused") is None
+    assert find(signals, "travel_cover_held") is None
+
+
+def test_travel_spend_counts_flights_hotels_and_foreign_payments() -> None:
+    abroad = Transaction(
+        id="t_abroad",
+        account_id="cur",
+        booked_at=TODAY - timedelta(days=12),
+        description="Restaurant Lisboa",
+        counterparty="Restaurant Lisboa",
+        amount=Decimal("-42.00"),
+        category=Category.LEISURE,
+        currency="USD",
+    )
+    txs = [
+        tx(70, "-240.00", "Brussels Airlines", Category.LEISURE),
+        tx(69, "-310.00", "Booking.com", Category.LEISURE),
+        abroad,
+    ]
+
+    signal = find(extract_signals(ledger([CURRENT], txs)), "travel_spend")
+
+    assert signal is not None
+    assert signal.meta["trips"] == "3"
+    assert signal.strength == 1.0
+
+
+def test_travel_spend_stays_silent_on_ordinary_spending() -> None:
+    txs = [tx(d, "-40.00", "Colruyt", Category.GROCERIES) for d in (60, 30, 5)]
+
+    assert find(extract_signals(ledger([CURRENT], txs)), "travel_spend") is None
+
+
+def test_package_signals_respect_the_products_consent() -> None:
+    signals = extract_signals(
+        ledger([CURRENT], package_fees("Luxepakket", "25.00")),
+        consent={"income", "spending", "balances"},
+    )
+
+    assert find(signals, "paid_package_unused") is None

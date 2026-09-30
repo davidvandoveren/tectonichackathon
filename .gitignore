@@ -33,3 +33,6 @@ coverage/
 
 # git worktrees (one dir per feature, local only)
 .worktrees/
+
+# voice samples written by backend/scripts/check_kate_keys.py
+kate-voice-*.mp3

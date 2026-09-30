@@ -49,13 +49,18 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | ✅ #20 op `main` |
 | README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
 | Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #29, **MUST** – niet aan beginnen |
-| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🚧 `feature/insights-engine` – niet aan beginnen |
+| `/insights` (home-carrousel "Voor jou") gevoed door de moments-engine: zelfde vorm + optioneel `urgency`/`channel`/`confidence`, respecteert toestemming en tijdmachine | Alexandre · **Claude-sessie Insights** (#31) | `backend/app/services/insights.py`, `backend/app/moments/`, insights-route in `routers/banking.py`, insights-sectie `docs/api.md` | 🔍 PR #37 |
+| **Fix #35:** geen `deal_match` (of ander moment) op gevoelige uitgaven zoals de apotheek; openbaar vervoer is geen deal-handelaar | Alexandre · **Claude-sessie Insights** (#35) | `backend/app/moments/` (+ tests) | 🔍 PR #45 |
+| Momenten `card_package_waste` + `card_package_gap` (ontwerp §5.2), prijzen uit Skills `cards`-pack (niet dupliceren) | Alexandre · **Claude-sessie Insights** (#39) | `backend/app/moments/` (+ tests), feed-sectie `docs/api.md` | 🚧 `feature/card-package-moments` – niet aan beginnen |
 | Jury-dashboard (10.000 klanten) | Sander (#25) | – | 🔍 PR #30 |
 | **Family circle**: gekoppelde accounts (wederzijdse toestemming, rechten per link), gedeeld potje, 18 jaar = voogdij stopt | Sander · **Claude-sessie Family** (#28) | `backend/app/family/`, `routers/family.py`, `frontend/src/family/` | ✅ eerste versie klaar (branch `claude/tectonic-hackathon-repo-setup-u4va4c`) |
 | Sleutelcheck Gemini + ElevenLabs (`check_kate_keys`) | – | – | 🔍 PR #33 |
 | Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David · **Claude-sessie UI** (#18) | `frontend/` | ⏳ backend klaar zodra #34 op `main` staat (kaartflow in `docs/api.md`) |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |
-| Aikido baseline + eind-scan, Builderbase-tekst, demovideo | **nog toe te wijzen** | – | ⏳ baseline dringend |
+| Aikido baseline + eind-scan | Alexandre (zelf, in Aikido) | – | 🚧 baseline bezig |
+| Builderbase-projecttekst + demoscript (< 3 min) | Alexandre · **Claude-sessie Personas** (#42) | nieuw: `docs/submission.md`, `docs/demo-script.md` | 🚧 `feature/submission-docs` – niet aan beginnen |
+| Personas briefing-scenario's: **financieel krap** (`cashflow_risk` + bewuste stilte) en **erfenis** (context voor erfenis-modus) | Alexandre · **Claude-sessie Personas** (#43) | `backend/app/domain/seed.py` (+ tests) | 🔍 PR #48 (na #29) |
+| Demovideo opnemen | **nog toe te wijzen** | – | ⏳ na demoscript (#42) |
 
 **David werkt met twee Claude-sessies tegelijk; zo zijn ze afgebakend:**
 

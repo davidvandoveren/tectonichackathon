@@ -22,6 +22,8 @@ function sub(overrides: Partial<Subscription>): Subscription {
     reason: "We weten niet of je het gebruikt.",
     status: "unknown",
     remind_on: null,
+    source: "detected",
+    is_new: false,
     ...overrides,
   };
 }
@@ -35,6 +37,7 @@ const overview: SubscriptionsOverview = {
   yearly_total: "293.76",
   yearly_savings: "0.00",
   hidden_sensitive: 1,
+  dismissed: 0,
 };
 
 function json(body: unknown): Response {
@@ -69,5 +72,34 @@ describe("SubscriptionsPage", () => {
     expect(await screen.findByText(/We herinneren je op/)).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("bespaar je");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("removes a wrongly detected subscription with one click and can undo it", async () => {
+    const withNew: SubscriptionsOverview = {
+      ...overview,
+      subscriptions: [sub({ id: "sub_000000000003", name: "Streamz", is_new: true, flags: [], duplicate_of: [] })],
+    };
+    const bodies: unknown[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      if (String(input).endsWith("/dismiss")) {
+        const body = JSON.parse(String(init?.body)) as { dismissed: boolean };
+        bodies.push(body);
+        return Promise.resolve(json(body.dismissed ? { ...withNew, subscriptions: [], dismissed: 1 } : withNew));
+      }
+      return Promise.resolve(json(withNew));
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SubscriptionsPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Nieuw gedetecteerd.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Verwijder" }));
+    expect(await screen.findByText("Streamz verwijderd uit je lijst.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ongedaan maken" }));
+    expect(await screen.findByText("Streamz")).toBeInTheDocument();
+    expect(bodies).toEqual([{ dismissed: true }, { dismissed: false }]);
   });
 });

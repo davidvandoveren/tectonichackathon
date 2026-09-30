@@ -3,6 +3,8 @@ import { useViewMode } from "./ViewModeContext";
 import type { ViewModePreference } from "./ViewModeContext";
 import { PhoneIcon } from "../components/icons/PhoneIcon";
 import { MonitorIcon } from "../components/icons/MonitorIcon";
+import { Link } from "react-router";
+import { sessionSlot } from "../lib/sessionSlot";
 import styles from "./ViewModeToggle.module.css";
 
 interface ViewModeOption {
@@ -51,12 +53,10 @@ export function ViewModeToggle({ variant = "inline", compact = false }: ViewMode
     }
   }
 
-  const groupClassName = [styles.group, variant === "floating" ? styles.floating : "", compact ? styles.compact : ""]
-    .filter(Boolean)
-    .join(" ");
+  const floating = variant === "floating";
 
-  return (
-    <div className={groupClassName} role="radiogroup" aria-label="Weergave: mobiel of desktop">
+  const group = (
+    <div className={styles.group} role="radiogroup" aria-label="Weergave: mobiel of desktop">
       {OPTIONS.map((option, index) => {
         const isSelected = option.value === preference;
         return (
@@ -78,6 +78,20 @@ export function ViewModeToggle({ variant = "inline", compact = false }: ViewMode
           </button>
         );
       })}
+    </div>
+  );
+
+  if (!floating) return group;
+  return (
+    <div className={compact ? `${styles.floating} ${styles.compact}` : styles.floating}>
+      {!sessionSlot && (
+        <Link to="/demo" className={styles.demoLink}>
+          <PhoneIcon aria-hidden="true" className={styles.icon} />
+          <PhoneIcon aria-hidden="true" className={styles.icon} />
+          <span>2 gsm's</span>
+        </Link>
+      )}
+      {group}
     </div>
   );
 }

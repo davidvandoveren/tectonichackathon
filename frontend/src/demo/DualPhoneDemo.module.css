@@ -1,0 +1,115 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--kbc-bg-muted);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
+}
+
+.back {
+  color: var(--kbc-blue);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-8);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
+}
+
+.picker select {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--kbc-line);
+  border-radius: var(--radius-pill);
+  background: var(--kbc-surface);
+  color: var(--kbc-navy);
+  font: inherit;
+  font-weight: var(--font-weight-default);
+}
+
+/* Takes exactly the scaled size of the phone, so the two phones sit neatly side by side. */
+.slot {
+  width: calc(414px * var(--phone-scale, 0.7));
+  height: calc(868px * var(--phone-scale, 0.7));
+}
+
+.device {
+  position: relative;
+  width: 414px;
+  height: 868px;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 56px;
+  background: #111418;
+  box-shadow:
+    0 0 0 1px #2b3036,
+    0 24px 60px rgba(13, 42, 80, 0.25);
+  transform: scale(var(--phone-scale, 0.7));
+  transform-origin: top left;
+}
+
+/* Dynamic Island */
+.device::before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 124px;
+  height: 36px;
+  border-radius: 999px;
+  background: #000;
+  z-index: 2;
+}
+
+.screen {
+  height: 100%;
+  padding-top: 50px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 44px;
+  background: var(--kbc-surface);
+}
+
+.frame {
+  display: block;
+  width: 390px;
+  height: 794px;
+  border: 0;
+}

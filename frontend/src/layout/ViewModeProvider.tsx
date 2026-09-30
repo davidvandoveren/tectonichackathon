@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { ViewModeContext, type ViewModePreference } from "./ViewModeContext";
 import { readStoredViewMode, writeStoredViewMode } from "./viewModeStorage";
 import { resolveLayout } from "./resolveLayout";
+import { sessionSlot } from "../lib/sessionSlot";
 
 export const DESKTOP_MEDIA_QUERY = "(min-width: 900px)";
 
@@ -31,11 +32,16 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     writeStoredViewMode(mode);
   }, []);
 
-  const resolved = useMemo(() => resolveLayout(preference, isWideViewport), [preference, isWideViewport]);
+  // A phone embedded in the /demo page is always a plain phone: mobile layout, no extra frame.
+  const embedded = sessionSlot !== null;
+  const resolved = useMemo(
+    () => (embedded ? "mobile" : resolveLayout(preference, isWideViewport)),
+    [embedded, preference, isWideViewport]
+  );
 
   const value = useMemo(
-    () => ({ preference, resolved, isWideViewport, setPreference }),
-    [preference, resolved, isWideViewport, setPreference]
+    () => ({ preference, resolved, isWideViewport: embedded ? false : isWideViewport, setPreference }),
+    [embedded, preference, resolved, isWideViewport, setPreference]
   );
 
   return <ViewModeContext.Provider value={value}>{children}</ViewModeContext.Provider>;

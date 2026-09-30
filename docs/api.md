@@ -196,6 +196,18 @@ Every KBC function (payments, savings, cards, deals, insurance, loans, investing
   "action": "savings.move_to_savings", "summary": "€ 50,00 naar je spaarrekening", "source": "moment", "reason": "…"}]
 ```
 
+#### Feed cards → confirmable actions
+`GET /api/v1/skills/feed-actions` → for each card in `GET /kate/feed` that Kate can act on (join on feed `id` == `moment`):
+```json
+[{"moment": "first_salary", "action": "savings.create_goal", "title": "Spaardoel maken",
+  "summary": "Spaardoel 'Buffer' van € 5 955,00", "level": "prepare", "can_confirm": true}]
+```
+No entry = no button on that card (no matching action, the customer switched the action `off`, or it is not possible right now). `can_confirm: false` = level `suggest`: show the summary, no button. Cards at sensitive merchants (health, religion, politics, trade union) never get an action.
+
+`POST /api/v1/proposals/from-moment` body `{"moment": "first_salary"}` → `201` proposal (same shape as `POST /proposals`, `source: "moment"`, `reason` = the engine's evidence). The server recomputes the moment itself, so a client cannot choose the amounts; a moment that is not in this customer's feed right now → `404`; consent `off` → `403`; not possible → `409`; extra fields → `422`.
+
+Card flow: **Bevestig** → `POST /proposals/from-moment` → `POST /proposals/{id}/approve` `{}` → show `outcome.message` (`navigate`: open `outcome.navigate_to`; `advisor_handoff`: show that an advisor will call). **Nee, bedankt** → `POST /kate/feed/{moment}/dismiss` `{}`.
+
 ### Family circle – linked accounts (`/family`)
 Customers link their accounts to the people around them. A link exists only after **both** sides accept; each side chooses what **it** shares with the other and can never raise what the other shares. Either side can end a link at any time. Levels, each including the previous: `exists` (only that the link exists) · `gift` (may contribute to pots you share with them, sees progress only) · `pot` (also sees who gave what) · `balances` (also your account balances, read-only; never transactions or IBANs).
 

@@ -179,6 +179,15 @@
   outline-offset: 2px;
 }
 
+.demoBanner {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: #fdf1dc;
+  color: #7a4a00;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 .guidanceBanner {
   display: flex;
   align-items: center;

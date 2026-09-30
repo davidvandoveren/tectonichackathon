@@ -13,6 +13,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.skills.registry import Registry, default_registry
+from app.subscriptions.detect import SENSITIVE_KEYWORDS
 
 Meta = Mapping[str, str]
 
@@ -23,15 +24,16 @@ class Draft:
     params: dict[str, Any]
 
 
-# The engine reports the spending category it saw; Kate Deals has its own categories.
+# The engine reports the spending category it saw; Kate Deals has its own categories. Transport
+# only becomes a fuel deal at an actual fuel station: De Lijn or NMBS riders get no fuel offer.
 DEAL_FOR_CATEGORY = {
-    "transport": "fuel",
     "groceries": "groceries",
     "leisure": "dining",
     "fuel": "fuel",
     "travel": "travel",
     "dining": "dining",
 }
+FUEL_BRANDS = ("q8", "total", "shell", "esso", "texaco", "lukoil", "dats 24", "gabriels", "tango")
 
 
 class _NoAction(ValueError):
@@ -58,7 +60,14 @@ def _top_up(meta: Meta) -> dict[str, Any]:
 
 
 def _deal(meta: Meta) -> dict[str, Any]:
-    category = DEAL_FOR_CATEGORY.get(meta["category"])
+    merchant = meta.get("counterparty", "").lower()
+    # Health, religion, politics, trade union: never profiled, never offered anything.
+    if any(word in merchant for word in SENSITIVE_KEYWORDS):
+        raise _NoAction
+    if meta["category"] == "transport":
+        category = "fuel" if any(brand in merchant for brand in FUEL_BRANDS) else None
+    else:
+        category = DEAL_FOR_CATEGORY.get(meta["category"])
     if category is None:
         raise _NoAction
     return {"category": category}

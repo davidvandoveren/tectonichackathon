@@ -17,9 +17,9 @@
 }
 
 .summary {
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  background: var(--kbc-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-tile);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
@@ -28,17 +28,18 @@
 
 .iban {
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
   letter-spacing: 0.02em;
 }
 
 .type {
   font-size: 0.875rem;
-  color: var(--color-text-muted);
+  color: var(--kbc-slate);
 }
 
 .balance {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: var(--font-weight-default);
+  color: var(--kbc-navy);
   margin-top: var(--space-1);
 }

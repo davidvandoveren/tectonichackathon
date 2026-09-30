@@ -69,7 +69,9 @@ def test_kate_requires_login(client: TestClient) -> None:
 
 def test_status_defaults_to_mock_without_keys(emma: TestClient) -> None:
     response = emma.get("/api/v1/kate/status")
-    assert response.json() == {"llm": "mock", "voice": False, "speech_recognition": False}
+    body = response.json()
+    assert (body["llm"], body["voice"], body["speech_recognition"]) == ("mock", False, False)
+    assert "GEMINI_API_KEY" in body["mock_reason"]
 
 
 def test_mock_chat_discloses_ai_and_prefills_transfer(emma: TestClient) -> None:

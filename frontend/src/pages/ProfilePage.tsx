@@ -1,7 +1,11 @@
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
+import { MenuLink } from "../components/MenuLink";
+import { DocumentIcon } from "../components/icons/DocumentIcon";
+import { PeopleIcon } from "../components/icons/PeopleIcon";
 import { PageHeader } from "../components/PageHeader";
+import { ViewModeToggle } from "../layout/ViewModeToggle";
 import styles from "./ProfilePage.module.css";
 
 export function ProfilePage() {
@@ -37,23 +41,30 @@ export function ProfilePage() {
             </div>
           </dl>
         </div>
-        <Link to="/subscriptions" className={styles.menuLink}>
-          <span>
-            <strong>Mijn abonnementen</strong>
-            <small>Overzicht, prijsstijgingen en dubbele betalingen</small>
-          </span>
-          <span aria-hidden="true">›</span>
-        </Link>
-        <Link to="/family" className={styles.menuLink}>
-          <span>
-            <strong>Familiekring</strong>
-            <small>Gekoppelde familie, wat je deelt en gedeelde potjes</small>
-          </span>
-          <span aria-hidden="true">›</span>
-        </Link>
+
+        <ul className={styles.menu}>
+          <li>
+            <MenuLink to="/subscriptions" label="Mijn abonnementen" Icon={DocumentIcon} />
+          </li>
+          <li>
+            <MenuLink to="/family" label="Familiekring" Icon={PeopleIcon} />
+          </li>
+        </ul>
+
         <Button type="button" variant="secondary" onClick={handleLogout}>
           Afmelden
         </Button>
+
+        <section className={styles.viewModeSection} aria-labelledby="view-mode-heading">
+          <h2 id="view-mode-heading" className={styles.viewModeHeading}>
+            Weergave
+          </h2>
+          <p className={styles.viewModeHint}>
+            Kies hoe de app getoond wordt: automatisch op basis van je scherm, of altijd Mobiel/Desktop
+            (handig voor demo's).
+          </p>
+          <ViewModeToggle />
+        </section>
       </div>
     </div>
   );

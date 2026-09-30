@@ -6,6 +6,10 @@ De rode draad voor de jury: **Kate toont niets op basis van wie iemand is, allee
 
 **Voorbereiding**
 - Gebruik de Cloud Run-versie, of draai lokaal met `PASSWORDLESS_LOGIN=true` (één klik per persona) en `ADMIN_USERNAMES=jan` (voor de tijdmachine).
+- **Admin = een gebruikersnaam in `ADMIN_USERNAMES`.** Een aparte rol bestaat niet. Standaard is die lijst leeg, en dan geven `/demo` (tijdmachine) en `/jury` (dashboard) aan **iedereen** *"Alleen beschikbaar voor de demo-admin"*, ook aan Jan. Zo stel je het in:
+  - **Lokaal:** zet `ADMIN_USERNAMES=jan` en `PASSWORDLESS_LOGIN=true` in `.env`, in de hoofdmap of in `backend/` (zie `.env.example`), en **herstart de backend**. Instellingen worden alleen bij het opstarten gelezen.
+  - **Cloud Run:** `ADMIN_USERNAMES=jan PASSWORDLESS_LOGIN=true ./deploy/cloudrun.sh`. Het script zet de variabele alleen door als ze in je shell staat.
+  - Wees daarna voor `/demo` en `/jury` **ingelogd als `jan`**. Met Emma, Bram, Sofie of Els blijft de melding staan.
 - Zet de sleutels voor Gemini en ElevenLabs in `.env` en controleer ze met `cd backend && python -m scripts.check_kate_keys` (#33). Voor Cloud Run is #62 nodig. Zonder sleutels werkt alles in demomodus, maar dan hoor je de stem van de browser.
 - Start elke opname met een **verse server**. Alle data zit in het geheugen, en zowel de tijdmachine als de live overschrijving in scène 4b veranderen de toestand.
 - Neem de scènes apart op en monteer ze achteraf. Dan verpest één fout niet de hele opname.

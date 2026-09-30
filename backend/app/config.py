@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     # Password shared by the synthetic demo personas. Never commit a value for it.
     demo_password: SecretStr
+    # Demo mode: log in as a synthetic persona with one click, no password. Off by default;
+    # only turn on for a public demo of synthetic data (see README "Known limitations").
+    passwordless_login: bool = False
     session_ttl_seconds: int = 60 * 60
     # Only disable for plain-http local development.
     cookie_secure: bool = True

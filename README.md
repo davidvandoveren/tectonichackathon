@@ -107,6 +107,7 @@ PROJECT_ID=<your-gcp-project> ./deploy/cloudrun.sh
 
 - **Data is in memory and synthetic.** It resets on every restart; that is why Cloud Run runs with `--max-instances 1`. Next step: a Firestore/Cloud SQL implementation of `Bank` and a shared session store.
 - **Demo login:** all personas share one password from `DEMO_PASSWORD`. No MFA/itsme – out of scope for the PoC.
+- **Passwordless demo mode (on for the live demo):** with `PASSWORDLESS_LOGIN=true` anyone can open a synthetic persona with one click, so judges can try it instantly. It is off by default; sessions, owner-scoped access and all transfer rules still apply. Never enable it with real data.
 - **Insights are simple rules**, not yet ML/LLM – this is where the PoC's personalization engine goes.
 - Rate limiting is per instance (in memory).
 

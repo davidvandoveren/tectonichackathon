@@ -28,6 +28,14 @@ class LoginIn(ApiModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class AuthConfigOut(ApiModel):
+    passwordless_login: bool
+
+
+class DemoLoginIn(ApiModel):
+    username: str = Field(min_length=1, max_length=64)
+
+
 class MeOut(ApiModel):
     id: str
     username: str

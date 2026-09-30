@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.config import Settings
+from app.main import create_app
 from tests.conftest import DEMO_PASSWORD, login
 
 
@@ -52,3 +54,23 @@ def test_validation_errors_do_not_echo_input(client: TestClient) -> None:
     response = client.post("/api/v1/auth/login", json={"username": "emma", "password": secret})
     assert response.status_code == 422
     assert secret not in response.text
+
+
+def test_demo_login_is_disabled_by_default(client: TestClient) -> None:
+    assert client.get("/api/v1/auth/config").json() == {"passwordless_login": False}
+    response = client.post("/api/v1/auth/demo-login", json={"username": "emma"})
+    assert response.status_code == 404
+    assert client.get("/api/v1/me").status_code == 401
+
+
+def test_demo_login_when_enabled(settings: Settings) -> None:
+    settings.passwordless_login = True
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/api/v1/auth/config").json() == {"passwordless_login": True}
+        assert client.post("/api/v1/auth/demo-login", json={"username": "ghost"}).status_code == 401
+        response = client.post("/api/v1/auth/demo-login", json={"username": "marie"})
+        assert response.status_code == 200
+        assert "httponly" in response.headers["set-cookie"].lower()
+        assert client.get("/api/v1/me").json()["username"] == "marie"
+        # Still owner-scoped: one-click login does not widen access.
+        assert client.get("/api/v1/accounts/a_emma_1").status_code == 404

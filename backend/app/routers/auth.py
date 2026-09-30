@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
+from app.config import Settings
 from app.dependencies import (
     BankDep,
     CurrentUser,
@@ -8,8 +9,10 @@ from app.dependencies import (
     SettingsDep,
     session_cookie_name,
 )
-from app.schemas import DemoUserOut, LoginIn, MeOut
+from app.domain.models import User
+from app.schemas import AuthConfigOut, DemoLoginIn, DemoUserOut, LoginIn, MeOut
 from app.security.passwords import hash_password, verify_password
+from app.security.sessions import SessionStore
 
 router = APIRouter(tags=["auth"])
 
@@ -26,6 +29,11 @@ def demo_users(bank: BankDep) -> list[DemoUserOut]:
         )
         for u in bank.list_users()
     ]
+
+
+@router.get("/auth/config", response_model=AuthConfigOut)
+def auth_config(settings: SettingsDep) -> AuthConfigOut:
+    return AuthConfigOut(passwordless_login=settings.passwordless_login)
 
 
 @router.post("/auth/login", response_model=MeOut)
@@ -51,6 +59,30 @@ def login(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
 
     limiter.reset(f"user:{body.username.lower()}")
+    return _start_session(request, response, settings, sessions, user)
+
+
+@router.post("/auth/demo-login", response_model=MeOut)
+def demo_login(
+    body: DemoLoginIn,
+    request: Request,
+    response: Response,
+    settings: SettingsDep,
+    bank: BankDep,
+    sessions: SessionsDep,
+) -> MeOut:
+    """One-click login as a synthetic persona. Only exists when PASSWORDLESS_LOGIN is on."""
+    if not settings.passwordless_login:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    user = bank.find_user_by_username(body.username)
+    if user is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
+    return _start_session(request, response, settings, sessions, user)
+
+
+def _start_session(
+    request: Request, response: Response, settings: Settings, sessions: SessionStore, user: User
+) -> MeOut:
     old_token = request.cookies.get(session_cookie_name(settings))
     if old_token:
         sessions.revoke(old_token)  # no session fixation: always issue a fresh token

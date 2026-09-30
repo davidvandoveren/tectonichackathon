@@ -101,6 +101,8 @@ Same direction as above, framed as **the brain behind the next generation of Kat
 
 ### f. Family circle – linked accounts (idea: Sander)
 
+> **Status: 🚧 in progress** (Sander · Claude session, issue #28) – first version: links with mutual consent + per-link permissions, shared pot, guardian link ends at 18.
+
 Customers can **link their KBC accounts to the people around them**: fiancé(e), spouse/partner, child, grandchild, godchild, mother, father, step-parents, and so on. This creates an **"organic" environment where everything fits together**. Kate understands the customer as part of a family, not as a loose individual, and helps across the whole circle at the right moments.
 
 **What Kate does with it (examples):**

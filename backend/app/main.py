@@ -14,7 +14,7 @@ from app.domain.bank import Bank
 from app.domain.seed import seed_bank
 from app.kate.voices import VoicePreferences
 from app.moments.state import KateState
-from app.routers import admin, auth, banking, kate, kate_feed, skills, subscriptions
+from app.routers import admin, auth, banking, dashboard, kate, kate_feed, skills, subscriptions
 from app.security.headers import CsrfGuardMiddleware, SecurityHeadersMiddleware
 from app.security.rate_limit import FailureLimiter, RequestLimiter
 from app.security.sessions import SessionStore
@@ -81,6 +81,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(kate.router, prefix="/api/v1")
     app.include_router(kate_feed.router, prefix="/api/v1")
     app.include_router(admin.router, prefix="/api/v1")
+    app.include_router(dashboard.router, prefix="/api/v1")
     app.include_router(subscriptions.router, prefix="/api/v1")
     app.include_router(skills.router, prefix="/api/v1")
 

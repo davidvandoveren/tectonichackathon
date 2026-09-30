@@ -357,3 +357,36 @@ def test_long_answer_with_disclosure_stays_within_limit(emma: TestClient) -> Non
     # ...so it can be sent back as history and read aloud without a 422.
     emma.app.dependency_overrides[get_voice] = FakeVoice  # type: ignore[attr-defined]
     assert emma.post("/api/v1/kate/speech", json={"text": reply + "x" * 500}).status_code == 200
+
+
+# --- disclosure once, handoff kept ---------------------------------------------------------------
+def _emma_context(client: TestClient) -> CustomerContext:
+    bank = client.app.state.bank  # type: ignore[attr-defined]
+    return build_context(bank, bank.get_user("u_emma"), date.today())
+
+
+def test_later_turns_tell_the_model_not_to_introduce_herself_again(client: TestClient) -> None:
+    model = RecordingModel(_answer(reply="Je saldo is 100 euro.", action={"type": "none"}))
+    history = [ChatTurn("kate", "Hallo, ik ben Kate. Ik ben een AI."), ChatTurn("user", "hoi")]
+    reply = chat(model, _emma_context(client), history, "en mijn saldo?")
+    assert "niet opnieuw voor" in model.system
+    assert reply.reply == "Je saldo is 100 euro."  # no forced disclosure after the first reply
+
+
+def test_first_turn_tells_the_model_to_disclose(client: TestClient) -> None:
+    model = RecordingModel(_answer(reply="Hoi, ik ben Kate (AI).", action={"type": "none"}))
+    chat(model, _emma_context(client), [], "hoi")
+    assert "eerste antwoord" in model.system
+    assert "niet opnieuw voor" not in model.system
+
+
+def test_long_advisor_summary_is_shortened_not_dropped(client: TestClient) -> None:
+    raw = _answer(
+        reply="AI: ik plan een gesprek.",
+        mode="guidance",
+        action={"type": "advisor_handoff", "summary": "Moeder overleden, erfenis. " * 60},
+    )
+    reply = chat(RecordingModel(raw), _emma_context(client), [], "mijn mama is overleden")
+    assert reply.mode == "guidance"
+    assert reply.action.type == "advisor_handoff"
+    assert 0 < len(reply.action.summary) <= 600  # type: ignore[union-attr]

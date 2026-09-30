@@ -2,7 +2,7 @@
   display: flex;
   flex-shrink: 0;
   height: var(--tabbar-height);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--home-indicator-space, env(safe-area-inset-bottom, 0px));
   box-sizing: content-box;
   background: var(--kbc-surface);
   border-top: 1px solid var(--kbc-line);

@@ -17,9 +17,11 @@
   box-sizing: border-box;
   padding: 12px;
   border-radius: 56px;
-  background: #111418;
+  /* Titanium edge around a black bezel. */
+  background: linear-gradient(145deg, #3a3f46, #16191d 40%, #2a2e34);
   box-shadow:
-    0 0 0 1px #2b3036,
+    inset 0 0 0 2px #50565e,
+    inset 0 0 0 5px #0b0d10,
     0 24px 60px rgba(13, 42, 80, 0.25);
   transform: scale(var(--phone-scale, 1));
   transform-origin: center;
@@ -41,7 +43,44 @@
   z-index: 2;
 }
 
+/* Side buttons: action and volume on the left, power on the right. */
+.sideButton {
+  position: absolute;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #2a2e34, #5b626b);
+}
+
+.action,
+.volumeUp,
+.volumeDown {
+  left: -3px;
+}
+
+.action {
+  top: 128px;
+  height: 32px;
+}
+
+.volumeUp {
+  top: 190px;
+  height: 62px;
+}
+
+.volumeDown {
+  top: 266px;
+  height: 62px;
+}
+
+.power {
+  right: -3px;
+  top: 214px;
+  height: 96px;
+  background: linear-gradient(270deg, #2a2e34, #5b626b);
+}
+
 .screen {
+  position: relative;
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -50,6 +89,43 @@
   border-radius: 44px;
   background: var(--kbc-surface);
   box-sizing: border-box;
+}
+
+/* Clock left of the Dynamic Island, signal / wifi / battery right of it. */
+.statusBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 28px 0 36px;
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.indicators {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.homeIndicator {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  border-radius: 999px;
+  background: #0b0d10;
+  z-index: 80;
+  pointer-events: none;
 }
 
 /* Everything below the status bar. Containing block for position:fixed overlays (Kate), so they
@@ -61,6 +137,8 @@
   transform: translateZ(0);
   /* Kate's overlay sizes itself to the app column; inside the frame that is the screen. */
   --max-width-app: 100vw;
+  /* Room for the home indicator below the tab bar and Kate's composer. */
+  --home-indicator-space: 20px;
 }
 
 /* The app shell fills the simulated screen instead of the browser viewport. */

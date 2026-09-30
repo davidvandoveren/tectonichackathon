@@ -6,12 +6,20 @@ returns that does not fit the schema is dropped.
 """
 
 import json
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+)
 
 from app.kate.context import CustomerContext, clean_text
 from app.kate.llm import ChatModel, ChatTurn
@@ -92,10 +100,35 @@ class TransferAction(BaseModel):
     amount: Decimal = Field(gt=0, le=Decimal("10000.00"), max_digits=7, decimal_places=2)
     description: str = Field(default="", max_length=140)
 
-    @field_validator("to_name", "description")
+    # Models write these loosely ("25,00", "€ 25", a 90-character name, `null`). Tidy them up before
+    # validation instead of silently dropping a transfer Kate just said she prepared.
+    @field_validator("to_name", "description", mode="before")
     @classmethod
-    def _clean(cls, value: str) -> str:
-        return clean_text(value, 140)
+    def _clean(cls, value: object, info: ValidationInfo) -> object:
+        if value is None:
+            return ""
+        return (
+            clean_text(value, 70 if info.field_name == "to_name" else 140)
+            if isinstance(value, str)
+            else value
+        )
+
+    @field_validator("amount", mode="before")
+    @classmethod
+    def _amount(cls, value: object) -> object:
+        return _normalise_amount(value) if isinstance(value, str) else value
+
+
+def _normalise_amount(raw: str) -> str:
+    """ "€ 1.250,50" / "1,250.50" / "25 EUR" -> "1250.50" / "1250.50" / "25"."""
+    text = re.sub(r"(?i)eur(o)?|€|\s", "", raw)
+    if "," in text and "." in text:
+        decimal = "," if text.rfind(",") > text.rfind(".") else "."
+        thousands = "." if decimal == "," else ","
+        text = text.replace(thousands, "").replace(decimal, ".")
+    else:
+        text = text.replace(",", ".")
+    return text
 
 
 class AdvisorHandoffAction(BaseModel):
@@ -149,7 +182,7 @@ def _parse(raw: str) -> KateReply:
     try:
         data = json.loads(_strip_fences(raw))
     except json.JSONDecodeError:
-        data = {"reply": raw}
+        data = _salvage(raw)
     if not isinstance(data, dict):
         data = {}
 
@@ -162,6 +195,28 @@ def _parse(raw: str) -> KateReply:
     except ValidationError:
         action = NoAction(type="none")
     return KateReply(reply=text.strip()[:MAX_REPLY], mode=mode, action=action)
+
+
+_REPLY_FIELD = re.compile(r'"reply"\s*:\s*"((?:[^"\\]|\\.)*)')
+
+
+def _salvage(raw: str) -> dict[str, object]:
+    """Best effort for output that is not valid JSON (e.g. cut off at the token limit).
+
+    Plain prose is shown as is. JSON that broke off keeps whatever `reply` text made it, so the
+    customer never sees raw braces and quotes.
+    """
+    text = _strip_fences(raw)
+    if not text.startswith("{"):
+        return {"reply": text}
+    match = _REPLY_FIELD.search(text)
+    if match is None:
+        return {}
+    try:
+        reply = json.loads(f'"{match.group(1)}"')
+    except json.JSONDecodeError:
+        reply = match.group(1)
+    return {"reply": reply}
 
 
 def _strip_fences(raw: str) -> str:

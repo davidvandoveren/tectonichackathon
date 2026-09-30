@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
 import { PageHeader } from "../components/PageHeader";
@@ -37,6 +37,13 @@ export function ProfilePage() {
             </div>
           </dl>
         </div>
+        <Link to="/subscriptions" className={styles.menuLink}>
+          <span>
+            <strong>Mijn abonnementen</strong>
+            <small>Overzicht, prijsstijgingen en dubbele betalingen</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
         <Button type="button" variant="secondary" onClick={handleLogout}>
           Afmelden
         </Button>

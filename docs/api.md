@@ -140,3 +140,54 @@ Consent is applied **before** signal extraction, so a domain the customer switch
 `days` is `1–365`; `username` defaults to the calling admin. Moving the clock shifts `get_today` for the *whole* app, so balances, transactions and the feed stay coherent.
 
 Requires the caller's username to be listed in `ADMIN_USERNAMES`. Anyone else — including a logged-in customer — gets **`404`, not `403`**: a caller who may not use an endpoint does not get to learn that it exists.
+
+
+### Subscriptions ("Gebruik je dit nog?")
+`GET /api/v1/subscriptions` → monthly subscriptions detected in the customer's **own** transactions:
+```json
+{"subscriptions": [{"id": "sub_3f2a…", "name": "Netflix", "group": "streaming", "amount": "13.49", "previous_amount": null,
+  "yearly_cost": "161.88", "frequency": "monthly", "first_seen": "2026-07-28", "last_charged": "2026-09-26",
+  "next_expected": "2026-10-26", "flags": ["duplicate"], "duplicate_of": ["Disney+"], "reason": "We zien sinds …",
+  "status": "unknown" | "in_use" | "cancel_reminder", "remind_on": null}],
+ "monthly_total": "36.47", "yearly_total": "437.64", "yearly_savings": "0.00", "hidden_sensitive": 0}
+```
+`flags`: `price_increase`, `duplicate` (two services in the same `group`), `trial_converted`. The bank does not know *usage*, so we never guess it; the customer answers. Sensitive subscriptions (health, religion, politics, trade union, dating) are only counted in `hidden_sensitive`, never shown or analysed.
+
+`POST /api/v1/subscriptions/{id}/feedback` body `{"still_used": false, "remind_to_cancel": true}` → the updated subscription (`status: "cancel_reminder"`, `remind_on` = 3 days before the next charge). `404` if the id is not one of *your* subscriptions.
+
+### Kate Skills – what Kate can do, and may do (see `docs/design/kate-skills.md`)
+Every KBC function (payments, savings, cards, deals, insurance, loans, investing, advisor) registers **actions**. Each customer sets a consent **level** per action: `off` (Kate never uses it, not even in chat) · `suggest` (mention only) · `prepare` (pre-filled proposal, customer confirms) · `auto` (executes within a **mandate**). The server caps the level per action (`max_level`): paying someone else and anything regulated (credit, investing, insurance advice) is at most `prepare`. POSTs without a body still need `Content-Type: application/json` (send `{}`).
+
+`GET /api/v1/skills` →
+```json
+[{"id": "savings", "title": "Sparen", "description": "…",
+  "actions": [{"id": "savings.move_to_savings", "title": "Geld opzij zetten", "description": "…",
+               "risk": "internal_money", "level": "prepare", "max_level": "auto", "mandate": null}]}]
+```
+`risk` is one of `info`, `internal_money`, `external_money`, `product_change`, `regulated`.
+
+`PUT /api/v1/skills/consent/{action_id}` body `{"level": "auto", "mandate": {"max_per_execution": "50.00", "max_per_month": "200.00"}}` → the updated action (shape above). `auto` on a money action needs a mandate; hard ceilings € 500 per execution / € 1 000 per month. Above `max_level` or over a ceiling → `422`; unknown action → `404`.
+
+`POST /api/v1/proposals` body `{"action": "savings.move_to_savings", "params": {"amount": "50.00"}, "source": "moment" | "chat" | "voice" | "ui", "reason": "Waarom zie ik dit?-tekst"}` → `201`
+```json
+{"id": "p_…", "action": "savings.move_to_savings", "params": {"amount": "50.00"},
+ "summary": "€ 50,00 naar je spaarrekening", "source": "moment", "reason": "…",
+ "status": "pending", "created_at": "2026-09-30T18:40:00Z", "outcome": null}
+```
+`status`: `suggested` (level `suggest`: show as a card without a confirm button) · `pending` (show *Bevestig* / *Nee, bedankt*) · `executed` (also returned straight away when `auto` + within mandate) · `failed` · `declined` · `expired` (after 24h). Consent `off` → `403`; not possible for this customer right now (e.g. not enough balance, package already held) → `409` with a plain-Dutch `detail`; bad params → `422`. The params per action are in the action's `description`, and as JSON schema via the chat tools.
+
+`GET /api/v1/proposals?status=pending` → the customer's proposals, newest first.
+
+`POST /api/v1/proposals/{id}/approve` body `{}` → the proposal with `status: "executed"` and an `outcome`:
+```json
+{"kind": "done" | "navigate" | "advisor_handoff", "message": "…", "navigate_to": "/transfer?to_name=Lucas&amount=25.00&description=Pizza", "handoff_summary": null}
+```
+`navigate` = open that screen pre-filled; the customer finishes there (Kate never pays a third party). `advisor_handoff` = show the message; `handoff_summary` is what the advisor receives. Consent lowered meanwhile → `403`; no longer possible or not pending → `409`; not yours → `404`.
+
+`POST /api/v1/proposals/{id}/decline` body `{}` → the proposal with `status: "declined"`.
+
+`GET /api/v1/activity` → "Wat heeft Kate voor mij gedaan?", newest first:
+```json
+[{"at": "2026-09-30T18:40:00Z", "event": "proposed" | "suggested" | "executed" | "failed" | "declined" | "expired" | "consent_changed",
+  "action": "savings.move_to_savings", "summary": "€ 50,00 naar je spaarrekening", "source": "moment", "reason": "…"}]
+```

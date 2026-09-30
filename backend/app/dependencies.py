@@ -10,7 +10,7 @@ from app.moments.state import KateState
 from app.security.rate_limit import FailureLimiter
 from app.security.sessions import SessionStore
 
-# The demo page shows two phones side by side, each logged in as a different persona. Each phone
+# The /duo demo page shows two phones side by side, each logged in as another persona. Each phone
 # sends its slot in this header and gets its own session cookie. Only these values are accepted.
 SESSION_SLOT_HEADER = "x-session-slot"
 SESSION_SLOTS = frozenset({"a", "b"})

@@ -209,6 +209,31 @@ PERSONAS = (
         ),
     ),
     Persona(
+        # The control case: a steady, healthy customer with nothing going on. Kate must say
+        # nothing at all to him, which is the point: no signal, no message, no spam.
+        username="tom",
+        first_name="Tom",
+        last_name="Claes",
+        persona="Leerkracht, 45, Hasselt, niets bijzonders aan de hand",
+        accounts=(
+            ("Zichtrekening", AccountType.CURRENT, "2480.00"),
+            ("Spaarrekening", AccountType.SAVINGS, "6200.00"),
+        ),
+        recurring=(
+            Recurring(1, "Huur woning", "Immo Hasselt", "-850.00", Category.HOUSING),
+            Recurring(25, "Wedde", "Vlaamse Overheid Onderwijs", "2650.00", Category.INCOME),
+            Recurring(8, "Energie", "Luminus", "-110.00", Category.UTILITIES),
+        ),
+        # Spread over several shops per category, so no single merchant stands out.
+        daily_spend=(
+            ("Colruyt Hasselt", Category.GROCERIES, 15, 45),
+            ("Delhaize Hasselt", Category.GROCERIES, 15, 45),
+            ("Aldi Hasselt", Category.GROCERIES, 15, 45),
+            ("Lidl Hasselt", Category.GROCERIES, 15, 45),
+            ("Bakkerij Vandijck", Category.GROCERIES, 3, 9),
+        ),
+    ),
+    Persona(
         username="els",
         first_name="Els",
         last_name="Claes",

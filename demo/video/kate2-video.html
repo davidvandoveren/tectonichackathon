@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<title>Kate 2.0 – demo video</title>
+<style>
+  :root {
+    --navy-950: #041a33;
+    --navy-900: #06264a;
+    --navy-700: #0a5695;
+    --accent: #00aeef;
+    --accent-2: #7fd6f7;
+    --green: #3ddc84;
+    --text: #ffffff;
+    --muted: rgba(255, 255, 255, 0.72);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--navy-950); }
+  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: var(--text); }
+
+  /* animated backdrop */
+  .bg { position: absolute; inset: 0; background: radial-gradient(1200px 800px at 15% 20%, #0b3f73 0%, transparent 60%),
+        radial-gradient(1000px 700px at 90% 85%, #075b8f 0%, transparent 55%), linear-gradient(135deg, var(--navy-950), var(--navy-900)); }
+  .orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.35; animation: drift 18s ease-in-out infinite alternate; }
+  .orb.a { width: 520px; height: 520px; background: var(--accent); left: -120px; top: 560px; }
+  .orb.b { width: 420px; height: 420px; background: #1f6fd1; right: -80px; top: -60px; animation-duration: 22s; }
+  @keyframes drift { to { transform: translate(140px, -90px) scale(1.15); } }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px; }
+
+  .brand { position: absolute; left: 64px; top: 48px; font-weight: 800; letter-spacing: .04em; font-size: 26px; opacity: .9; z-index: 5; }
+  .brand span { color: var(--accent); }
+  .tag { position: absolute; right: 64px; top: 52px; font-size: 18px; color: var(--muted); z-index: 5; letter-spacing: .06em; text-transform: uppercase; }
+  .progress { position: absolute; left: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0; z-index: 5; }
+
+  .scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .6s ease; }
+  .scene.on { opacity: 1; visibility: visible; }
+
+  /* typography */
+  .kicker { font-size: 26px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: 120px; line-height: 1.02; margin: 0; font-weight: 800; letter-spacing: -.02em; }
+  h2 { font-size: 76px; line-height: 1.06; margin: 0; font-weight: 800; letter-spacing: -.01em; }
+  p.lead { font-size: 36px; line-height: 1.35; color: var(--muted); margin: 0; }
+  .accent { color: var(--accent); }
+  .grad { background: linear-gradient(90deg, #fff, var(--accent-2) 60%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* entrance animations, triggered when the scene turns on */
+  .in { opacity: 0; transform: translateY(40px); }
+  .on .in { animation: rise .9s cubic-bezier(.2,.8,.2,1) forwards; }
+  .on .d1 { animation-delay: .25s; } .on .d2 { animation-delay: .6s; } .on .d3 { animation-delay: 1s; }
+  .on .d4 { animation-delay: 1.5s; } .on .d5 { animation-delay: 2.1s; } .on .d6 { animation-delay: 2.8s; }
+  .on .d7 { animation-delay: 3.6s; } .on .d8 { animation-delay: 4.5s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .pop { opacity: 0; transform: scale(.85); }
+  .on .pop { animation: pop .8s cubic-bezier(.2,1.4,.3,1) forwards; }
+  @keyframes pop { to { opacity: 1; transform: none; } }
+
+  .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 28px; padding: 0 160px; }
+  .split { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 520px; align-items: center; gap: 80px; padding: 0 140px 0 160px; }
+  .split .copy { display: flex; flex-direction: column; gap: 26px; }
+
+  /* intro logo */
+  .logo { width: 170px; height: 170px; border-radius: 50%; display: grid; place-items: center; font-size: 96px; font-weight: 800; color: var(--navy-950);
+          background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 0 rgba(0,174,239,.6); }
+  .on .logo { animation: pop .9s cubic-bezier(.2,1.4,.3,1) forwards, ring 2.4s 1s ease-out infinite; }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(0,174,239,.55); } 100% { box-shadow: 0 0 0 60px rgba(0,174,239,0); } }
+  .motto { display: flex; gap: 22px; font-size: 40px; font-weight: 700; }
+  .motto b { color: var(--accent); }
+
+  /* big numbers */
+  .stats { display: flex; gap: 60px; justify-content: center; }
+  .stat { padding: 34px 44px; border-radius: 28px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); min-width: 420px; }
+  .stat .n { font-size: 110px; font-weight: 800; line-height: 1; }
+  .stat .l { font-size: 30px; color: var(--muted); margin-top: 12px; }
+
+  /* flow chips */
+  .flow { display: flex; align-items: center; gap: 22px; }
+  .chip { padding: 26px 34px; border-radius: 22px; font-size: 38px; font-weight: 800; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); }
+  .chip.hl { background: linear-gradient(135deg, var(--accent), #1f6fd1); border-color: transparent; }
+  .arrow { font-size: 44px; color: var(--accent); opacity: 0; }
+  .on .arrow { animation: rise .6s forwards; }
+  .silence { font-size: 34px; color: var(--muted); }
+  .silence b { color: var(--green); }
+
+  /* phone */
+  .phone { position: relative; width: 430px; height: 900px; margin-top: 60px; border-radius: 64px; padding: 16px; background: #0b0f14;
+           box-shadow: 0 40px 120px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.12); opacity: 0; transform: translateY(60px) rotate(2deg); }
+  .on .phone { animation: phoneIn 1s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes phoneIn { to { opacity: 1; transform: none; } }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 50px; overflow: hidden; background: #f2f5f8; }
+  .screen img { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; }
+  .notch { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); width: 130px; height: 34px; border-radius: 20px; background: #0b0f14; z-index: 3; }
+  /* screenshots inside the phone, shown one after another (--at, --until in seconds) */
+  .on .screen img { animation: shotIn .6s ease forwards; animation-delay: var(--at, 0s); }
+  @keyframes shotIn { to { opacity: 1; } }
+  .on .screen img.zoom { animation: shotIn .6s ease forwards, zoomIn 4s ease-in-out forwards; animation-delay: var(--at, 0s), var(--at, 0s); transform-origin: 50% 70%; }
+  @keyframes zoomIn { to { transform: scale(1.14); } }
+
+  .caption { display: inline-flex; align-self: flex-start; padding: 14px 24px; border-radius: 999px; font-size: 26px; font-weight: 700;
+             background: rgba(0,174,239,.16); border: 1px solid rgba(0,174,239,.5); color: var(--accent-2); }
+  .bullets { display: flex; flex-direction: column; gap: 18px; font-size: 32px; color: var(--muted); }
+  .bullets div::before { content: "✓"; color: var(--green); font-weight: 800; margin-right: 16px; }
+
+  /* dashboard */
+  .dash { position: absolute; left: 120px; top: 170px; width: 1060px; height: 780px; border-radius: 26px; overflow: hidden; opacity: 0;
+          box-shadow: 0 40px 120px rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.12); transform: translateY(40px); }
+  .on .dash { animation: rise 1s .2s forwards; }
+  .dash img { width: 100%; }
+  .on .dash img { animation: pan 16s ease-in-out forwards; }
+  @keyframes pan { 0%, 12% { transform: translateY(0); } 100% { transform: translateY(-38%); } }
+  .dashstats { position: absolute; right: 120px; top: 190px; width: 560px; display: flex; flex-direction: column; gap: 26px; }
+  .dashstats .stat { min-width: 0; padding: 26px 34px; }
+  .dashstats .stat .n { font-size: 84px; }
+  .dashstats .stat.hero { background: linear-gradient(135deg, var(--accent), #1f6fd1); border-color: transparent; }
+  .dashstats .stat.hero .l { color: #fff; }
+
+  /* quote */
+  .quote { font-size: 104px; font-weight: 800; line-height: 1.08; letter-spacing: -.02em; }
+  .quote::before { content: "“"; display: block; font-size: 220px; line-height: .6; color: var(--accent); }
+
+  .team { font-size: 34px; color: var(--muted); }
+  .fine { font-size: 22px; color: rgba(255,255,255,.5); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grid"></div><div class="orb a"></div><div class="orb b"></div>
+<div class="brand">KATE <span>2.0</span></div>
+<div class="tag">Tectonic Hackathon · KBC-case · prototype</div>
+
+<!-- 1 · Intro -->
+<section class="scene" data-id="intro">
+  <div class="center">
+    <div class="logo">K</div>
+    <h1 class="in d2"><span class="grad">Kate 2.0</span></h1>
+    <div class="motto in d4"><span>De juiste boodschap.</span><span>Op het juiste moment.</span><b>Of bewust niets.</b></div>
+  </div>
+</section>
+
+<!-- 2 · Probleem -->
+<section class="scene" data-id="problem">
+  <div class="center">
+    <div class="kicker in d1">Het probleem</div>
+    <div class="stats">
+      <div class="stat pop d2" style="animation-delay:.4s"><div class="n">140+</div><div class="l">situaties, met de hand geschreven</div></div>
+      <div class="stat pop" style="animation-delay:1.4s"><div class="n accent" data-count="2300000">0</div><div class="l">klanten</div></div>
+    </div>
+    <h2 class="in d7">Je kan geen persoonlijke bankier<br/>met de hand schrijven.</h2>
+  </div>
+</section>
+
+<!-- 3 · Idee -->
+<section class="scene" data-id="idea">
+  <div class="center">
+    <div class="kicker in d1">Het brein achter de volgende Kate</div>
+    <div class="flow">
+      <div class="chip pop" style="animation-delay:.6s">Signalen</div><div class="arrow" style="animation-delay:1.2s">→</div>
+      <div class="chip pop" style="animation-delay:1.6s">Momenten</div><div class="arrow" style="animation-delay:2.2s">→</div>
+      <div class="chip pop" style="animation-delay:2.6s">Arbitrage</div><div class="arrow" style="animation-delay:3.2s">→</div>
+      <div class="chip hl pop" style="animation-delay:3.6s">Juiste kanaal</div>
+    </div>
+    <p class="lead in" style="animation-delay:5.5s">Uit je eigen data. Momenten die niemand vooraf schreef.</p>
+    <div class="silence in" style="animation-delay:8.5s">…of: <b>bewust niets zeggen.</b></div>
+  </div>
+</section>
+
+<!-- 4 · Voor jou -->
+<section class="scene" data-id="for-you">
+  <div class="split">
+    <div class="copy">
+      <div class="kicker in d1">Persoonlijk</div>
+      <h2 class="in d2">Elke suggestie<br/><span class="accent">zegt waarom.</span></h2>
+      <p class="lead in d3">In jouw eigen cijfers. Met één tik: <i>Waarom zie ik dit?</i></p>
+      <div class="caption in d5">Kate · Voor jou</div>
+    </div>
+    <div class="phone"><div class="screen">
+      <img src="shots/01-home.png" style="--at:.4s" />
+      <img class="zoom" src="shots/02-why.png" style="--at:5s" />
+    </div></div>
+  </div>
+</section>
+
+<!-- 5 · Just say it -->
+<section class="scene" data-id="just-say-it">
+  <div class="split">
+    <div class="copy">
+      <div class="kicker in d1">Just say it</div>
+      <h2 class="in d2">Eén zin in plaats<br/>van <span class="accent">vijf schermen.</span></h2>
+      <p class="lead in d3">“Stuur Lucas 25 euro voor de pizza.”</p>
+      <div class="bullets">
+        <div class="in d5">Kate zet alles klaar</div>
+        <div class="in d6">Jij bevestigt</div>
+        <div class="in d7">Kate betaalt nooit zelf</div>
+      </div>
+    </div>
+    <div class="phone"><div class="screen">
+      <img src="shots/03-kate-welcome.png" style="--at:.3s" />
+      <img src="shots/04-kate-typing.png" style="--at:2.6s" />
+      <img src="shots/05-kate-transfer.png" style="--at:5.2s" />
+      <img src="shots/06-transfer-prefilled.png" style="--at:10.2s" />
+    </div></div>
+  </div>
+</section>
+
+<!-- 6 · Erfenis -->
+<section class="scene" data-id="inheritance">
+  <div class="split">
+    <div class="copy">
+      <div class="kicker in d1">Zware momenten</div>
+      <h2 class="in d2">Er is een moment waarop<br/>een bank <span class="accent">níét</span> moet verkopen.</h2>
+      <div class="bullets">
+        <div class="in d4">Eerst medeleven, dan hulp</div>
+        <div class="in d5">Stap voor stap, zonder reclame</div>
+        <div class="in d6">Door naar een mens, met de context klaar</div>
+      </div>
+    </div>
+    <div class="phone"><div class="screen">
+      <img src="shots/07-kate-empathy.png" style="--at:.3s" />
+      <img src="shots/08-kate-advisor.png" style="--at:7.5s" />
+    </div></div>
+  </div>
+</section>
+
+<!-- 7 · Abonnementen -->
+<section class="scene" data-id="subscriptions">
+  <div class="split">
+    <div class="copy">
+      <div class="kicker in d1">Geld besparen</div>
+      <h2 class="in d2">Twee keer betalen<br/>voor streaming? <span class="accent">Kate ziet het.</span></h2>
+      <p class="lead in d3">De bank weet niet of je iets gebruikt. Dus Kate vraagt het gewoon:</p>
+      <div class="caption in d5">“Gebruik je dit nog?”</div>
+    </div>
+    <div class="phone"><div class="screen">
+      <img class="zoom" src="shots/09-subscriptions.png" style="--at:.3s" />
+    </div></div>
+  </div>
+</section>
+
+<!-- 8 · Vertrouwen -->
+<section class="scene" data-id="trust">
+  <div class="split">
+    <div class="copy">
+      <div class="kicker in d1">Vertrouwen</div>
+      <h2 class="in d2">Jij kiest wat Kate<br/>mag <span class="accent">weten</span> én <span class="accent">doen.</span></h2>
+      <div class="bullets">
+        <div class="in d4">Per soort data aan of uit</div>
+        <div class="in d5">Per actie: uit, tippen of klaarzetten</div>
+        <div class="in d6">Gevoelige uitgaven: nooit gebruikt</div>
+      </div>
+    </div>
+    <div class="phone"><div class="screen">
+      <img src="shots/10-consent.png" style="--at:.3s" />
+    </div></div>
+  </div>
+</section>
+
+<!-- 9 · Schaal -->
+<section class="scene" data-id="scale">
+  <div class="dash"><img src="shots/11-jury.png" /></div>
+  <div class="dashstats">
+    <div class="kicker in d1">Echte motor · 10.000 klanten</div>
+    <div class="stat hero pop" style="animation-delay:2.5s"><div class="n">45,3%</div><div class="l">kreeg bewust niets</div></div>
+    <div class="stat pop" style="animation-delay:7s"><div class="n">0,7 ms</div><div class="l">per klant</div></div>
+    <div class="stat pop" style="animation-delay:10s"><div class="n">≈ 30 min</div><div class="l">rekenwerk voor heel KBC, zonder AI-model</div></div>
+  </div>
+</section>
+
+<!-- 10 · Quote -->
+<section class="scene" data-id="quote">
+  <div class="center"><div class="quote pop" style="animation-delay:.2s">Niet spammen<br/>is een <span class="accent">feature.</span></div></div>
+</section>
+
+<!-- 11 · Visie -->
+<section class="scene" data-id="vision">
+  <div class="center">
+    <div class="kicker in d1">Onze visie</div>
+    <h2 class="in d2">Een bank die aanvoelt als<br/><span class="grad">je persoonlijke bankier.</span></h2>
+    <p class="lead in" style="animation-delay:3.5s">Die spreekt op het juiste moment, via het juiste kanaal.</p>
+    <p class="lead in" style="animation-delay:6.5s">En zwijgt als er niets te zeggen valt.</p>
+    <p class="lead in" style="animation-delay:10s"><b style="color:#fff">De grote beslissingen blijven altijd bij een mens.</b></p>
+  </div>
+</section>
+
+<!-- 12 · Outro -->
+<section class="scene" data-id="outro">
+  <div class="center">
+    <div class="logo">K</div>
+    <h1 class="in d2"><span class="grad">Kate 2.0</span></h1>
+    <p class="lead in d3">Een bank die je durft te vertrouwen.</p>
+    <div class="team in d5">Sander · David · Alexandre</div>
+    <div class="fine in d6">Tectonic Hackathon 2026 · KBC-case · concept/prototype · synthetische data</div>
+  </div>
+</section>
+
+<div class="progress" id="progress"></div>
+
+<script>
+  // One source of truth for picture and voice: make_voiceover.py reads the same timings.
+  window.SCENES = [
+    { id: "intro", duration: 7, vo: "Stel je voor: een bank die je écht kent. Maak kennis met Kate twee punt nul!" },
+    { id: "problem", duration: 13, vo: "Vandaag herkent Kate honderdveertig situaties. Allemaal met de hand geschreven. Maar hoe schrijf je een persoonlijke bankier voor twee komma drie miljoen klanten? Dat kan niet. Dus bouwden we iets beters." },
+    { id: "idea", duration: 13, vo: "Kate twee punt nul leest signalen in je eigen data, en combineert ze tot momenten die niemand vooraf schreef. Dan beslist ze: wat zeg ik, wanneer, en via welk kanaal. Of: zeg ik beter niets?" },
+    { id: "for-you", duration: 11, vo: "Elke suggestie op je startscherm is persoonlijk. En altijd met één tik: waarom zie ik dit? In jouw eigen cijfers." },
+    { id: "just-say-it", duration: 15, vo: "Zeg gewoon wat je wil. Stuur Lucas vijfentwintig euro voor de pizza. Kate zet alles klaar, jij bevestigt. Kate betaalt nooit zelf. Eén zin in plaats van vijf schermen!" },
+    { id: "inheritance", duration: 15, vo: "En bij de zwaarste momenten? Dan verkoopt Kate niets. Ze toont medeleven, biedt hulp aan, en geeft je door aan een echte adviseur. Met de context al klaar, zodat je je verhaal niet opnieuw hoeft te doen." },
+    { id: "subscriptions", duration: 12, vo: "Kate spoort ook je abonnementen op. Dubbele streamingdiensten, prijsstijgingen, vergeten proefperiodes. En ze vraagt gewoon: gebruik je dit nog?" },
+    { id: "trust", duration: 11, vo: "Jij houdt de controle. Jij kiest wat Kate mag weten, en wat ze mag doen. Gevoelige uitgaven? Die raakt ze nooit aan." },
+    { id: "scale", duration: 17, vo: "En het schaalt! Hetzelfde brein, over tienduizend klanten. Vijfenveertig procent kreeg bewust niets. Nul komma zeven milliseconde per klant: heel KBC in een half uur rekenwerk. Zonder AI-model." },
+    { id: "quote", duration: 6, vo: "Want niet spammen, dat is een feature." },
+    { id: "vision", duration: 15, vo: "Onze visie: een bank die aanvoelt als je persoonlijke bankier. Die spreekt op het juiste moment, via het juiste kanaal, en zwijgt als er niets te zeggen valt. De grote beslissingen? Die blijven altijd bij een mens." },
+    { id: "outro", duration: 9, vo: "Kate twee punt nul. Een bank die je durft te vertrouwen." },
+  ];
+  window.TOTAL = SCENES.reduce((s, x) => s + x.duration, 0);
+
+  function countUp(el, target, ms) {
+    const start = performance.now();
+    const fmt = new Intl.NumberFormat("nl-BE");
+    (function tick(now) {
+      const t = Math.min(1, (now - start) / ms);
+      el.textContent = fmt.format(Math.round(target * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) requestAnimationFrame(tick);
+    })(start);
+  }
+
+  window.start = function () {
+    const sections = Object.fromEntries([...document.querySelectorAll(".scene")].map((s) => [s.dataset.id, s]));
+    let t = 0;
+    SCENES.forEach((scene) => {
+      setTimeout(() => {
+        document.querySelectorAll(".scene.on").forEach((s) => s.classList.remove("on"));
+        const el = sections[scene.id];
+        el.classList.add("on");
+        el.querySelectorAll("[data-count]").forEach((c) => setTimeout(() => countUp(c, +c.dataset.count, 1800), 1500));
+      }, t * 1000);
+      t += scene.duration;
+    });
+    const bar = document.getElementById("progress");
+    bar.style.transition = `width ${TOTAL}s linear`;
+    requestAnimationFrame(() => (bar.style.width = "100%"));
+  };
+  if (!navigator.webdriver) window.addEventListener("load", () => window.start());
+</script>
+</body>
+</html>

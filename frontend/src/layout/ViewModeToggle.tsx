@@ -85,7 +85,7 @@ export function ViewModeToggle({ variant = "inline", compact = false }: ViewMode
   return (
     <div className={compact ? `${styles.floating} ${styles.compact}` : styles.floating}>
       {!sessionSlot && (
-        <Link to="/demo" className={styles.demoLink}>
+        <Link to="/duo" className={styles.demoLink}>
           <PhoneIcon aria-hidden="true" className={styles.icon} />
           <PhoneIcon aria-hidden="true" className={styles.icon} />
           <span>2 gsm's</span>

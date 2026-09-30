@@ -18,7 +18,7 @@ function phoneSrc(slot: SessionSlot, persona: string): string {
 }
 
 /**
- * Demo page: two real-size iPhones side by side, each running the whole app with its own session
+ * Demo page (/duo): two real-size iPhones side by side, each running the whole app with its own session
  * (`?slot=a|b`), so the jury sees how Kate treats two customers differently at the same time.
  */
 export function DualPhoneDemo() {

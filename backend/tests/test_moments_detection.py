@@ -225,3 +225,41 @@ def test_confidence_always_stays_within_bounds() -> None:
 
     for moment in moments:
         assert 0.0 <= moment.confidence <= 1.0, f"{moment.type}: {moment.confidence}"
+
+
+# --- card packages -----------------------------------------------------------------------------
+
+
+def test_an_unused_package_becomes_a_saving_suggestion_worth_its_yearly_cost() -> None:
+    moment = find(
+        detect_moments([signal("paid_package_unused", 1.0, package="luxe", yearly_cost="300.00")]),
+        "card_package_waste",
+    )
+
+    assert moment is not None
+    assert moment.confidence >= ACT_THRESHOLD
+    assert moment.value_eur_per_year == Decimal("300.00")
+    assert moment.meta["package"] == "luxe", "Skills needs it to drop the right package"
+
+
+def test_travel_without_cover_suggests_the_reispakket() -> None:
+    moment = find(detect_moments([signal("travel_spend", 0.8, trips="2")]), "card_package_gap")
+
+    assert moment is not None
+    assert moment.confidence >= ACT_THRESHOLD
+
+
+def test_travel_with_cover_already_held_says_nothing() -> None:
+    moments = detect_moments([signal("travel_spend", 1.0), signal("travel_cover_held", 1.0)])
+
+    assert find(moments, "card_package_gap") is None
+
+
+def test_the_reispakket_suggestion_quotes_the_real_price() -> None:
+    moment = find(
+        detect_moments([signal("travel_spend", 1.0, trips="3", last_merchant="Ryanair")]),
+        "card_package_gap",
+    )
+
+    assert moment is not None
+    assert moment.meta["reis_monthly_label"] == "€ 7,00"

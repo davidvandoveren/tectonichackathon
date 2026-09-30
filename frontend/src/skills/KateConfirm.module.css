@@ -1,0 +1,91 @@
+.box,
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--kbc-bg-muted);
+  border: 1px solid var(--kbc-line);
+}
+
+.done {
+  border-color: var(--kbc-blue);
+  color: var(--kbc-navy);
+  font-weight: var(--font-weight-bold);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kbc-slate);
+}
+
+.summary {
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--kbc-navy);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-lg);
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--kbc-blue);
+  color: #ffffff;
+}
+
+.secondary {
+  border: 1px solid var(--kbc-blue);
+  background: transparent;
+  color: var(--kbc-blue);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid var(--kbc-focus);
+  outline-offset: 2px;
+}
+
+.hint {
+  font-size: 0.8125rem;
+  color: var(--kbc-slate);
+}
+
+.hint a {
+  color: var(--kbc-blue);
+  font-weight: var(--font-weight-bold);
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: var(--kbc-red);
+}

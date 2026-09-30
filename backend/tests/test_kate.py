@@ -79,13 +79,14 @@ def test_mock_chat_discloses_ai_and_prefills_transfer(emma: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert "AI" in body["reply"]
-    assert body["action"] == {
+    action = body["action"]
+    assert {k: action[k] for k in ("type", "to_name", "amount", "description")} == {
         "type": "transfer",
         "to_name": "Lucas",
         "amount": "25.00",
         "description": "Pizza",
-        "summary": None,
     }
+    assert action["proposal_id"].startswith("p_")  # a real Kate Skills proposal
 
 
 def test_mock_chat_bereavement_first_empathy_then_offer_then_plan(emma: TestClient) -> None:

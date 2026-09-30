@@ -12,8 +12,10 @@ from app.domain.models import User
 from app.kate import assistant
 from app.kate.context import build_context
 from app.kate.llm import ChatModel, ChatTurn, GeminiChat, KateUnavailableError, MockChat
+from app.kate.proposals import propose_from_chat
 from app.kate.voice import ElevenLabsVoice
 from app.kate.voices import VoiceKind, VoicePreferences, default_voice
+from app.routers.skills import SkillsDep
 from app.schemas import ApiModel
 from app.security.rate_limit import RequestLimiter
 
@@ -110,6 +112,9 @@ class ActionOut(ApiModel):
     amount: str | None = None
     description: str | None = None
     summary: str | None = None
+    # The Kate Skills proposal behind this suggestion (confirm/decline via /proposals/{id}/…).
+    proposal_id: str | None = None
+    proposal_status: str | None = None
 
 
 class ChatOut(ApiModel):
@@ -178,6 +183,7 @@ def kate_chat(
     today: TodayDep,
     model: ChatModelDep,
     state: KateStateDep,
+    skills: SkillsDep,
 ) -> ChatOut:
     # Only this customer's own data, and only the kinds they allowed (PUT /kate/consent).
     context = build_context(bank, user, today, state.consent_for(user.id))
@@ -187,8 +193,14 @@ def kate_chat(
     except KateUnavailableError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, _UNAVAILABLE) from exc
     action = result.action
+    reply = result.reply
+    proposal = propose_from_chat(skills, user.id, action, body.message, today)
+    if proposal is not None and not proposal.allowed:
+        # The customer switched this action off for Kate: no card, and she says so.
+        reply = f"{reply} (Dit mag ik niet voor je klaarzetten, zo koos je het in 'Wat mag Kate?'.)"
+        action = assistant.NoAction(type="none")
     return ChatOut(
-        reply=result.reply,
+        reply=reply[: assistant.MAX_REPLY],
         mode=result.mode,
         action=ActionOut(
             type=action.type,
@@ -196,6 +208,8 @@ def kate_chat(
             amount=f"{action.amount:.2f}" if isinstance(action, assistant.TransferAction) else None,
             description=getattr(action, "description", None),
             summary=getattr(action, "summary", None),
+            proposal_id=proposal.proposal_id if proposal else None,
+            proposal_status=proposal.status if proposal else None,
         ),
     )
 

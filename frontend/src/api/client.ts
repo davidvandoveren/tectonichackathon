@@ -4,6 +4,7 @@
  * - Every state-changing request sends `Content-Type: application/json`.
  * - Any 401 response notifies subscribers so the app can route to /login.
  */
+import { sessionSlot } from "../lib/sessionSlot";
 
 const API_BASE = "/api/v1";
 
@@ -57,6 +58,9 @@ function isErrorBody(value: unknown): value is { detail: string } {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, signal } = options;
   const headers: Record<string, string> = { Accept: "application/json" };
+  if (sessionSlot) {
+    headers["X-Session-Slot"] = sessionSlot;
+  }
   const init: RequestInit = {
     method,
     credentials: "same-origin",
@@ -64,9 +68,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     signal,
   };
 
-  if (body !== undefined) {
+  // Every state-changing request is JSON, even without a body (e.g. logout): the backend's CSRF
+  // guard rejects anything else, and some proxies require a Content-Length on POST.
+  if (method !== "GET") {
     headers["Content-Type"] = "application/json";
-    init.body = JSON.stringify(body);
+    init.body = JSON.stringify(body ?? {});
   }
 
   let response: Response;

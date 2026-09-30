@@ -105,7 +105,7 @@ def test_security_headers_present(client: TestClient) -> None:
     headers = client.get("/health").headers
     assert "default-src 'self'" in headers["content-security-policy"]
     assert headers["x-content-type-options"] == "nosniff"
-    assert headers["x-frame-options"] == "DENY"
+    assert headers["x-frame-options"] == "SAMEORIGIN"
 
 
 def test_insights_are_personal_and_explained(client: TestClient) -> None:

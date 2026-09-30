@@ -10,10 +10,17 @@ from app.moments.state import KateState
 from app.security.rate_limit import FailureLimiter
 from app.security.sessions import SessionStore
 
+# The demo page shows two phones side by side, each logged in as a different persona. Each phone
+# sends its slot in this header and gets its own session cookie. Only these values are accepted.
+SESSION_SLOT_HEADER = "x-session-slot"
+SESSION_SLOTS = frozenset({"a", "b"})
 
-def session_cookie_name(settings: Settings) -> str:
+
+def session_cookie_name(settings: Settings, request: Request) -> str:
     # The __Host- prefix makes browsers enforce Secure, Path=/ and no Domain attribute.
-    return "__Host-session" if settings.cookie_secure else "session"
+    base = "__Host-session" if settings.cookie_secure else "session"
+    slot = request.headers.get(SESSION_SLOT_HEADER, "")
+    return f"{base}-{slot}" if slot in SESSION_SLOTS else base
 
 
 def get_bank(request: Request) -> Bank:
@@ -58,7 +65,7 @@ KateStateDep = Annotated[KateState, Depends(get_kate_state)]
 def get_current_user(
     request: Request, settings: SettingsDep, bank: BankDep, sessions: SessionsDep
 ) -> User:
-    token = request.cookies.get(session_cookie_name(settings))
+    token = request.cookies.get(session_cookie_name(settings, request))
     user_id = sessions.resolve(token) if token else None
     user = bank.get_user(user_id) if user_id else None
     if user is None:

@@ -1,90 +1,92 @@
 # Brainstorm – KBC personalization at scale
 
-Status: draft for team discussion. Add your own ideas via PR.
+Status: **direction chosen (see below)**, still open for input. Add your ideas via PR or directly under [Parking lot](#parking-lot).
 
 ## Framing
 
-The brief asks for a *scalable approach to understanding, supporting and guiding customers*. Every idea below is built from the same four layers; what differs is the "hero" experience we demo.
+The brief asks for a *scalable approach to understanding, supporting and guiding customers*. Every idea is built from the same four layers; what differs is the "hero" experience we demo.
 
 ```
-Signals → Understanding (situation / behavior / intent) → Decision (what, when, which channel) → Experience (adapts per customer) 
+Signals → Understanding (situation / behavior / intent) → Decision (what, when, which channel) → Experience (adapts per customer)
    ▲                                                                                           │
    └──────────────────── feedback + consent + explainability ◀─────────────────────────────────┘
 ```
 
 **Design principles:** privacy & consent first · explainable ("why am I seeing this?") · human in control · cheap at 2.3M customers (expensive models only where they add value) · works across app, web, branch, advisor and voice.
 
-## Candidate ideas
+## Chosen direction: Kate as a proactive guide
 
-### 1. Moments Engine – life-event detection
-Detect "moments that matter" (first job, moving, baby, buying a home, retirement, business start, unexpected expense) from transaction patterns, app behavior and product holdings. Trigger the *right* help at the right time (e.g. mortgage simulator, insurance check, savings plan) – or stay silent when nothing is useful.
-- Demo: timeline of a synthetic customer; moment detected → tailored journey appears.
-- Scale: lightweight scoring on event stream for everyone; LLM only to compose the message.
-- Risk: looks like "a recommender" → stress the *moment + silence* logic and explainability.
+Kate is already KBC Mobile's digital assistant. Today she mostly *reacts*. Our PoC turns Kate into a guide that **recognises the right moment, prepares the work, and explains why**, so the customer only has to confirm.
 
-### 2. Customer Context Graph + Journey Composer (platform vision)
-One living "context profile" per customer (situation, goals, preferences, consent), exposed through an API. A composer assembles the next best step from reusable building blocks (cards, forms, simulators, advisor hand-off) across channels.
-- Demo: same customer seen in app, web, and advisor screen with consistent context.
-- Strong on *fit* (across products/channels/scale) and *technical ability*.
+> From "ask Kate" to "Kate already knows what you need next, and tells you why."
 
-### 3. Generative / server-driven UI – "an app per customer"
-App layout, language level, content density and actions are composed per customer (segment of one) from a safe component library and policy guardrails. Example: a student, a pensioner and a SME owner open the same app and get three different home screens.
-- Demo: side-by-side personas, live regeneration when context changes.
-- Risk: compliance → LLM chooses from approved components only, never free-form numbers.
+This merges our strongest candidates into one story: the Moments Engine (old idea 1) is Kate's brain, the voice companion (4) is Kate's voice, the trust layer (6) is how Kate explains herself, and the advisor copilot (7) is Kate's hand-off to a human.
 
-### 4. Proactive voice companion (ElevenLabs)
-A voice-first guide for customers who struggle with apps (older customers, low digital literacy, accessibility). Proactively calls/notifies on relevant moments ("your card expires, want me to order a new one?") and adapts tone, pace and language (NL/FR/EN).
-- Demo: short conversation with real voice; handoff to a human advisor.
-- High creativity/wow factor; combine with idea 1 for the trigger logic.
+### Building blocks (in priority order)
 
-### 5. "Financial Twin" – simulate futures before deciding
-A personal simulation of the customer's finances; the customer (or advisor) asks "what if I buy a house / go part-time / have a child?" and sees paths with KBC products woven in. The system learns goals and nudges progress.
-- Demo: sliders + natural-language what-ifs.
-- Risk: regulatory advice boundaries → present as scenarios, not advice.
+| # | Block | What the customer experiences | Where it lives in the code |
+|---|---|---|---|
+| 1 | **Kate moments** (proactive) | "Congrats on your first salary! Shall I move €200/month to savings?" – one tap, pre-filled. | `backend/app/services/insights.py` rules → "Voor jou" cards get an action |
+| 2 | **"Just say it"** (natural language) | "Send Lucas 25 euro for the pizza" / "How much did I spend on food this month?" → pre-filled screen or answer. 1 sentence instead of 5 screens. | New `/api/v1/kate` endpoint, Gemini Flash on Vertex AI, tools = our existing owner-scoped API |
+| 3 | **Trust: "What does Kate know about me?"** | Every suggestion has "Waarom zie ik dit?"; a screen lists the signals Kate uses, each can be switched off. | `reason` field (exists) + signals/consent screen |
+| 4 | **Kate adapts per customer** | Emma (21) gets short, informal nudges; Marie (67) gets calm explanations, larger text, advisor option. Same Kate, different tone. | Persona/tone passed to the prompt + UI density setting |
+| 5 | **Kate's voice** (ElevenLabs) *– stretch* | Talk to Kate instead of typing; NL/FR/EN, adapted pace. Great for Marie and for the demo video. | Frontend mic → Kate endpoint → ElevenLabs TTS |
+| 6 | **Hand-off to a human** *– stretch* | Big/sensitive moments (mortgage, bereavement, debt) → Kate briefs an advisor, customer doesn't repeat their story. | Advisor summary view |
 
-### 6. Trust layer – consent, control and "why this?"
-A cross-cutting differentiator: customers see which signals are used, can switch signals off, and every suggestion carries a plain-language explanation. Turns personalization into a *relationship* rather than surveillance.
-- Can be added to any idea above; probably what separates us on creativity + fit.
+### Security rules for Kate (Aikido: business logic, IDOR, authn, authz)
 
-### 7. Advisor copilot – scale human attention
-Instead of only automating towards the customer, prioritise which customers need a human *today* and brief the advisor (context, likely intent, suggested talking points). Scales relationships, not only messages.
+- **Same authorization as the rest of the app.** Kate's tools only call existing functions that take the logged-in user's id (`Bank.account_for(owner_id, …)`), so Kate can never see another customer's data.
+- **Human in the loop.** Kate *proposes* money movements; the customer confirms on the normal, server-validated transfer screen. Kate never executes a transfer herself.
+- **Prompt-injection safe.** Transaction descriptions are untrusted input ("ignore your instructions and…"). Pass them as data, never as instructions, and add a test for it.
+- **Data minimisation.** Send the model summaries (categories, totals), not full IBANs or names, unless a tool call needs them. No real customer data anywhere – synthetic personas only.
+- **Scale & cost.** Rules run for all 2.3M customers for free; the LLM is only called when a customer talks to Kate or a moment needs a personal message (Gemini Flash).
+
+### Demo script (< 3 min video)
+
+1. **Emma** opens the app → Kate: "First salary received 🎉 – save €200/month?" → *Waarom zie ik dit?* → one tap → done.
+2. Emma types "Stuur Lucas 25 euro voor de pizza" → pre-filled transfer → confirm. ~5 seconds.
+3. **Jan** → Kate spotted the move (moving company, IKEA, deposit) → one checklist: address, home insurance, energy.
+4. **Marie** *talks* to Kate (voice) → calm answer + "Shall I book a call with your advisor?"
+5. Close on the trust screen + one line on how it scales (rules for everyone, LLM only on demand).
 
 ## Scale strategy (answers guiding question 5)
 
-- **Tiered intelligence:** rules/light ML for all 2.3M → LLM only for shortlisted moments → human for high-value/sensitive cases.
+- **Tiered intelligence:** rules/light ML for all 2.3M → LLM only for shortlisted moments or when the customer talks to Kate → human for high-value/sensitive cases.
 - **Event-driven:** stream signals (Pub/Sub), precompute profiles, compose on demand, cache aggressively.
-- **Cost guardrails:** token budgets, batching, small models for classification, large model for composition.
-- **Evaluation at scale:** synthetic personas + simulated customer journeys + guardrail tests; A/B hooks in the design.
+- **Cost guardrails:** token budgets, batching, small/fast models (Gemini Flash) for classification and chat, bigger model only where it clearly adds value.
+- **Evaluation at scale:** synthetic personas + simulated customer journeys + guardrail tests (incl. prompt injection); A/B hooks in the design.
 
 ## Data (no real customer data!)
 
-Generate a **synthetic population** (e.g. 50–500 personas with transactions, product holdings, app events, life events) with a script in this repo. Keep seeds reproducible so everyone's demo looks the same.
+The base app seeds a **synthetic population** (`backend/app/domain/seed.py`): Emma (first salary), Jan (moving house), Marie (retired, idle savings). Seeds are reproducible so everyone's demo looks the same. Add personas there for new moments.
 
-## Possible tech stack (to decide)
+## Tech stack (decided)
 
-- Backend: Python (FastAPI) or TypeScript (Node) – pick what the team knows best
-- Frontend: Next.js / React (or plain Vite) for the demo UI
-- AI: Gemini on Google Cloud (Vertex AI), ElevenLabs for voice; Cursor for coding
-- Data/infra: BigQuery or SQLite/DuckDB for the demo, Cloud Run if we deploy
-- Security: run Aikido AI Code Audit early (baseline) and again at the end (10% of score)
+- Backend: Python 3.13 + FastAPI · Frontend: React + Vite + TypeScript
+- One Docker image → Google Cloud Run (`deploy/cloudrun.sh`), secrets in Secret Manager
+- AI: Gemini Flash on Vertex AI for Kate, ElevenLabs for voice; Cursor for coding
+- Security: Aikido AI Code Audit early (baseline) and again at the end (10% of score)
 
-## Quick scoring (1–5, discuss & adjust)
+## Other ideas we considered
 
-| Idea | Creativity | Technical | Fit | Feasible in a day | Notes |
+Kept for reference; the useful parts are folded into Kate above.
+
+| Idea | Creativity | Technical | Fit | Feasible | Status |
 |---|---|---|---|---|---|
-| 1 Moments Engine | 3 | 4 | 5 | 5 | Solid core, needs a twist |
-| 2 Context graph + composer | 3 | 5 | 5 | 3 | Great platform story, heavy |
-| 3 Generative UI | 4 | 4 | 4 | 4 | Very demoable |
-| 4 Voice companion | 5 | 3 | 3 | 4 | Wow factor |
-| 5 Financial Twin | 4 | 3 | 3 | 3 | Advice-boundary risk |
-| 6 Trust layer | 4 | 3 | 4 | 5 | Add-on to any idea |
-| 7 Advisor copilot | 3 | 3 | 4 | 4 | Underused angle |
-
-**Suggested starting point (for discussion):** Moments Engine (1) as the intelligence core + Generative UI (3) or Voice (4) as the hero demo + Trust layer (6) as the differentiator. One persona, one moment, end-to-end, then widen.
+| 1 Moments Engine (life-event detection) | 3 | 4 | 5 | 5 | → Kate block 1 |
+| 2 Customer Context Graph + Journey Composer | 3 | 5 | 5 | 3 | Vision slide / "how it scales" |
+| 3 Generative UI ("an app per customer") | 4 | 4 | 4 | 4 | Partly → Kate block 4 |
+| 4 Proactive voice companion (ElevenLabs) | 5 | 3 | 3 | 4 | → Kate block 5 |
+| 5 Financial Twin (what-if simulations) | 4 | 3 | 3 | 3 | Parked – advice-boundary risk |
+| 6 Trust layer (consent, "why this?") | 4 | 3 | 4 | 5 | → Kate block 3 |
+| 7 Advisor copilot | 3 | 3 | 4 | 4 | → Kate block 6 |
 
 ## Open questions
 
-- Which customer segment / moment do we demo first?
-- Do we want a voice demo (ElevenLabs) or visual only?
-- Stack and deployment target (local demo vs Cloud Run)?
-- Who owns: data generator, decision engine, UI, demo video, security pass?
+- Who owns what? Suggested split: **Kate backend** (endpoint + Gemini + tools) · **Kate UI** (Kate bar, action cards, trust screen) · **moments & personas** (rules + seed data) · **voice** · **demo video + Aikido pass**.
+- Kate language: Dutch only, or NL/FR/EN from the start?
+- Do we deploy to Cloud Run for the demo, or record locally?
+
+## Parking lot
+
+_Drop new ideas here (one line each, with your name) – we'll sort them in._

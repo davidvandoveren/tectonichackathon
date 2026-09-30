@@ -18,6 +18,7 @@ import httpx
 from app.kate.context import CustomerContext
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+RETRY_NEXT_MODEL = frozenset({404, 429, 500, 502, 503, 504})
 TIMEOUT_SECONDS = 25.0
 
 logger = logging.getLogger("kbc_poc.kate")
@@ -68,10 +69,16 @@ class GeminiChat:
                     json=body,
                     timeout=TIMEOUT_SECONDS,
                 )
-                if response.status_code == 404:  # model not available for this key: try the next
-                    logger.warning("Gemini model %s not available (404), trying next", model)
+                # Not available for this key (404), rate limited (429) or overloaded (5xx):
+                # another model usually answers, so try the next one.
+                if response.status_code in RETRY_NEXT_MODEL:
+                    logger.warning(
+                        "Gemini model %s unavailable (HTTP %s), trying next",
+                        model,
+                        response.status_code,
+                    )
                     last_error = httpx.HTTPStatusError(
-                        "model not found", request=response.request, response=response
+                        "model unavailable", request=response.request, response=response
                     )
                     continue
                 response.raise_for_status()

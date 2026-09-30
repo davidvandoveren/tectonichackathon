@@ -110,6 +110,7 @@ is fully deterministic — no model, no network call — so it cannot fail durin
 ```
 
 - `id` is the moment type, stable across requests, and is what you pass to the dismiss endpoint.
+  Moment types: `cashflow_risk`, `income_missing` (risk) · `moving_house` (obligation) · `first_salary`, `idle_savings`, `savings_habit_automatable`, `deal_match`, `card_package_waste` (pays for Reis-/Luxepakket, no travel seen → drop it and save), `card_package_gap` (travels, no Reispakket) (opportunity).
 - `urgency` is `0–100`. Bands do not overlap: `risk` 70–100, `obligation` 40–69, `opportunity` 10–39, so a risk can never be outranked by a confident nudge. Items come back ranked, highest first.
 - `channel` is one of `feed`, `push`, `sms`, `call`, `none`. **At most one item per response uses an interruptive channel** (`push`/`sms`/`call`); the rest fall back to `feed`.
 - `reason` is the "Waarom zie ik dit?" text. It is assembled from the evidence that produced the moment, so it can never drift from what was actually observed. Always present, never empty.
@@ -122,6 +123,8 @@ is fully deterministic — no model, no network call — so it cannot fail durin
 `GET /api/v1/kate/consent` → `{"income": true, "spending": true, "balances": true, "products": true}`
 
 `PUT /api/v1/kate/consent` body `{"domain": "spending", "allowed": false}` → the updated object. An unknown domain gives `422`.
+
+`products` covers what Kate reads about the customer's KBC products (card packages); switching it off silences `card_package_waste` and lets `card_package_gap` fire without knowing a package is held.
 
 Consent is applied **before** signal extraction, so a domain the customer switched off is never computed rather than computed and filtered. Switching off `spending` visibly changes the feed.
 

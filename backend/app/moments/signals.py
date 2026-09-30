@@ -8,14 +8,16 @@ Every extractor declares a consent `domain`. Consent is applied *before* extract
 the customer switched off is never computed, let alone acted on.
 """
 
+import re
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
 from itertools import pairwise
 from typing import Literal
 
 from app.domain.models import AccountType, Category, Transaction
+from app.kate.context import is_sensitive
 from app.moments.ledger import Ledger, euro, median_of, percentile
 
 Domain = Literal["income", "spending", "balances", "products"]
@@ -33,6 +35,8 @@ DEPOSIT_TOLERANCE = Decimal("0.10")
 IDLE_MONTHS = Decimal(12)
 CONCENTRATION_MIN_BOOKINGS = 6
 CONCENTRATION_MIN_SHARE = Decimal("0.40")
+#: Public transport has no Kate Deal, so being loyal to it is not a deal opportunity (#35).
+PUBLIC_TRANSPORT = re.compile(r"\b(de lijn|nmbs|sncb|stib|mivb|tec)\b", re.IGNORECASE)
 SELF_TRANSFER_MIN_MONTHS = 3
 #: Three monthly transfers span up to 92 days, so a 90-day window would always miss the oldest.
 SELF_TRANSFER_WINDOW_DAYS = 100
@@ -344,6 +348,8 @@ def merchant_concentration(led: Ledger) -> Signal | None:
             continue
         counts: dict[str, list[Decimal]] = {}
         for transaction in outflows:
+            if PUBLIC_TRANSPORT.search(transaction.counterparty):
+                continue
             counts.setdefault(transaction.counterparty, []).append(-transaction.amount)
         for name, amounts in counts.items():
             share = sum(amounts, Decimal(0)) / total
@@ -456,8 +462,13 @@ def extract_signals(
     rules: Sequence[Extractor] = EXTRACTORS,
     consent: frozenset[Domain] | set[Domain] | None = None,
 ) -> list[Signal]:
-    """Run every extractor the customer has consented to. Silence is a valid answer."""
+    """Run every extractor the customer has consented to. Silence is a valid answer.
+
+    Sensitive transactions (health, religion, politics, unions, dating) are removed before any
+    extractor runs, so no signal can be built on them — not merely hidden afterwards (#35).
+    """
     allowed = ALL_DOMAINS if consent is None else frozenset(consent)
+    led = replace(led, transactions=[t for t in led.transactions if not is_sensitive(t)])
     found: list[Signal] = []
     for rule in rules:
         if _DOMAIN_OF[rule.__name__] not in allowed:

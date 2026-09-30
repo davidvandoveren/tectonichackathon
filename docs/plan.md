@@ -47,7 +47,7 @@ De oorspronkelijke verdeling hieronder (3.1) is ingehaald door wat er echt gebou
 | Kate Skills: acties per KBC-functie, toestemmingsladder, mandaten, voorstellen, activiteitenlog | David · **Claude-sessie Skills** (#19) | `backend/app/skills/`, `routers/skills.py` | 🔍 PR #16 |
 | Kate-stem vrouw/man (standaard uit klantprofiel, altijd wisselbaar) | Sander | `backend/app/kate/`, `frontend/src/kate/` | 🔍 PR #20 |
 | README "Our solution" | Alexandre | `README.md` | 🚧 `feature/readme-our-solution` |
-| Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | **niemand** (bestand van Alexandre) | `backend/app/domain/seed.py` | ⏳ open, **MUST** |
+| Nieuwe personas in `seed.py` (o.a. Sofie) – nodig voor `savings_habit_automatable` en `deal_match` | Alexandre · **Claude-sessie Personas** | `backend/app/domain/seed.py` (+ tests) | 🚧 `feature/personas`, **MUST** – niet aan beginnen |
 | Jury-dashboard (10.000 klanten) | **niemand** | – | ⏳ open |
 | Scherm **"Wat weet en mag Kate?"** (data-toestemming #15 + actie-toestemming #16 op één scherm), voorstelkaarten met *Bevestigen*, activiteitenscherm | David (frontend) | `frontend/` | ⏳ na #15/#16 |
 | Twee personas naast elkaar (demo) | David (frontend) | `frontend/` | ⏳ basis = telefoonkader-modus |

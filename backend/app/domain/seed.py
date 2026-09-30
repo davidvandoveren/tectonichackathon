@@ -182,8 +182,8 @@ PERSONAS = (
         savings_habits=(SavingsHabit(28, 2, "250.00", "Naar spaarrekening"),),
     ),
     Persona(
-        username="lucas",
-        first_name="Lucas",
+        username="bram",
+        first_name="Bram",
         last_name="Wouters",
         persona="Magazijnier via interim, 26, Mechelen, krap bij kas",
         accounts=(

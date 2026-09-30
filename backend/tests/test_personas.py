@@ -109,17 +109,17 @@ def user_named(bank: Bank, username: str):  # type: ignore[no-untyped-def]
 
 
 @pytest.mark.parametrize("today", TODAYS)
-def test_lucas_gets_a_cashflow_warning_that_interrupts(today: date) -> None:
+def test_bram_gets_a_cashflow_warning_that_interrupts(today: date) -> None:
     bank = seeded(today)
-    verdict = run(bank, user_named(bank, "lucas"), today)
+    verdict = run(bank, user_named(bank, "bram"), today)
     assert verdict.decisions[0].moment.type == "cashflow_risk"
     assert verdict.decisions[0].channel in {"push", "sms", "call"}
 
 
 @pytest.mark.parametrize("today", TODAYS)
-def test_lucas_deal_is_deliberately_withheld(today: date) -> None:
+def test_bram_deal_is_deliberately_withheld(today: date) -> None:
     bank = seeded(today)
-    verdict = run(bank, user_named(bank, "lucas"), today)
+    verdict = run(bank, user_named(bank, "bram"), today)
     said = {d.moment.type for d in verdict.decisions}
     withheld = {s.moment_type: s.reason_code for s in verdict.silenced}
     assert "deal_match" not in said
